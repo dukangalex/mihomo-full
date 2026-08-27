@@ -10,9 +10,45 @@
 - 机场入口订阅在 `settings.conf` 里填写，可随时修改
 - 一键更新**只更新 VPS 自建落地节点**，主订阅地址永远不变
 
-## 真正一键安装（推荐）
+## 依赖说明（请先读）
 
-在 VPS 上执行：
+本仓库的一键脚本**不会**安装 v2ray-agent，只负责在已有落地节点之上生成完整 Mihomo 配置。
+
+落地节点由 **[v2ray-agent](https://github.com/mack-a/v2ray-agent)**（作者 [mack-a](https://github.com/mack-a)）在 VPS 上管理；本项目读取其本地 clashMeta 订阅目录中的节点，再与机场入口订阅合并。
+
+### 推荐安装顺序
+
+1. **安装并配置 v2ray-agent**（在 VPS 上）
+
+   ```bash
+   bash <(curl -fsSL https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh)
+   ```
+
+   安装完成后执行 `vasma`，添加你需要的落地协议（推荐 VLESS Reality / Vision、Hysteria2 等；本方案生成时会自动排除 VMess）。
+
+2. **再安装本仓库（mihomo-full）**
+
+   ```bash
+   bash <(curl -fsSL https://raw.githubusercontent.com/dukangalex/mihomo-full/main/install.sh)
+   ```
+
+   按提示填写：机场订阅链接、你的域名、以及 v2ray-agent 的 clashMeta 目录（默认 `/etc/v2ray-agent/subscribe_local/clashMeta`）。
+
+3. **配置 Nginx** 并重载（脚本会打印需要粘贴的 `location`）。
+
+4. 客户端只导入固定订阅地址即可。
+
+### 与 v2ray-agent 的衔接
+
+| 项目 | 说明 |
+|------|------|
+| 节点来源 | `V2RAY_AGENT_CLASHMETA_DIR`（默认见上）下的本地订阅文件 |
+| 更新落地 | 在 v2ray-agent 中增删改协议后，执行 `/opt/mihomo-full/generate.sh` |
+| 不覆盖 | 本脚本不修改 v2ray-agent 自身配置，只读节点、写出 Mihomo 侧文件 |
+
+官方文档与问题反馈请优先前往：[mack-a/v2ray-agent](https://github.com/mack-a/v2ray-agent)。
+
+## 真正一键安装本仓库（在 v2ray-agent 就绪后）
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/dukangalex/mihomo-full/main/install.sh)
@@ -45,7 +81,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/dukangalex/mihomo-full/main/
 - 银行/微信进程直连、STUN/DNS 泄露封堵、远控默认 REJECT-DROP
 - 公告伪节点名称排除、url-test 健康检查收紧（interval 180 / tolerance 35）
 
-Raw 地址（上传完整文件后可用）：
+Raw 地址：
 
 ```
 https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.js
@@ -64,3 +100,13 @@ https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.
 1. 落地节点会自动排除 VMess。
 2. 完整配置内部通过第二个固定地址拉取落地节点，客户端无感知。
 3. Nginx 示例里已包含 `Cache-Control: no-cache`。
+4. 本仓库不包含 v2ray-agent 本体；请先完成其安装与协议配置。
+
+## 鸣谢
+
+- **[mack-a / v2ray-agent](https://github.com/mack-a/v2ray-agent)**  
+  提供 VPS 侧协议管理与本地 clashMeta 订阅能力。本项目的落地节点读取与更新流程建立在其工作流之上，特此致谢。
+- [MetaCubeX / mihomo](https://github.com/MetaCubeX/mihomo) 及社区规则、文档贡献者。
+- 规则与 geodata 等上游维护者（如 meta-rules-dat、相关 ruleset 项目）。
+
+若你在使用 v2ray-agent 时遇到安装/协议问题，请到其仓库提交 Issue；与本仓库「配置生成 / 固定订阅 / 覆写脚本」相关的问题可在本仓库反馈。
