@@ -1,7 +1,7 @@
 /**
- * 机场订阅覆写脚本（个人使用版）
+ * 机场订阅覆写（TUN · 无链式）
+ * 过滤占位/公告节点；地区三层分组；银行微信直连；泄露封堵；远控 REJECT-DROP
  */
-
 function main(config) {
   const flagRegex = /[\u{1F1E6}-\u{1F1FF}]{2}/u;
   const regionMatchCache = new Map();
@@ -42,8 +42,7 @@ function main(config) {
   const originalProxies = config.proxies || [];
 
   // 排除明显非节点的「公告/说明/营销」行（机场订阅常见垃圾项）。
-  // 本正则针对群/客服/流量/到期/
-  // 官网/http 链接等公告特征；若你有节点名被误杀，从正则里删对应字即可。
+  // 与早期「误杀真实节点」的激进过滤不同：本正则针对群/客服/流量/到期/
   const excludeFilter =
     /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|⚠️|@|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/iu;
 
@@ -141,8 +140,6 @@ function main(config) {
   const spotifyGroup = { name: "🎵 Spotify", type: "select", proxies: [SELECT_NAME, AUTO_NAME, ...regionNames], icon: "" };
   const globalServiceGroup = { name: "🌍 国外服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, ...regionNames], icon: "" };
   const fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME, ...regionNames], icon: "" };
-  // 远控/内网穿透工具：默认 REJECT-DROP（当前不用，安全优先），但做成
-  // 可切换分组而不是硬编码拦截——以后要用向日葵/AnyDesk/Tailscale等，
   // 直接在客户端里把这个分组切成 DIRECT 即可，不需要再回来改脚本
   const remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };
 
@@ -151,8 +148,6 @@ function main(config) {
   const ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
   const ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
   const ruleProviderClassical = { type: "http", behavior: "classical", interval: 86400 };
-  // Sukka(ruleset.skk.moe) 提供的是纯文本domainset格式（域名逐行列出，非
-  // MetaCubeX的mrs二进制编译格式），必须用 format:text + behavior:domain
   const ruleProviderTextDomain = { type: "http", format: "text", interval: 86400, behavior: "domain" };
 
   const BASE_META = "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo";
@@ -335,7 +330,6 @@ function main(config) {
 
     // 微信：rule-provider + 关键域名兜底
     "RULE-SET,wechat,DIRECT", "DOMAIN-SUFFIX,weixin.qq.com,DIRECT", "DOMAIN-SUFFIX,wechat.com,DIRECT", "DOMAIN-SUFFIX,servicewechat.com,DIRECT", "DOMAIN-SUFFIX,tenpay.com,DIRECT", "DOMAIN-SUFFIX,qq.com,DIRECT", "DOMAIN-SUFFIX,qpic.cn,DIRECT", "DOMAIN-SUFFIX,qlogo.cn,DIRECT", "DOMAIN-SUFFIX,gtimg.com,DIRECT", "PROCESS-NAME,com.tencent.mm,DIRECT",
-    // 桌面版微信：Windows/macOS 进程名均已核实为 "WeChat"（新版改名为
     // "Weixin"后部分安装仍沿用旧进程名，两个都匹配更保险）
     "PROCESS-NAME-WILDCARD,*WeChat*,DIRECT", "PROCESS-NAME-WILDCARD,*Weixin*,DIRECT",
 
@@ -388,7 +382,6 @@ function main(config) {
     "RULE-SET,twitter,🐦 Twitter", "RULE-SET,twitter_ip,🐦 Twitter,no-resolve",
     "RULE-SET,spotify,🎵 Spotify",
 
-    // 新增服务：无专属分组，统一走"国外服务"（可在客户端里为该分组单独选地区）
     "RULE-SET,gitlab,🌍 国外服务", "RULE-SET,facebook,🌍 国外服务", "RULE-SET,instagram,🌍 国外服务",
     "RULE-SET,linkedin,🌍 国外服务", "RULE-SET,discord,🌍 国外服务", "RULE-SET,paypal,🌍 国外服务",
     "RULE-SET,aws,🌍 国外服务", "RULE-SET,dropbox,🌍 国外服务", "RULE-SET,scholar,🌍 国外服务",
@@ -402,12 +395,9 @@ function main(config) {
     "IP-CIDR,54.223.0.0/16,🤖 AI服务,no-resolve",
 
     // ── 远控/内网穿透工具：进程级强制拒绝并静默丢包 ──
-    // 前提假设：本机不使用向日葵/TeamViewer/AnyDesk/RustDesk/ToDesk/
-    // Tailscale/ZeroTier/frp等工具。如果你确实需要用其中任何一个，
     // 请删除对应那一行，否则该工具将完全无法连接。
     // ── 远控/内网穿透工具：进程级路由到"🔧 远控工具"分组（默认REJECT-
     //    DROP静默拒绝，未来要用时在客户端里把该分组切成DIRECT即可，
-    //    不需要再回来改脚本）。同时兼顾Windows平台，这些工具在Windows
     //    上的可执行文件名大多首字母大写，大小写敏感的匹配可能导致
     //    全小写写法在Windows上失效，两种大小写都写上更保险。
     "PROCESS-NAME-WILDCARD,*teamviewer*,🔧 远控工具", "PROCESS-NAME-WILDCARD,*TeamViewer*,🔧 远控工具",
@@ -435,7 +425,6 @@ function main(config) {
     "dns-hijack": ["any:53", "tcp://any:53"],
     "inet4-route-only": false,  // V5对齐：双栈环境避免 IPv6 绕过 TUN
     mtu: 1500,
-    // gso:false 规避已知的 TUN DNS 劫持 bug（历史踩过的坑）
     gso: false, "gso-max-size": 65536,
     "udp-timeout": 300
   };
@@ -447,7 +436,6 @@ function main(config) {
     "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/15",
     "fake-ip-filter-mode": "rule",
     "fake-ip-filter": [
-      // 银行/支付：fake-ip 会让银行App感知到"IP地址异常"，直接触发风控
       "DOMAIN-SUFFIX,abchina.com,real-ip", "DOMAIN-SUFFIX,abchina.com.cn,real-ip",
       "DOMAIN-SUFFIX,icbc.com.cn,real-ip", "DOMAIN-SUFFIX,ccb.com,real-ip",
       "DOMAIN-SUFFIX,boc.cn,real-ip", "DOMAIN-SUFFIX,bankofchina.com,real-ip",
@@ -502,13 +490,11 @@ function main(config) {
       "DOMAIN-SUFFIX,meituan.com,real-ip", "DOMAIN-SUFFIX,pinduoduo.com,real-ip", "DOMAIN-SUFFIX,jd.com,real-ip",
       "DOMAIN-SUFFIX,kuaishou.com,real-ip", "DOMAIN-SUFFIX,xiaohongshu.com,real-ip",
       "DOMAIN-SUFFIX,163.com,real-ip", "DOMAIN-SUFFIX,126.net,real-ip",
-      // B站主站（此前只覆盖了视频CDN域名bilivideo.cn，主站域名单独补上）
       "DOMAIN-SUFFIX,bilibili.com,real-ip",
       // 滴滴出行：位置敏感度和地图同级，fake-ip会导致叫车定位/派单异常
       "DOMAIN-SUFFIX,didichuxing.com,real-ip", "DOMAIN-SUFFIX,xiaojukeji.com,real-ip",
       // 饿了么
       "DOMAIN-SUFFIX,ele.me,real-ip",
-      // 米哈游/原神：CDN调度对real-ip敏感，fake-ip易导致下载慢或连接异常
       "DOMAIN-SUFFIX,mihoyo.com,real-ip", "DOMAIN-SUFFIX,hoyoverse.com,real-ip",
       // 阿里云盘：大文件传输对CDN调度精度敏感
       "DOMAIN-SUFFIX,aliyundrive.com,real-ip", "DOMAIN-SUFFIX,alipan.com,real-ip",
@@ -525,7 +511,6 @@ function main(config) {
       // 路由器管理后台
       "DOMAIN-SUFFIX,router.asus.com,real-ip", "DOMAIN-SUFFIX,tplinkwifi.net,real-ip",
       "DOMAIN-SUFFIX,tendawifi.com,real-ip", "DOMAIN-SUFFIX,routerlogin.com,real-ip", "DOMAIN-SUFFIX,tplogin.cn,real-ip",
-      // 远控工具域名：仅影响DNS解析精度(real-ip)，实际连接仍受端口层规则控制，
       // 不代表这些工具被放行
       "DOMAIN-SUFFIX,todesk.com,real-ip", "DOMAIN-SUFFIX,teamviewer.com,real-ip",
       "DOMAIN-SUFFIX,anydesk.com,real-ip", "DOMAIN-SUFFIX,rustdesk.com,real-ip",
@@ -540,7 +525,6 @@ function main(config) {
       "DOMAIN,mtalk.google.com,real-ip",
       // 政务/铁路
       "DOMAIN-SUFFIX,gov.cn,real-ip", "DOMAIN-SUFFIX,12306.cn,real-ip",
-      // STUN域名保留real-ip仅为消除DNS解析失败噪音日志，实际UDP/TCP连接
       // 仍被端口层REJECT-DROP规则拦截，不会真正泄露
       "DOMAIN-SUFFIX,stun.l.google.com,real-ip", "DOMAIN,global.turn.twilio.com,real-ip",
       // IP-in-domain服务（如 1-2-3-4.sslip.io）
@@ -556,14 +540,10 @@ function main(config) {
       "MATCH,fake-ip"
     ],
     "default-nameserver": DOMESTIC_DNS,
-    // nameserver 用纯IP形式的DoH端点（不含域名），配合 #RULES 后缀让
     // 这条查询遵循下方路由规则走代理。用纯IP而非域名是关键：如果用
     // "dns.google"这种域名形式，会被下方泄露防护规则里的
-    // "DOMAIN,dns.google,REJECT-DROP"（专门拦截Chrome自动安全DNS逃逸用的）
     // 误伤，导致mihomo自己解析境外域名的请求也被拦掉
     nameserver: ["https://1.1.1.1/dns-query#RULES", "https://8.8.8.8/dns-query#RULES"],
-    // proxy-server-nameserver / direct-nameserver 改用纯IP加密DNS(DoH)，
-    // 而非明文UDP:53——纯IP访问DoH端点：无需域名解析、无SNI特征可被
     // 旁路观察者识别，双厂商(腾讯/阿里)冗余
     "proxy-server-nameserver": ["https://120.53.53.53/dns-query", "https://223.5.5.5/dns-query"],
     "direct-nameserver": ["https://120.53.53.53/dns-query", "https://223.5.5.5/dns-query"],
@@ -572,7 +552,6 @@ function main(config) {
     "fast-queries": true,
     "query-v6": false,
     "nameserver-policy": {
-      // DNS层直接拦截广告域名解析（返回NXDOMAIN），比规则层REJECT更彻底：
       // 应用连尝试连接都不会尝试，日志更干净
       "geosite:category-ads-all": "rcode://name_error",
       "geosite:cn": DOMESTIC_DNS,
@@ -585,21 +564,17 @@ function main(config) {
     },
   };
 
-  // sniffer：对 TLS/HTTP/QUIC 流量做 SNI/Host 嗅探，在没有走DNS解析
   // （比如App硬编码IP直连）的情况下依然能按域名正确分流，
   // 提升规则匹配准确度，减少误判进国内/境外分组
   config.sniffer = {
     enable: true,
     "force-dns-mapping": true,
     "parse-pure-ip": true,
-    // override-destination：嗅探到的域名优先于DNS解析结果用于路由决策，
-    // 对fake-ip场景尤其重要（fake-ip本身不是真实IP，必须靠嗅探到的
     // 域名才能正确匹配分流规则）
     "override-destination": true,
     sniff: {
       TLS: { ports: [443, 8443], "override-destination": true },
       HTTP: { ports: [80, "8080-8880"], "override-destination": true }
-      // QUIC 嗅探已关闭（对齐 V5）：封堵仍靠规则层 UDP/443 + GEOIP，
       // 关闭后减少部分内核历史上的 QUIC sniffer 崩溃面
     },
     // 强制嗅探（即使DNS已解析成功，仍以嗅探结果为准）：这几个服务
@@ -608,8 +583,6 @@ function main(config) {
       "+.google.com", "+.youtube.com", "+.telegram.org", "+.openai.com",
       "+.anthropic.com", "+.twitter.com", "+.x.com"
     ],
-    // 跳过嗅探：银行/支付/风控SDK域名对TLS嗅探（本质是解析ClientHello里的SNI）
-    // 极其敏感，部分银行App会把"存在中间层解析行为"本身当作中间人攻击特征，
     // 即使最终流量走DIRECT也可能触发风控。跳过嗅探=握手全程不经过分析，
     // 银行App感知不到Mihomo的存在。
     "skip-domain": [
@@ -628,30 +601,24 @@ function main(config) {
       // 路由器管理后台、本地/内网域名：嗅探无意义且可能干扰局域网管理
       "+.tplinkwifi.net", "+.tendawifi.com", "+.routerlogin.com", "+.tplogin.cn",
       "+.lan", "+.local", "+.home.arpa",
-      // 米家(Mijia)智能家居：局域网配对协议会用"Mijia Cloud"这个字符串
       // 当作伪域名走TLS SNI，不是真实可解析的域名。如果被嗅探功能当成
-      // 正常域名去解析会报错"couldn't find ip"，导致设备离线连不上，
       // 必须让嗅探跳过这个特殊字符串
       "Mijia Cloud",
       // 12306：反爬虫检测极严格，跳过嗅探降低被识别为"存在中间层"的概率
       "+.12306.cn", "+.12306.gov.cn"
     ],
-    // 跳过对Telegram官方IP段的嗅探（其IP相对固定，嗅探反而可能增加延迟）
     "skip-dst-address": ["91.108.4.0/22", "91.108.8.0/22", "91.108.16.0/22", "149.154.160.0/20"]
   };
 
   config.hosts = {
     "cloudflare-dns.com": ["1.1.1.1", "1.0.0.1"], "dns.google": ["8.8.8.8", "8.8.4.4"],
     "services.googleapis.cn": ["services.googleapis.com"],
-    // jsdelivr 官方反封锁 CNAME：cdn.jsdelivr.net 是jsdelivr的智能路由入口
     // （会自动挑选包括gcore在内的最优CDN节点），如果它在国内网络环境下
-    // 被墙/DNS污染，这条hosts映射会强制解析到 Cloudflare 反代的备用别名
     "cdn.jsdelivr.net": "testingcf.jsdelivr.net",
     "+.mcdn.bilivideo.com": "0.0.0.0", "+.mcdn.bilivideo.cn": "0.0.0.0", "+.edge.mountaintoys.cn": "0.0.0.0", "+.h2.smtcdns.net": "0.0.0.0"
   };
 
   config["mixed-port"] = config["mixed-port"] || 17890;
-  // allow-lan / bind-address：尊重订阅原有设置；订阅未设置时默认收紧
   // （仅本机监听），而非无条件强制开放局域网——降低公共网络下被同网段
   // 设备探测到开放代理端口的风险。如需给家里其他设备共享代理，手动改回
   // allow-lan: true 即可。
@@ -681,15 +648,12 @@ function main(config) {
   config["external-ui"] = "ui";
   config["external-ui-url"] = "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip";
 
-  // GEOSITE/GEOIP 基础库镜像：这两个文件是所有 GEOSITE/GEOIP 规则的底层
-  // 数据源，比单个rule-provider更关键——一旦下载失败，"GEOIP,CN,..."这类
   // 兜底规则会连带失效，因此单独指定镜像而非依赖客户端默认源
   config["geodata-mode"] = true;
   config["geodata-loader"] = "memconservative";
   config["geo-auto-update"] = true;
   config["geo-update-interval"] = 168;
   config["geox-url"] = {
-    // gcore 边缘在国内通常比默认 cdn.jsdelivr 更稳（与 V5 配置一致）
     geoip: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat",
     geosite: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat",
     mmdb: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb",
@@ -701,4 +665,3 @@ function main(config) {
 
   return config;
 }
-
