@@ -1,4 +1,4 @@
-# Mihomo 完整配置 + v2ray-agent 融合方案（方案 B）
+# Mihomo 完整配置 + v2ray-agent 融合方案
 
 ## 最终效果
 
