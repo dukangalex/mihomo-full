@@ -25,13 +25,30 @@ bash <(curl -fsSL https://raw.githubusercontent.com/dukangalex/mihomo-full/main/
 ```
 /opt/mihomo-full/
 ├── settings.conf          # 用户配置（机场订阅、域名）
-├── template.yaml          # 完整配置模板
+├── template.yaml          # 完整配置模板（链式：机场入口 + 落地）
 ├── generate.sh            # 一键生成/更新脚本
 ├── install.sh             # 一键安装脚本
 ├── nginx-example.conf     # Nginx 参考配置
+├── airport_overwrite.js   # 机场专用订阅覆写脚本（无链式）
 └── output/
     ├── full-config.yaml   # 最终完整配置（主订阅）
     └── exit-nodes.yaml    # 落地节点列表
+```
+
+## 机场专用覆写脚本（无链式）
+
+仅用机场、不需要 VPS 落地时，把 `airport_overwrite.js` 挂到客户端的「脚本覆写」即可。
+
+能力概要：
+
+- 地区三层分组（自动 / 负载 / 选择）+ AI/流媒体等功能组
+- 银行/微信进程直连、STUN/DNS 泄露封堵、远控默认 REJECT-DROP
+- 公告伪节点名称排除、url-test 健康检查收紧（interval 180 / tolerance 35）
+
+Raw 地址（上传完整文件后可用）：
+
+```
+https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.js
 ```
 
 ## 日常使用
@@ -46,4 +63,4 @@ bash <(curl -fsSL https://raw.githubusercontent.com/dukangalex/mihomo-full/main/
 
 1. 落地节点会自动排除 VMess。
 2. 完整配置内部通过第二个固定地址拉取落地节点，客户端无感知。
-3. 建议给两个文件加上 `Cache-Control: no-cache`。
+3. Nginx 示例里已包含 `Cache-Control: no-cache`。
