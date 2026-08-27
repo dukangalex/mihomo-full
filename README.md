@@ -63,13 +63,15 @@ bash <(curl -fsSL https://raw.githubusercontent.com/dukangalex/mihomo-full/main/
 
 按提示填写：
 
-- 机场订阅链接
-- 域名
-- clashMeta 目录（默认 `/etc/v2ray-agent/subscribe_local/clashMeta`）
+| 填写项 | 含义 |
+|--------|------|
+| **机场订阅链接** | 你的机场 Clash / Mihomo 订阅 URL，用作链式**入口** |
+| **域名** | 已解析到**这台 VPS**、并已用 Nginx（或同类）提供 HTTPS 的域名。用于拼出客户端要导入的固定订阅地址，以及配置内部拉取落地节点的第二个地址。填写时**不要**带 `https://`，也不要带路径，例如 `example.com` 或 `sub.example.com`。一般与你在 v2ray-agent 里使用的域名相同。 |
+| **clashMeta 目录** | v2ray-agent 生成本地节点文件的目录，默认 `/etc/v2ray-agent/subscribe_local/clashMeta`，多数情况直接回车即可 |
 
 **3. 配置 Nginx**
 
-将脚本打印的 `location` 粘贴进站点配置，然后：
+将脚本打印的 `location` 粘贴进**该域名**对应的站点配置（与上面填写的域名一致），然后：
 
 ```bash
 nginx -t && systemctl reload nginx
@@ -79,7 +81,7 @@ nginx -t && systemctl reload nginx
 
 **4. 客户端**
 
-只导入脚本最后给出的固定 HTTPS 地址。
+只导入脚本最后给出的固定 HTTPS 地址（形如 `https://你填写的域名/assets/static/a7f3c21e9b`）。
 
 ### 与 v2ray-agent 的关系
 
