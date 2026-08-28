@@ -9,6 +9,7 @@
 - [两种用法](#两种用法)
 - [方案 A：链式代理（机场入口 + VPS 落地）](#方案-a链式代理机场入口--vps-落地)
 - [方案 B：仅机场（覆写脚本）](#方案-b仅机场覆写脚本)
+- [进阶玩法（Cloudflare）](#进阶玩法cloudflare)
 - [目录结构](#目录结构)
 - [日常维护](#日常维护)
 - [注意事项](#注意事项)
@@ -110,7 +111,37 @@ https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.
 - 地区三层分组（自动 / 负载 / 选择）及 AI、流媒体等功能组
 - 银行 / 微信进程直连，STUN、DNS 泄露封堵，远控默认 `REJECT-DROP`
 - 公告类伪节点名称排除
-- url-test 健康检查：`interval: 180`，`tolerance: 35`，`timeout: 3000`
+- url-test 健康检查：`interval: 180`，`tolerance: 35`，`timeout: 3000`，`expected-status: 204`
+
+---
+
+## 进阶玩法（Cloudflare）
+
+在已有「机场 / VPS 链式」之外，可结合 Cloudflare 做**低成本入口**或**优选 IP**，与本仓库配置互补（不替代本仓库安装流程）。
+
+| 项目 | 作用 | 仓库 |
+|------|------|------|
+| **edgetunnel** | 在 CF Workers / Pages 上部署边缘隧道，提供 VLESS / Trojan / SS 等节点与订阅，可作为免费或备用「入口」 | [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel) |
+| **Country IP Filter** | 按国家/地区筛选 Cloudflare 相关 IP，用于优选、测速或给隧道/节点填更合适的出口 IP | [alienwaregf/Cloudflare-Country-Specific-IP-Filter](https://github.com/alienwaregf/Cloudflare-Country-Specific-IP-Filter) |
+
+### 1. edgetunnel（CF 边缘隧道）
+
+- 基于 Cloudflare Workers / Pages 的边缘解密与转发方案，带管理面板与订阅生成。
+- 适合：没有稳定 VPS、或需要一条**额外入口**与现有机场/落地搭配时。
+- 部署方式以官方 README 为准（Workers 粘贴、Pages 上传、或 GitHub 连接均可）。
+- 与本仓库的关系：生成的订阅可当作方案 A 的**机场入口订阅**填入 `AIRPORT_SUB_URL`，或单独在客户端使用；**不能**替代 v2ray-agent 的 VPS 落地。
+
+### 2. Cloudflare 国家/地区 IP 筛选
+
+- 用于筛选指定国家或地区的 IP，便于做优选列表、降低延迟或匹配目标区域。
+- 适合：给 edgetunnel 的 ProxyIP、自建节点或测速脚本提供候选 IP。
+- 请遵守该项目说明与当地法律法规；建议绑定自定义域，勿用于未授权场景。
+
+### 使用注意
+
+- 以上均为**独立开源项目**，安装、变量、配额与风控以各自仓库文档为准。
+- CF 免费额度、封锁策略会变化；进阶玩法适合折腾与备用，主用链路仍建议方案 A（VPS 落地）或可信机场。
+- 本仓库不内嵌其代码，仅作文档推荐与组合说明。
 
 ---
 
@@ -155,8 +186,11 @@ https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.
 - **[mack-a / v2ray-agent](https://github.com/mack-a/v2ray-agent)** — VPS 协议管理与本地 clashMeta 订阅；本项目落地读取建立在其工作流之上
 - [MetaCubeX / mihomo](https://github.com/MetaCubeX/mihomo) 及社区贡献者
 - meta-rules-dat 与相关 ruleset 维护者
+- [cmliu / edgetunnel](https://github.com/cmliu/edgetunnel) — Cloudflare 边缘隧道进阶方案
+- [alienwaregf / Cloudflare-Country-Specific-IP-Filter](https://github.com/alienwaregf/Cloudflare-Country-Specific-IP-Filter) — 按国家/地区筛选 CF 相关 IP
 
 | 问题类型 | 反馈位置 |
 |----------|----------|
 | v2ray-agent 安装 / 协议 | [mack-a/v2ray-agent](https://github.com/mack-a/v2ray-agent) |
+| edgetunnel / CF IP 筛选 | 对应上游仓库 |
 | 本仓库配置生成 / 固定订阅 / 覆写脚本 | 本仓库 Issue |
