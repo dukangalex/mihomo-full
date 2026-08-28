@@ -1,11 +1,14 @@
 # mihomo-full
 
+> **Public template** — sample values only. Never commit real airport URLs, domains, or node secrets. Use **Use this template** / Fork, then fill secrets **only on your VPS**.
+
 基于 [v2ray-agent](https://github.com/mack-a/v2ray-agent) 落地节点 + 机场入口订阅，生成**固定地址、无 `.yaml` 后缀**的完整 Mihomo 配置；另附纯机场场景的订阅覆写脚本。
 
 ---
 
 ## 目录
 
+- [公共模板使用说明](#公共模板使用说明)
 - [两种用法](#两种用法)
 - [方案 A：链式代理（机场入口 + VPS 落地）](#方案-a链式代理机场入口--vps-落地)
 - [方案 B：仅机场（覆写脚本）](#方案-b仅机场覆写脚本)
@@ -13,7 +16,20 @@
 - [目录结构](#目录结构)
 - [日常维护](#日常维护)
 - [注意事项](#注意事项)
+- [免责声明](#免责声明)
 - [鸣谢](#鸣谢)
+
+---
+
+## 公共模板使用说明
+
+| 要点 | 说明 |
+|------|------|
+| **如何用** | GitHub → **Use this template** 生成自己的仓库，或 Fork 后在本机/VPS 使用 |
+| **仓库内有什么** | 仅占位配置与脚本；**不含**真实订阅、UUID、域名密码 |
+| **秘密写在哪** | 只写在 VPS 上的 `/opt/mihomo-full/settings.conf`（由 `install.sh` 生成） |
+| **禁止** | 把填好订阅的 `settings.conf`、`output/full-config.yaml` 推回任何**公开**仓库 |
+| **生成物** | `output/` 已被 `.gitignore` 忽略；生成后的 YAML 会嵌入你的机场 URL |
 
 ---
 
@@ -37,7 +53,7 @@
   https://你的域名/assets/static/a7f3c21e9b
   ```
 
-- 机场订阅写在 `settings.conf`，可随时改
+- 机场订阅写在 VPS 本地 `settings.conf`，可随时改
 - 一键更新**只刷新 VPS 落地节点**，主订阅地址不变
 
 ### 依赖
@@ -62,7 +78,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/mack-a/v2ray-agent/master/in
 bash <(curl -fsSL https://raw.githubusercontent.com/dukangalex/mihomo-full/main/install.sh)
 ```
 
-按提示填写：
+按提示填写（内容只保存在**本机** `settings.conf`）：
 
 | 填写项 | 含义 |
 |--------|------|
@@ -104,14 +120,14 @@ v2ray-agent 的安装与协议问题请到其[官方仓库](https://github.com/m
 https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.js
 ```
 
-（私有仓库或 raw 受限时，可改为本地文件路径。）
+（若使用自己的 Template 副本，请改成**你的仓库** raw 地址。）
 
 ### 能力概要
 
 - 地区三层分组（自动 / 负载 / 选择）及 AI、流媒体等功能组
 - 银行 / 微信进程直连，STUN、DNS 泄露封堵，远控默认 `REJECT-DROP`
 - 公告类伪节点名称排除
-- url-test 健康检查：`interval: 180`，`tolerance: 35`，`timeout: 3000`，`expected-status: 204`
+- url-test：`interval: 180`，`tolerance: 35`，`timeout: 3000`，`expected-status: 204`
 
 ---
 
@@ -128,36 +144,42 @@ https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.
 
 - 基于 Cloudflare Workers / Pages 的边缘解密与转发方案，带管理面板与订阅生成。
 - 适合：没有稳定 VPS、或需要一条**额外入口**与现有机场/落地搭配时。
-- 部署方式以官方 README 为准（Workers 粘贴、Pages 上传、或 GitHub 连接均可）。
-- 与本仓库的关系：生成的订阅可当作方案 A 的**机场入口订阅**填入 `AIRPORT_SUB_URL`，或单独在客户端使用；**不能**替代 v2ray-agent 的 VPS 落地。
+- 部署方式以官方 README 为准。
+- 与本仓库：生成的订阅可当作方案 A 的**机场入口**填入 `AIRPORT_SUB_URL`，或单独在客户端使用；**不能**替代 v2ray-agent 的 VPS 落地。
 
 ### 2. Cloudflare 国家/地区 IP 筛选
 
-- 用于筛选指定国家或地区的 IP，便于做优选列表、降低延迟或匹配目标区域。
-- 适合：给 edgetunnel 的 ProxyIP、自建节点或测速脚本提供候选 IP。
-- 请遵守该项目说明与当地法律法规；建议绑定自定义域，勿用于未授权场景。
+- 用于筛选指定国家或地区的 IP，便于做优选列表或匹配目标区域。
+- 请遵守该项目说明与当地法律法规；建议绑定自定义域。
 
 ### 使用注意
 
-- 以上均为**独立开源项目**，安装、变量、配额与风控以各自仓库文档为准。
-- CF 免费额度、封锁策略会变化；进阶玩法适合折腾与备用，主用链路仍建议方案 A（VPS 落地）或可信机场。
-- 本仓库不内嵌其代码，仅作文档推荐与组合说明。
+- 以上为**独立开源项目**，安装、变量、配额与风控以各自仓库为准。
+- CF 免费额度与策略会变化；进阶玩法适合备用，主用仍建议方案 A 或可信机场。
+- 本仓库不内嵌其代码，仅作文档推荐。
 
 ---
 
 ## 目录结构
 
 ```text
+仓库（公开模板）
+├── settings.conf          # 占位示例，勿填真实订阅后推送
+├── template.yaml          # 链式配置模板（含 __占位符__）
+├── generate.sh            # 生成脚本
+├── install.sh             # 一键安装（写入 VPS 本地）
+├── nginx-example.conf
+├── airport_overwrite.js
+└── .gitignore             # 忽略 output/ 与本地密钥形文件
+
+VPS 运行时（勿提交公开仓）
 /opt/mihomo-full/
-├── settings.conf          # 用户配置（机场订阅、域名）
-├── template.yaml          # 链式完整配置模板
-├── generate.sh            # 生成 / 更新落地与完整配置
-├── install.sh             # 一键安装
-├── nginx-example.conf     # Nginx 参考
-├── airport_overwrite.js   # 仅机场覆写脚本
+├── settings.conf          # 含真实机场 URL
+├── template.yaml
+├── generate.sh
 └── output/
-    ├── full-config.yaml   # 主订阅内容
-    └── exit-nodes.yaml    # 落地节点列表
+    ├── full-config.yaml   # 会嵌入机场 URL
+    └── exit-nodes.yaml
 ```
 
 ---
@@ -167,7 +189,7 @@ https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.
 | 操作 | 命令 / 做法 |
 |------|-------------|
 | 只更新落地节点 | `/opt/mihomo-full/generate.sh` |
-| 更换机场订阅 | 编辑 `settings.conf` 中 `AIRPORT_SUB_URL`，再执行 `generate.sh` |
+| 更换机场订阅 | 编辑 VPS 上 `settings.conf` 中 `AIRPORT_SUB_URL`，再执行 `generate.sh` |
 | 主订阅地址 | **不必改**；客户端继续用原固定链接 |
 
 ---
@@ -177,13 +199,24 @@ https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.
 1. 落地节点生成时会排除 VMess。
 2. 完整配置通过第二个固定路径拉取落地列表，客户端只需导入主订阅。
 3. Nginx 示例已带 `Cache-Control: no-cache`，避免缓存旧节点。
-4. 仓库内均为占位配置，不含真实订阅或节点；VPS 上的 `settings.conf` 请勿再提交回公开仓库。
+4. **公开模板纪律**：仓库内只保留占位符；真实订阅、域名、节点仅存在于你的 VPS。
+5. `generate.sh` 会拒绝仍为 `REPLACE_…` / `example.com` 的占位配置，避免误生成。
+6. 固定路径 `a7f3c21e9b` / `e9b2f1a7c3` 可自行更换，须与 Nginx 一致。
+
+---
+
+## 免责声明
+
+- 本仓库仅提供配置生成与客户端规则示例，供学习与研究。
+- 使用代理、隧道、Cloudflare Workers 等须遵守**所在地及服务商**的法律法规与条款。
+- 作者与贡献者不对使用本仓库产生的任何后果负责。
+- 第三方项目（v2ray-agent、edgetunnel 等）的行为与风险以其各自仓库为准。
 
 ---
 
 ## 鸣谢
 
-- **[mack-a / v2ray-agent](https://github.com/mack-a/v2ray-agent)** — VPS 协议管理与本地 clashMeta 订阅；本项目落地读取建立在其工作流之上
+- **[mack-a / v2ray-agent](https://github.com/mack-a/v2ray-agent)** — VPS 协议管理与本地 clashMeta 订阅
 - [MetaCubeX / mihomo](https://github.com/MetaCubeX/mihomo) 及社区贡献者
 - meta-rules-dat 与相关 ruleset 维护者
 - [cmliu / edgetunnel](https://github.com/cmliu/edgetunnel) — Cloudflare 边缘隧道进阶方案
