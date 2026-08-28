@@ -1,6 +1,7 @@
 /**
  * 机场订阅覆写（TUN · 无链式）
- * 过滤占位/公告节点；地区三层分组；银行微信直连；泄露封堵；远控 REJECT-DROP
+ * 与 template.yaml 除链式外对齐：mixed、expected-status:204、gstatic、
+ * fake-ip /16、arc、controller:9090、auto-redirect:false、无 QUIC 嗅探
  */
 function main(config) {
   const flagRegex = /[\u{1F1E6}-\u{1F1FF}]{2}/u;
@@ -96,8 +97,8 @@ function main(config) {
   function buildRegionTrio(name, matchField) {
     const autoName = `${name}-自动选择`;
     const lbName = `${name}-负载均衡`;
-    const common = { "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "exclude-type": "DIRECT", "empty-fallback": "REJECT", icon: "", hidden: true };
-    const auto = { name: autoName, type: "url-test", tolerance: 35, ...common, ...matchField };
+    const common = { "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, "exclude-type": "DIRECT", "empty-fallback": "REJECT", icon: "", hidden: true };
+    const auto = { name: autoName, type: "url-test", tolerance: 35, "max-failed-times": 2, ...common, ...matchField };
     const lb = { name: lbName, type: "load-balance", strategy: "sticky-sessions", ...common, ...matchField };
     const select = { name, type: "select", proxies: [autoName, lbName], icon: "" };
     return [auto, lb, select];
@@ -121,8 +122,8 @@ function main(config) {
   const LB_NAME = "⚖️ 负载均衡";
   const SELECT_NAME = "🔰 节点选择";
 
-  const autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, timeout: 3000, "exclude-type": "DIRECT", "empty-fallback": "REJECT", icon: "" };
-  const lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "exclude-type": "DIRECT", "empty-fallback": "REJECT", icon: "" };
+  const autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, timeout: 3000, "expected-status": 204, "max-failed-times": 2, "exclude-type": "DIRECT", "empty-fallback": "REJECT", icon: "" };
+  const lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, "exclude-type": "DIRECT", "empty-fallback": "REJECT", icon: "" };
   const selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME, ...regionNames], icon: "" };
   const adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
   const privateGroup = { name: "🔒 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
@@ -420,20 +421,29 @@ function main(config) {
   ];
 
   config.tun = {
-    enable: true, stack: "system", "auto-route": true, "strict-route": true,
-    "auto-redirect": true, "auto-detect-interface": true,
+    enable: true,
+    // mixed：TCP 走 system、UDP 走 gvisor（2025–2026 社区主流推荐）
+    stack: "mixed",
+    "auto-route": true,
+    "strict-route": true,
+    "auto-redirect": false,
+    "auto-detect-interface": true,
     "dns-hijack": ["any:53", "tcp://any:53"],
-    "inet4-route-only": false,  // V5对齐：双栈环境避免 IPv6 绕过 TUN
+    "inet4-route-only": false,
     mtu: 1500,
-    gso: false, "gso-max-size": 65536,
+    gso: false,
+    "gso-max-size": 65536,
     "udp-timeout": 300
   };
 
   const DOMESTIC_DNS = ["223.5.5.5", "119.29.29.29"];
 
   config.dns = {
-    enable: true, ipv6: false, "use-hosts": true, "use-system-hosts": true,
-    "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/15",
+    enable: true, ipv6: false,
+    "cache-algorithm": "arc",
+    "prefer-h3": false,
+    "use-hosts": true, "use-system-hosts": true,
+    "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/16",
     "fake-ip-filter-mode": "rule",
     "fake-ip-filter": [
       "DOMAIN-SUFFIX,abchina.com,real-ip", "DOMAIN-SUFFIX,abchina.com.cn,real-ip",
@@ -638,11 +648,11 @@ function main(config) {
     "quic-go-disable-gso": false,
     "quic-go-disable-ecn": false
   };
-  config["external-controller"] = "127.0.0.1:9090";
+  config["external-controller"] = "127.0.0.1:19090";
   // CORS防护：只允许本地origin访问控制器，防止CDN被劫持/投毒后
   // 其JS通过CORS读取本地控制器数据（节点列表、连接记录等敏感信息）
   config["external-controller-cors"] = {
-    "allow-origins": ["http://127.0.0.1:9090", "http://localhost:9090"],
+    "allow-origins": ["http://127.0.0.1:19090", "http://localhost:19090"],
     "allow-private-network": false
   };
   config["external-ui"] = "ui";
@@ -665,3 +675,4 @@ function main(config) {
 
   return config;
 }
+
