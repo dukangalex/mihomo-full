@@ -19,8 +19,18 @@ command -v grep >/dev/null || err "需要 grep"
 command -v find >/dev/null || err "需要 find"
 
 [[ -f "$TEMPLATE" ]] || err "找不到模板: $TEMPLATE"
-[[ -n "$AIRPORT_SUB_URL" && "$AIRPORT_SUB_URL" != "这里填入你的机场订阅链接" ]] || err "请先在 settings.conf 填写 AIRPORT_SUB_URL"
-[[ -n "$DOMAIN" && "$DOMAIN" != "你的域名.com" ]] || err "请先在 settings.conf 填写 DOMAIN"
+
+# Block public-template placeholders (never generate with sample values)
+case "${AIRPORT_SUB_URL:-}" in
+  ""|"REPLACE_WITH_YOUR_AIRPORT_SUBSCRIPTION_URL"|"这里填入你的机场订阅链接")
+    err "请先在 settings.conf 填写真实的 AIRPORT_SUB_URL（勿提交回公开仓库）"
+    ;;
+esac
+case "${DOMAIN:-}" in
+  ""|"example.com"|"你的域名.com")
+    err "请先在 settings.conf 填写真实的 DOMAIN（勿提交回公开仓库）"
+    ;;
+esac
 
 mkdir -p "$OUTPUT_DIR"
 TMP_NODES=$(mktemp)
