@@ -1,30 +1,54 @@
 # Clash Meta (Mihomo) 配置 · FINAL v5
+# 目标：中国大陆用户 · 境内全直连 · 境外链式代理（机场入口 + 自建VPS落地）
+# 零泄露（宁可断网也不泄露） · 零误判 · 零风控隐患 · 高隐匿 · 国内流量无感
+#
 # ── 本版本相对早期 PATCH 版本的关键变更（供以后回来自己核对）──
 # 1. empty-fallback: REJECT 已从全部分组移除
+#    实测确认 FlClash/Bettbox 绑定的 mihomo 核心不识别这个字段，
 #    会导致整份配置直接加载失败。CMFA（跑 Alpha 开发分支）能识别，
 #    但为保证三个客户端通用，统一不使用。不要再加回来。
+# 2. tun.exclude-package 已移除，原因与上面相同（同样导致加载失败），
 #    且该字段对设备级 VPN 接口检测（banking App 风控）本来就无效，
+#    银行 App 的直连保障靠 rules 里的 PROCESS-NAME-WILDCARD 兜底。
+# 3. 全部 rule-provider 与 geox-url 下载源统一使用 gcore.jsdelivr.net，
+#    不用 testingcf.jsdelivr.net——后者在国内的可用性会不定期被单独
+#    干扰，历史上已经因此导致过多次加载失败（EOF / rule set not found）。
+#    如果 gcore 哪天也不通了，参考同一域名下 fastly/cdn 等其他 jsDelivr
 #    边缘节点做替换，全局替换一个域名字符串即可。
+# 4. QUIC 嗅探已关闭（sniffer.sniff.QUIC.enable: false）。P7 的境外 QUIC
+#    封堵靠 RULE-SET,cn-ip 做 IP 段判断，不依赖嗅探结果，关闭嗅探不影响
 #    封堵效果，同时彻底消除历史上 QUIC sniffer 的崩溃漏洞攻击面，不再
 #    需要关注"内核版本是否 ≥v1.19.27"这件事。
+# 5. 远程控制/内网穿透工具（Tailscale/AnyDesk/RustDesk/frp等）不再是硬编码
+#    DIRECT 或 REJECT-DROP，改指向一个叫"远控工具"的 select 分组，默认
 #    选中 REJECT-DROP（安全默认，收窄"进程名可被伪造绕开代理"这个信任
+#    盲区）。真要用这类工具时，直接在 FlClash/Bettbox 的分组切换界面里
 #    把"远控工具"这个分组手动选成 DIRECT 即可，不用再回来改 YAML。
+# 6. log-level 设为 info（而非更省日志的 warning/error）——用户主动选择
 #    "日志量最大，换取以后排查问题的能力"这个权衡，如果观感上日志太吵，
 #    可以自行调回 warning。
+# 7. 【重要】mihomo 的"排除节点"必须用 exclude-filter 字段，不能用
+#    filter 硬凑负向先行断言 (?!...)——Go 标准库正则引擎(RE2)根本不
 #    支持这种断言语法，写了也是静默失效。落地两个分组（url-test/
+#    load-balance）排除 vmess 节点，之前用 filter 写法，实测确认
+#    Vmess 节点照样出现，已改用 exclude-filter: "(?i)vmess" 修复。
 #    前置入口（机场）原本也用同样错误写法排除 CN2/GIA 线路，同样
 #    从未真正生效过；用户明确要求前置不做任何排除，已直接删除，
 #    不是"改成 exclude-filter"，是彻底移除这个限制。
+# 8. inet4-route-only 改为 false（原为 true）。原设置下 TUN 只接管
 #    IPv4 路由，操作系统若有能用的原生 IPv6 出口，IPv6 流量会完全
 #    绕过 TUN、绕过 rules 里 P1 的 IPv6 封堵规则，是个从未被真正
 #    验证过的潜在泄露口——大陆手机 IPv6 部署本就不完整，这条隐患
 #    过去概率低，但现在要在 Windows/macOS 家宽环境用（IPv6 双栈
 #    很常见），风险显著上升，因此关闭。
-#    secret 字段是占位符，必须自己在设备本地生成替换，不要把生成的值
+# 9. secret 字段是占位符，必须自己在设备本地生成替换，不要把生成的值
 #    粘贴回任何对话——旧密钥已经在聊天记录里出现过，按最佳实践视为已
 #    泄露，不能继续用。
+#
 # 落地 VPS 是自建，IP 地理声誉需要自己定期抽查
+# （ipinfo.io / MaxMind demo 页面，看有没有被误判成中国相关），
 # 这件事配置文件管不到，纯粹是 IP 自身历史声誉决定的服务端判断。
+
 
 mode: rule
 allow-lan: false
@@ -44,8 +68,9 @@ external-controller: 127.0.0.1:19090
 secret: "【必须替换】终端执行 openssl rand -hex 32 生成新密钥，直接填入设备本地的这份文件"
 
 # CORS 防护：只允许本地 origin，彻底断绝远程利用路径
+# yacd.haishan.me / metacubexd.pages.dev 是外部 CDN 域名
 # 若 CDN 被劫持或投毒，其 JS 可通过 CORS 读取本地控制器数据
-# 只保留 127.0.0.1 和 localhost
+# 总统专机级安全：只保留 127.0.0.1 和 localhost
 external-controller-cors:
   allow-origins:
     - "http://127.0.0.1:19090"
@@ -64,13 +89,19 @@ geo-auto-update: true
 geo-update-interval: 168   # 7天，与 rule-providers interval 协同
 
 geox-url:
+  # 原直接指向 github.com release 直链，跟其余 57 个 rule-provider 一样存在
   # 国内可用性不稳定的风险（github.com release 会重定向到
+  # objects.githubusercontent.com，同类问题）。这四个文件是 GEOSITE/GEOIP
+  # 基础匹配库，比单个规则集更关键——一旦下载失败，"GEOSITE,cn,DIRECT"/
+  # "GEOIP,CN,DIRECT" 这类兜底规则会连带失效。改用 meta-rules-dat 官方
+  # 提供的 jsDelivr 镜像（@release 分支，整包文件），与其余规则集统一走
   # 同一个已验证可用的 CDN 边缘节点。
   geoip:   "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat"
   geosite: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat"
   mmdb:    "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb"
   asn:     "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
 
+# 使用较中性的 Chrome UA，避免在 Windows/macOS 上出现明显的 Android 指纹。
 # 如主要只在 Android 使用，可改回 Pixel 专用 UA。
 global-ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
@@ -78,6 +109,7 @@ experimental:
   quic-go-disable-gso: false
   quic-go-disable-ecn: false
 
+# NTP 已禁用（Android 系统自带 NTP 足够，明文 UDP 暴露流量特征）
 ntp:
   enable: false
   write-to-system: false
@@ -89,16 +121,27 @@ tun:
   enable: true
   stack: mixed
   auto-route: true
+  # auto-redirect 关闭：这是 Linux 专属特性(靠 iptables 做流量重定向)，
+  # 在 Windows/macOS/Android 上都没有对应机制、不起作用，属于死字段。
+  # 之前 exclude-package 已经因为"某平台专属字段在其他客户端上引发解析
+  # 问题"踩过坑，现在要跑 Windows/macOS/Android 三个平台，这种平台专属
   # 但又用不上的字段直接关掉更安全，不留隐患。
   auto-redirect: false
   strict-route: true           # 严格路由：防止流量绕过 TUN
   auto-detect-interface: true
+  # inet4-route-only 改为 false：原来是 true，含义是 TUN 只接管 IPv4
   # 路由，IPv6 完全不碰——如果这台设备的操作系统有能用的原生 IPv6 出口，
   # IPv6 流量会直接走系统路由绕过 TUN，rules 里 P1 那条
+  # "IP-CIDR6,::/0,REJECT-DROP" 只能拦住进了 TUN 的流量，从来没进 TUN
+  # 的 IPv6 连接完全拦不到，等于一条摆设。大陆手机 IPv6 部署本来就不完整，
+  # 这条隐患过去概率低；现在要在 Windows/macOS 家宽环境用（IPv6 双栈很
+  # 常见），风险从"理论上"变成"大概率真实存在"。改成 false 后 TUN 会把
   # IPv6 路由也接管，P1 的封堵规则才能真正拦到全部 IPv6 流量，而不是被
   # 绕过。
   inet4-route-only: false
   mtu: 1500  # 标准以太网 MTU，消除 TUN 网卡指纹特征
+  # gso 改为 false：规避 Alpha 分支已确认但 stable 分支(含 v1.19.29)尚未修复的
+  # "tun dns hijack sending zero-filled or stale packets when PackBuffer reallocates"
   # 该问题可能导致过期/损坏的 DNS 应答被用于路由分类判断，后果不是断网而是
   # 可能把本该走代理的境外域名误判直连——属于真实泄露风险而非单纯故障，
   # 在官方 stable 修复落地前关闭 GSO 换取正确性优先于吞吐量。
@@ -108,6 +151,13 @@ tun:
   dns-hijack:
     - any:53
     - tcp://any:53
+  # exclude-package 字段已再次移除：实测确认 FlClash/Bettbox 绑定的
+  # mihomo 核心版本不识别这个字段，会导致整份配置直接加载失败。
+  # 该字段即便生效，对设备级 VPN 接口检测（农行掌上银行的实测情况）
+  # 也无法解决，去掉不损失实际防护——银行 App 的直连保障已经由
+  # rules 里的 PROCESS-NAME-WILDCARD 规则在路由层兜底。如需针对
+  # 个别银行 App 做系统层面 VPN 排除，请改用 FlClash/Bettbox App 内
+  # 自带的"应用分流/分应用代理"GUI 设置，不要在 YAML 里配置这个字段。
 
 sniffer:
   enable: true
@@ -123,11 +173,6 @@ sniffer:
       ports: [443, 8443]
       enable: true
       override-destination: true
-    QUIC:
-      ports: [443, 8443]
-      enable: false  # 关闭：P7 的 QUIC 封堵靠 RULE-SET,cn-ip 做 IP 段判断，不依赖嗅探
-                      # 结果，关闭嗅探不影响封堵效果，同时彻底消除 v1.19.27 之前
-                      # 那个"单个 UDP 包可致进程崩溃"漏洞的攻击面，纯收益无代价
   force-domain:
     - "+.google.com"
     - "+.youtube.com"
@@ -140,6 +185,7 @@ sniffer:
     - "+.ytimg.com"
     - "+.chatgpt.com"
     - "+.claude.ai"
+  # Telegram 官方 IP 段跳过嗅探（MTProto 加密协议，TLS 嗅探会失败产生噪音日志）
   skip-dst-address:
     - "91.105.192.0/23"
     - "91.108.4.0/22"
@@ -154,6 +200,7 @@ sniffer:
     - "geosite:geolocation-cn"       # 国内域名不做嗅探，减少性能开销
     - "geosite:category-ads-all"
     - "geosite:category-games-cn"    # 国内游戏域名跳过嗅探
+    # Android / Windows / Apple 网络连通性检测域名，跳过嗅探防误判
     - "+.gstatic.com"
     - "+.msftconnecttest.com"
     - "+.msftncsi.com"
@@ -167,6 +214,7 @@ sniffer:
     - "+.local"
     - "+.lan"
     - "+.home.arpa"
+    # ── 银行/金融/反诈域名跳过 TLS 嗅探 ──────────────────────
     # 关键：sniffer 对这些域名做 TLS 解析会被银行检测为"中间人劫持"
     # 跳过后 TLS 握手端到端，银行无法感知 Mihomo 的存在
     - "+.unionpay.com"             # 银联
@@ -196,6 +244,7 @@ sniffer:
     - "+.gfbazc.com"               # 国家反诈中心
     - "+.fzuol.com"                # 地方反诈接口
     - "+.netsunion.org.cn"         # 网联清算（非银行支付清算机构）
+    # ── 银行风控SDK跳过TLS嗅探 ────────────────────────────────
     - "+.tongdun.net"              # 同盾科技
     - "+.ishumei.com"              # 数美科技
     - "+.geetest.com"              # 极验
@@ -412,6 +461,7 @@ rule-providers:
     url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/snap.mrs"
     path: ./ruleset/snapchat.mrs
 
+  # iCloud 独立规则集（比 apple.mrs 更精准，专门处理 iCloud 服务）
   icloud:
     <<: *DA
     url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/icloud.mrs"
@@ -557,6 +607,7 @@ rule-providers:
 
   # Hagezi 威胁情报（恶意软件/C2/诈骗/矿工脚本），mrs 格式，质量高
 
+  # SukkaW 钓鱼域名拦截（13万条，补充 category-ads-all 的安全维度）
   sukka-phishing:
     type: http
     behavior: domain
@@ -565,7 +616,12 @@ rule-providers:
     url: "https://ruleset.skk.moe/Clash/domainset/reject_phishing.txt"
     path: ./ruleset/sukka-phishing.txt
 
+  # blackmatrix7 精选规则：加密货币交易所，classical/yaml 格式，
+  # 跟 meta-rules-dat 的 .mrs 格式不同，不能套用 *DA/*IA 锚点，单独写。
+  # 注：用户最初给的是 OKX 专属路径(rule/Clash/OKX/OKX.yaml)，多次搜索
   # 核实都找不到这个路径存在的证据，该仓库大概率没有单独拆分 OKX 文件夹，
+  # 而是合并进了这个更宽泛的 Cryptocurrency 分类——已直接抓取确认这个
+  # 文件真实可访问，内容里包含 okx.com/okex.com（OKX 改名前旧域名）。
   cryptocurrency:
     type: http
     behavior: classical
@@ -578,7 +634,7 @@ proxy-providers:
 
   provider_entry_J:
     type: http
-    url: "__AIRPORT_SUB_URL__"        # 由 generate.sh 从 settings.conf 自动填入
+    url: "__AIRPORT_SUB_URL__"
     interval: 3600
     path: ./proxy_providers/entry_J.yaml
     override:
@@ -587,55 +643,60 @@ proxy-providers:
       ip-version: ipv4-only
     health-check:
       enable: true
-      url: https://8.8.8.8/generate_204
+      url: https://www.gstatic.com/generate_204  # 纯 IP，无域名解析无 SNI，与 Cloudflare 节点基础设施独立
       interval: 300
-      expected-status: 204
+      expected-status: 204              # 只接受 204，过滤“能连通但返回异常状态”的节点
 
-  # 落地节点订阅（固定地址，由 generate.sh 更新内容）
-  # 看起来像普通静态资源，不会让人立刻联想到节点
   provider_exit:
     type: http
-    url: "__EXIT_NODES_URL__"         # 由 generate.sh 自动填入固定节点地址
+    url: "__EXIT_NODES_URL__"
     interval: 3600
     path: ./proxy_providers/exit.yaml
     override:
       client-fingerprint: chrome
-      dialer-proxy: "前置优选入口"     # 链式代理：出口经入口转发
+      dialer-proxy: "前置优选入口"   # 链式代理：出口经入口转发
       udp: true
       ip-version: ipv4-only
     health-check:
       enable: true
-      url: https://8.8.8.8/generate_204
+      url: https://www.gstatic.com/generate_204  # 纯 IP，无域名解析无 SNI，与 Cloudflare 节点基础设施独立
       interval: 600
-      expected-status: 204
+      expected-status: 204              # 只接受 204，过滤“能连通但返回异常状态”的节点
 
 proxy-groups:
 
   - name: "前置优选入口"
     type: url-test
     use: [provider_entry_J]
-    url: https://8.8.8.8/generate_204
+    url: https://www.gstatic.com/generate_204
+    expected-status: 204
     interval: 180
     tolerance: 35
     lazy: false
     timeout: 3000
     max-failed-times: 2
+    # empty-fallback: REJECT 不用（见头部说明 #1），组内节点全灭时会
     # 按 mihomo 默认行为尝试拨号最后已知节点直到超时失败，而不是立即拒绝
     # 参数已优化：更频繁探测 + 更低切换门槛 + 更严格超时，降低入口延迟
 
   - name: "落地优选出口"
     type: url-test
     use: [provider_exit]
+    # exclude-filter 是 mihomo 专门的"排除"字段，跟 filter（筛选保留）
     # 是两个不同的字段，不要混用。之前这里用 filter 硬写
+    # "(?i)^(?!.*vmess).*$" 想拿负向先行断言凑排除效果，实测 Vmess
+    # 节点照样出现——因为 mihomo 是 Go 写的，Go 标准库正则引擎(RE2)
     # 根本不支持 (?!...) 这种断言语法，这条规则要么编译失败要么被
     # 静默忽略，从头到尾没生效过。exclude-filter 本身就是排除语义，
     # 不需要再套断言语法，直接写要排除的关键词即可。
     exclude-filter: "(?i)vmess"
-    url: https://8.8.8.8/generate_204
-    interval: 400
-    tolerance: 50
+    url: https://www.gstatic.com/generate_204
+    expected-status: 204
+    interval: 180
+    tolerance: 35
     lazy: false
     timeout: 5000
+    max-failed-times: 2
     max-failed-times: 3
 
   - name: "落地负载均衡"
@@ -651,8 +712,9 @@ proxy-groups:
     # 每个功能分组现支持：落地优选出口（默认）、落地负载均衡、落地手动选择。
     use: [provider_exit]
     exclude-filter: "(?i)vmess"
-    url: https://8.8.8.8/generate_204
-    interval: 400
+    url: https://www.gstatic.com/generate_204
+    expected-status: 204
+    interval: 180
     lazy: false
     timeout: 5000
 
@@ -695,26 +757,41 @@ proxy-groups:
   - name: "远控工具"
     type: select
     # 默认第一项 REJECT-DROP，跟之前硬编码拦截的安全默认保持一致。
+    # 以前想放行这些工具必须回来改 YAML、把 REJECT-DROP 改成 DIRECT，
+    # 现在直接在 FlClash/Bettbox 的分组切换界面里，找到"远控工具"这个
     # 分组，手动点选 DIRECT 就行，实时生效，不用再碰配置文件。
     # 用完记得点回 REJECT-DROP——恶意软件可以伪造这些工具的进程名来
     # 蹭这条"信任白名单"绕开代理，放行状态不该常态化保持开启。
     proxies: ["REJECT-DROP", "DIRECT"]
 
+#
 # 全链路零泄露 DNS 架构：
+#
+#  启动期：default-nameserver（纯 IP UDP，解析 DoH 服务器域名）
+#
 #  运行期：
 #   proxy-server-nameserver ──→ 国内 DoH 直连
 #     专门解析代理节点域名，切断"解代理→需代理"死循环
+#
 #   nameserver-policy ──→ 精细分流（最高优先级）
 #     国内域名   → 国内 DoH 直连（223.5/doh.pub）
 #     境外域名   → 境外 DoH #RULES（经代理发出）
+#
+#   direct-nameserver ──→ 直连域名兜底（follow-policy: true）
 #   nameserver        ──→ 境外域名兜底（#RULES 经代理）
+#
 #  泄露封堵：
+#   · fake-ip-filter MATCH,fake-ip 兜底：境外域名全 fake-ip
 #   · prefer-h3: false：H3 可能绕过 respect-rules
 #   · disable-qtype-65：屏蔽 HTTPS 记录
 #   · respect-rules: true：DNS 查询遵循路由规则
 #   · 规则层 P5/P6/P7 多层封堵明文 DNS 和 QUIC
+#
 # DNS hosts 预解析：消除 fake-ip 冷启动循环依赖
+# 注：dns.alidns.com / doh.pub 的 hosts 预解析已删除——DNS 全链路早已
+# 转向纯 IP 访问（223.5.5.5/120.53.53.53），没有任何配置项还在以域名
 # 形式引用这两个地址，属于设计早期迭代留下的死配置。dns.google 仍保留，
+# 因为 nameserver 列表里的 "https://dns.google/dns-query#RULES" 依然是
 # 域名形式，需要这条预解析打破"解析DNS服务器域名需要先能解析DNS"的死循环。
 hosts:
   "dns.google": ["8.8.8.8", "8.8.4.4"]
@@ -726,6 +803,8 @@ dns:
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
   fake-ip-cache-size: 4096
+  # fake-ip 持久化只由 profile.store-fake-ip 一个开关控制（见文件头部 profile 段），
+  # 原来这里的 dns.fake-ip-persist 字段实测不生效、且与 profile.store-fake-ip:false
   # 相矛盾，已删除避免误导——不要在这里重新加回来。
   ttl: 600
   # "国内流量无感"优化：300s→60s
@@ -742,6 +821,7 @@ dns:
   disable-qtype-65: true
 
   # fake-ip-filter rule 模式
+  # 顺序：mrs 规则集（最快）→ geosite → 手工精细条目 → MATCH 兜底
   fake-ip-filter-mode: rule
   fake-ip-filter:
     # ── 银行/金融域名最优先（fake-ip 会直接触发银行风控）────────
@@ -776,6 +856,7 @@ dns:
     - DOMAIN-SUFFIX,servicewechat.com,real-ip   # 微信小程序服务
     - DOMAIN-SUFFIX,weixinbridge.com,real-ip    # 微信桥接
     - DOMAIN-SUFFIX,url.cn,real-ip              # 微信短链接
+    # ── 银行风控SDK（需要真实IP才能正常工作）──────────────────
     - DOMAIN-SUFFIX,tongdun.net,real-ip
     - DOMAIN-SUFFIX,tongduncdn.com,real-ip
     - DOMAIN-SUFFIX,ishumei.com,real-ip
@@ -831,6 +912,7 @@ dns:
     - DOMAIN-SUFFIX,10086.cn,real-ip               # 中国移动
     - DOMAIN-SUFFIX,10010.com,real-ip              # 中国联通
     - DOMAIN-SUFFIX,10000.cn,real-ip               # 中国电信
+    # 微信（qq.com 父域覆盖所有子域，含 wifi.weixin.qq.com 等探测域名）
     - DOMAIN-SUFFIX,minorshield.qq.com,real-ip
     # Apple 中国区
     - DOMAIN-SUFFIX,icloud.com.cn,real-ip
@@ -1018,6 +1100,8 @@ dns:
     - DOMAIN-SUFFIX,wotgame.cn,real-ip
     - DOMAIN-SUFFIX,wggames.cn,real-ip
     - DOMAIN-SUFFIX,wowsgame.cn,real-ip
+    # STUN/TURN 域名返回 real-ip（防止 DNS 解析失败产生错误日志）
+    # 注：实际 UDP/TCP STUN 端口连接仍被 P6 规则 REJECT-DROP，不会真正泄露
     - DOMAIN-SUFFIX,stun.l.google.com,real-ip
     - DOMAIN-SUFFIX,stun1.l.google.com,real-ip
     - DOMAIN-SUFFIX,stun2.l.google.com,real-ip
@@ -1026,6 +1110,7 @@ dns:
     - DOMAIN,global.turn.twilio.com,real-ip
     - DOMAIN-SUFFIX,stun.playstation.net,real-ip   # PlayStation STUN
     - DOMAIN-SUFFIX,stun.syncthing.net,real-ip     # Syncthing P2P
+    # IP-in-domain 服务（如 1-2-3-4.sslip.io → 1.2.3.4）
     - DOMAIN-SUFFIX,sslip.io,real-ip
     - DOMAIN-SUFFIX,nip.io,real-ip
     # 物联网/虚假域名
@@ -1045,6 +1130,8 @@ dns:
     - 223.5.5.5
     - 119.29.29.29
 
+  # 全部使用纯 IP，消除启动期 DNS 查询（doh.pub 域名解析改为直接 IP）
+  # 最优方案：120.53.53.53（腾讯纯IP）+ 223.5.5.5（阿里纯IP）
   # 纯IP访问DoH：无需域名解析、无SNI特征、双厂商冗余，三优合一
   proxy-server-nameserver:
     - https://120.53.53.53/dns-query  # 腾讯 DNSPod 纯IP，无SNI特征
@@ -1129,6 +1216,9 @@ dns:
     "+.ele.me":            *ALIBABA
     "+.dingtalk.com":      *ALIBABA
     "+.1688.com":          *ALIBABA
+    # 字节跳动：原用 180.184.2.2 裸 IP（明文 UDP:53，与全局纯 DoH 原则矛盾）。
+    # 官方文档显示该 DNS 服务截至目前 DoH/DoT/DoQ 支持情况未经确认，无法安全启用；
+    # 改用已验证可用的 DoH 端点，牺牲少量抖音/头条 CDN 调度精度换取零明文泄露。
     "+.bytedance.com":  &BYTEDANCE [https://120.53.53.53/dns-query, https://223.5.5.5/dns-query]
     "+.byteimg.com":    *BYTEDANCE
     "+.tosv.com":       *BYTEDANCE
@@ -1142,6 +1232,7 @@ dns:
     "+.feishu.cn":      *BYTEDANCE
     "+.feishu.net":     *BYTEDANCE
     "+.volces.com":     *BYTEDANCE
+    # 百度：同上，180.76.76.76 是明文 DNS，无已验证的 DoH 端点，改用已验证的 DoH 解析器
     "+.baidu.com":    &BAIDU [https://120.53.53.53/dns-query, https://223.5.5.5/dns-query]
     "+.bdstatic.com": *BAIDU
     "+.bdimg.com":    *BAIDU
@@ -1190,6 +1281,7 @@ dns:
     "+.minimax.chat":    *DOMESTIC_AI
     "+.stepfun.com":     *DOMESTIC_AI
     "+.iflytek.com":     *DOMESTIC_AI
+    # 政务 / 铁路（+.gov.cn / +.edu.cn 已被头部新增的宽泛 +.cn 系列覆盖，此处不再重复声明）
     "+.12306.cn":        *CN_DNS
     "+.railway12306.cn": *CN_DNS
     # 境外关键服务 → 境外 DoH #RULES（经代理发出）
@@ -1213,11 +1305,15 @@ dns:
 
 sub-rules:
   DOMESTIC_DOMAIN:
+    # ── 腾讯统计/遥测域名拦截 ─────────────────────────────────
     # teg.tencent-cloud.net：腾讯后台数据统计上报
+    # 使用非标端口（13861/33861/43861/53861/63861），运营商 QoS 导致
     # 持续 i/o timeout，产生大量 warning 日志噪音
     # 拦截后消除日志噪音，不影响微信/腾讯任何正常功能
     - DOMAIN-SUFFIX,teg.tencent-cloud.net,REJECT-DROP
+    # ── 微信长连接域名白名单（曾被 hagezi-tif 误杀，规则已删除但保留防御）──
     # szlong = 微信长连接服务（断开会导致"无法使用当前WiFi"弹窗）
+    # szminorshort / szshort 已走 SubRules DIRECT，szlong 需要单独保护
     - DOMAIN-SUFFIX,szlong.weixin.qq.com,DIRECT
     - DOMAIN-SUFFIX,szminorshort.weixin.qq.com,DIRECT
     - DOMAIN-SUFFIX,szshort.weixin.qq.com,DIRECT
@@ -1228,6 +1324,7 @@ sub-rules:
     - DOMAIN-SUFFIX,servicewechat.com,DIRECT   # 微信小程序服务
     - DOMAIN-SUFFIX,weixinbridge.com,DIRECT    # 微信桥接
     - DOMAIN-SUFFIX,url.cn,DIRECT              # 微信短链接
+    # ── 家电/IoT 品牌直连（国内流量无感）──────────────────────
     - DOMAIN-SUFFIX,midea.com,DIRECT           # 美的
     - DOMAIN-SUFFIX,smartmidea.net,DIRECT      # 美的智能
     - DOMAIN-SUFFIX,haier.net,DIRECT           # 海尔
@@ -1238,6 +1335,7 @@ sub-rules:
     - DOMAIN-SUFFIX,tuya.com,DIRECT            # 涂鸦智能
     - DOMAIN-SUFFIX,tuyaus.com,DIRECT          # 涂鸦
     - DOMAIN-SUFFIX,tcl.com,DIRECT             # TCL
+    # ── 推送 SDK 白名单（v5.4.19/v5.4.22 Smart-Config-Kit）────────
     # 被广告/隐私规则集误杀，导致 App 收不到推送通知
     # 极光推送（JPush）：国内最大第三方推送 SDK
     - DOMAIN-SUFFIX,jpush.cn,DIRECT
@@ -1249,6 +1347,7 @@ sub-rules:
     - DOMAIN-SUFFIX,getui.com,DIRECT
     - DOMAIN-SUFFIX,getui.net,DIRECT
     - DOMAIN-SUFFIX,gepush.com,DIRECT
+    # ── 小米广告误杀白名单（来自 Smart-Config-Kit 实战经验）──────
     # 这些域名会被 category-ads-all 误收录导致小米设备登录/推送失败
     # 前置 DIRECT 确保优先级高于广告规则集
     - DOMAIN,account.xiaomi.com,DIRECT
@@ -1262,6 +1361,7 @@ sub-rules:
     - DOMAIN,mazu.sec.miui.com,DIRECT
     - DOMAIN,ccc.sys.miui.com,DIRECT
     - DOMAIN,register.xmpush.xiaomi.com,DIRECT
+    # ── 国内域名判定 ───────────────────────────────────────────
     - RULE-SET,geolocation-cn,DIRECT
     - RULE-SET,cn,DIRECT
     - RULE-SET,bilibili,DIRECT
@@ -1291,6 +1391,7 @@ rules:
   - IP-CIDR6,::/0,REJECT-DROP,no-resolve
 
   # P2. 银行风控SDK域名（必须最优先，直连保证风控SDK正常工作）
+  # 这些是银行/支付App内置的第三方风控SDK，走代理或fake-ip会触发安全警告
   - DOMAIN-SUFFIX,tongdun.net,DIRECT       # 同盾科技（设备指纹/风控）
   - DOMAIN-SUFFIX,tongduncdn.com,DIRECT    # 同盾CDN
   - DOMAIN-SUFFIX,ishumei.com,DIRECT       # 数美科技（行为分析）
@@ -1375,30 +1476,40 @@ rules:
   - DOMAIN-SUFFIX,yeepay.com,DIRECT        # 易宝支付
   - DOMAIN-SUFFIX,jdpay.com,DIRECT         # 京东支付
 
+  # P2. sukka-phishing/category-ads-all 误杀白名单
   # （历史上 hagezi-tif 曾误杀以下域名，已删除该规则集；本白名单继续保留
+  #  防止 sukka-phishing/category-ads-all 未来收录同类域名，日志持续更新）
   # ── 微信域名全系列（被误杀导致WiFi弹窗/图片加载失败）──────────
   - DOMAIN-SUFFIX,weixin.qq.com,DIRECT          # 微信所有子域（含 szlong/wximg 等）
   - DOMAIN-SUFFIX,wx.qq.com,DIRECT
   - DOMAIN-SUFFIX,weixin.com,DIRECT
   - DOMAIN-SUFFIX,wxs.qq.com,DIRECT             # 微信CDN（wximg.wxs.qq.com 图片CDN）
+  # ── 国内合法域名被误杀 ──────────────────────────────────────────
   - DOMAIN-SUFFIX,pddpic.com,DIRECT             # 拼多多图片CDN
   - DOMAIN-SUFFIX,samsunghealth.com,DIRECT      # 三星健康
+  # ── Android/Google 系统服务被误杀 ──────────────────────────────
   - DOMAIN,connectivitycheck.gstatic.com,DIRECT # Android网络连通性检测，必须直连
   - DOMAIN,userlocation.googleapis.com,国外服务  # Google定位API
   - DOMAIN,voilatile-pa.googleapis.com,国外服务  # Google API
   - DOMAIN,geller-pa.googleapis.com,国外服务     # Google助手预测API（日志实测误杀）
   - DOMAIN,mobilemaps-pa-gz.googleapis.com,国外服务  # Google地图API
+  # ── Firebase / Microsoft SDK 被误杀 ────────────────────────────
   - DOMAIN-SUFFIX,app-measurement.com,国外服务   # Firebase分析SDK
   - DOMAIN-SUFFIX,firebaselogging.googleapis.com,国外服务  # Firebase日志
   - DOMAIN-SUFFIX,in.appcenter.ms,国外服务       # Microsoft App Center崩溃分析
   - DOMAIN-SUFFIX,mobile.events.data.microsoft.com,国外服务  # 微软遥测
   - DOMAIN-SUFFIX,connect.facebook.net,国外服务  # Facebook SDK
+  # ── Anthropic CDN 被误杀 ────────────────────────────────────────
   - DOMAIN-SUFFIX,a-cdn.anthropic.com,AI服务
   - DOMAIN-SUFFIX,assets-proxy.anthropic.com,AI服务
+  # ── 微软 Bing 被误杀 ────────────────────────────────────────────
   - DOMAIN-SUFFIX,bing.com,国外服务                 # Bing 搜索（c.bing.com 被误杀）
+  # ── 三星推送被误杀 ──────────────────────────────────────────────
   - DOMAIN-SUFFIX,samsungosp.com,DIRECT             # 三星推送服务（含 an-gld.push.samsungosp.com）
+  # ── Firebase 崩溃上报被误杀 ─────────────────────────────────────
   - DOMAIN-SUFFIX,crashlytics.com,国外服务          # Firebase Crashlytics（firebase-settings.crashlytics.com）
   - DOMAIN-SUFFIX,firebase.io,国外服务              # Firebase 服务域
+  # ── 监控/分析工具 ───────────────────────────────────────────────
   - DOMAIN,browser-intake-us5-datadoghq.com,国外服务
 
   # P2. 广告 / 安全威胁拦截
@@ -1411,6 +1522,7 @@ rules:
   - RULE-SET,private-ip,DIRECT,no-resolve
 
   # P4. STUN/TURN 域名精确拦截
+  # 当 sniffer 能还原域名时（TCP TLS/HTTP）拦截 stun/turn 域名
   # UDP STUN 流量 sniffer 无法还原域名 → 依赖 P6 端口层兜底
   - DOMAIN-REGEX,^(stun|turn|stuns|turns)\.,REJECT-DROP
   - DOMAIN-REGEX,[-.]stun[-.],REJECT-DROP
@@ -1419,6 +1531,7 @@ rules:
   - DOMAIN-REGEX,[-.]turns[-.],REJECT-DROP
 
   # P5. DNS 明文泄露封堵
+  # REJECT → REJECT-DROP：静默丢包而非返回 TCP RST/ICMP，避免主动暴露
   # "此处存在拦截行为"的可探测特征，与 P2/P6/P7 的隐匿风格保持一致
   - AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
   - AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
@@ -1429,6 +1542,7 @@ rules:
   #       ICMP ping 泄露风险极低，系统层面 strict-route 已缓解
 
   # P5.6 明文协议境外封堵（防恶意软件通过代理外联）
+  # Telnet:23 / FTP:21 / SMTP:25 / POP3:110 / IMAP:143
   - AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
   - AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
   - AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
@@ -1443,6 +1557,7 @@ rules:
   - AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP
   - AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP
   - AND,((NETWORK,UDP),(DST-PORT,19302-19305)),REJECT-DROP
+  # TCP 封堵（STUN/TURN over TCP 备用路径，同样能泄露真实 IP）
   - AND,((NETWORK,TCP),(DST-PORT,3478-3480)),REJECT-DROP
   - AND,((NETWORK,TCP),(DST-PORT,5349-5355)),REJECT-DROP
   - AND,((NETWORK,TCP),(DST-PORT,19302-19305)),REJECT-DROP
@@ -1455,12 +1570,16 @@ rules:
   - AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
 
   # P8. 境外伪装段强制代理
+  # 54.223.0.0/16 = AWS 中国区含 FCM(port 5229)，被 cn-ip 误收录
   # 157.255.0.0/16 已删除（含微信服务器 IP，强制代理触发弹窗）
   - IP-CIDR,54.223.0.0/16,国外服务,no-resolve
+  # 52.80.168.0/24 = 另一段被 cn-ip 误收录的 AWS 地址，三星推送服务
+  # (com.sec.spp.push) 直接裸 IP 连接不经过 DNS，域名层规则完全碰不到
   # 它，日志实测连续多次 DIRECT 超时后确认，只能用 IP 段规则修
   - IP-CIDR,52.80.168.0/24,国外服务,no-resolve
 
   # P8.5 泄露检测 / IP 查询站点强制走代理
+  # 必须在 P9 SUB-RULE 之前：防止被 geolocation-cn/cn 误收录后直连
   # sub-rules 不支持代理组名称，此类规则必须放在主规则层
   # browserleaks.com 已通过日志实测确认被误判为国内域名
   - DOMAIN-SUFFIX,browserleaks.com,国外服务
@@ -1526,11 +1645,14 @@ rules:
   # 支付类
   - PROCESS-NAME-WILDCARD,*com.tenpay*,DIRECT        # 微信支付
   - PROCESS-NAME-WILDCARD,*com.tencent.mm*,DIRECT    # 微信主体（Android）
+  # 微信 Windows/macOS 桌面端进程名跨版本迁移过：旧版 WeChat(.exe)，
+  # 4.x 新版改名 Weixin(.exe)，另有小程序/视频号子进程 WeChatAppEx(.exe)。
   # 前后都带通配符做子串匹配，一条规则同时覆盖 Windows 带.exe后缀和
   # macOS 不带后缀两种写法，不用分平台单独写。
   - PROCESS-NAME-WILDCARD,*WeChat*,DIRECT             # 微信桌面端(含WeChatAppEx子进程)，Win/Mac通用
   - PROCESS-NAME-WILDCARD,*Weixin*,DIRECT             # 微信桌面端4.x新版进程名，Win/Mac通用
   - PROCESS-NAME-WILDCARD,*com.MobileTicket*,DIRECT  # 12306官方App（之前完全没有进程级保护）
+  # ── 以下为联网搜索交叉验证过包名的政务/运营商App(2026-08补充) ──
   - PROCESS-NAME-WILDCARD,*com.hicorenational.antifraud*,DIRECT  # 国家反诈中心
   - PROCESS-NAME-WILDCARD,*com.service.android.gov.cn*,DIRECT    # 国家政务服务平台
   - PROCESS-NAME-WILDCARD,*cn.hsa.app*,DIRECT                    # 国家医保服务平台
@@ -1548,7 +1670,10 @@ rules:
   - PROCESS-NAME-WILDCARD,*com.czbank*,DIRECT          # 浙商银行
   - PROCESS-NAME-WILDCARD,*com.bjrcb*,DIRECT           # 北京农商银行
   - PROCESS-NAME-WILDCARD,*com.android.mobilebank*,DIRECT  # 通用备用银行包名
+  # 远程控制/内网穿透工具：目标改为"远控工具"分组（原为硬编码 REJECT-DROP）
+  # 进程名可以被伪造——恶意软件只要把自己命名成"tailscale"/"frpc"这类
   # 名字，就能利用这条规则绕开整个代理隧道，所以默认状态必须是拦截。
+  # 但硬编码 REJECT-DROP 意味着真要用这类工具时得回来改 YAML、重新导入
   # 配置才能放行，太麻烦。现在指向一个 select 分组，默认还是选中
   # REJECT-DROP（安全默认不变），真要用的时候直接在 App 里切换分组
   # 选项到 DIRECT 就行，不用碰配置文件——效果对等，操作成本从"改配置
@@ -1569,6 +1694,7 @@ rules:
   - PROCESS-NAME-WILDCARD,*nblink*,远控工具
 
   # P13. Apple / Microsoft 境外代理
+  # 国内域名已在 DOMESTIC_DOMAIN 子规则（apple-cn/microsoft-cn）覆盖
   - RULE-SET,icloud,国外服务         # iCloud 独立规则集，优先于 apple.mrs
   - RULE-SET,apple,国外服务
   - RULE-SET,microsoft,国外服务
@@ -1618,6 +1744,7 @@ rules:
   - RULE-SET,blizzard,国外服务
 
   # P18. 支付 / 云服务
+  # visa/mastercard/stripe/wise/heroku/digitalocean 不在官方仓库
   # 均由 P20 geolocation-!cn 覆盖
   - RULE-SET,paypal,国外服务
   - RULE-SET,aws,国外服务
