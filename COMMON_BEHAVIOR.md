@@ -28,7 +28,7 @@
 - DNS：fake-ip、安全过滤、国内/境外解析策略、`respect-rules`
 - 公共规则集、规则优先级和安全封堵
 - **广告拦截：默认 REJECT/REJECT-DROP，并保留用户主动 DIRECT 例外**
-- **远控工具：默认 REJECT-DROP，并保留用户主动 DIRECT 例外**
+- **远控工具：默认 REJECT，并保留用户主动 DIRECT 例外**
 - **私有网络：底层规则 DIRECT，不提供“私有网络代理”用户选择器**
 - **国内服务：通过规则集/CN IP 底层判定 DIRECT，不提供“国内服务代理”用户选择器**
 - **未知目标不得因为无法分类而自动 DIRECT**
