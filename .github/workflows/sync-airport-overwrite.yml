@@ -1,5 +1,7 @@
 name: Sync airport overwrite
-# Final behavior baseline: preserve airport UX, map common rule targets, validate syntax.
+# Final behavior baseline: template.yaml is the common source of truth.
+# This workflow may materialize the deterministic airport variant, but must
+# validate it before committing. Chain-only behavior is the only allowed delta.
 
 on:
   push:
@@ -28,6 +30,8 @@ jobs:
         run: python tools/sync-airport-overwrite.py
       - name: Validate JavaScript syntax
         run: node --check airport_overwrite.js
+      - name: Run static repository audit
+        run: python tools/static-audit.py
       - name: Commit generated synchronization
         run: |
           if git diff --quiet -- airport_overwrite.js; then
@@ -37,5 +41,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add airport_overwrite.js
-          git commit -m 'chore: sync airport overwrite with template [skip ci]'
+          git commit -m 'chore: sync airport overwrite with template'
           git push
