@@ -94,8 +94,11 @@ def map_airport_targets(text: str) -> str:
         "远控工具": "🔧 远控工具",
     }
     for src, dst in mappings.items():
-        text = text.replace("," + src + "\n", "," + dst + "\n")
-        text = text.replace("," + src + "\r\n", "," + dst + "\r\n")
+        # JS rule arrays contain string literals ending with \"", or \".\"
+        text = text.replace("," + src + "\",", "," + dst + "\",")
+        text = text.replace("," + src + "\"", "," + dst + "\"")
+        text = text.replace("," + src + "\\n", "," + dst + "\\n")
+        text = text.replace("," + src + "\\r\\n", "," + dst + "\\r\\n")
     return text
 
 def main() -> None:
