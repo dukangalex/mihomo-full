@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 审计 generate.sh 生成的最终主配置，避免模板历史残留重新影响实际输出。
+# 审计 generate.sh 生成的最终 Mihomo 配置，避免模板历史残留重新影响实际输出。
 set -euo pipefail
 
 CONFIG="${1:-/opt/mihomo-full/output/full-config.yaml}"
@@ -9,14 +9,12 @@ ok(){ echo -e "${GREEN}[✓]${NC} $1"; }
 
 [[ -s "$CONFIG" ]] || fail "找不到最终配置：$CONFIG"
 
-if grep -qE '^\s*exclude-type:\s*vmess\s*$' "$CONFIG"; then
-  fail "最终配置仍排除 VMess 节点"
-fi
+grep -qE '^\s*exclude-type:\s*vmess\s*$' "$CONFIG" && fail "最终配置仍排除 VMess 节点" || true
 ok "落地节点未按协议类型排除"
 
 grep -q '^  - name: "🛑 广告拦截"$' "$CONFIG" || fail "缺少广告拦截策略组"
-grep -q 'proxies: ["REJECT", "DIRECT"]' "$CONFIG" || fail "广告拦截缺少 DIRECT 例外"
-grep -q 'RULE-SET,category-ads-all,🛑 广告拦截' "$CONFIG" || fail "广告规则未进入广告策略组"
+grep -qF 'proxies: ["REJECT", "DIRECT"]' "$CONFIG" || fail "广告拦截缺少 DIRECT 例外"
+grep -qF 'RULE-SET,category-ads-all,🛑 广告拦截' "$CONFIG" || fail "广告规则未进入广告策略组"
 if grep -q 'geosite:category-ads-all.*rcode://name_error' "$CONFIG"; then
   fail "广告规则仍在 DNS 层强制 NXDOMAIN，DIRECT 例外无法生效"
 fi
@@ -25,15 +23,26 @@ ok "广告拦截：默认阻断 + 用户可主动 DIRECT"
 awk '/- name: "远控工具"/{p=1} p&&/proxies:/{print; exit}' "$CONFIG" | grep -Fq '"DIRECT"' || fail "远控工具缺少 DIRECT 例外"
 ok "远控工具：默认拒绝 + 代理 + DIRECT"
 
-grep -q 'RULE-SET,private-ip,DIRECT,no-resolve' "$CONFIG" || fail "私有网络 DIRECT 底层规则缺失"
+grep -qF 'RULE-SET,private-ip,DIRECT,no-resolve' "$CONFIG" || fail "私有网络 DIRECT 底层规则缺失"
 ok "私有网络：底层 DIRECT，不暴露全局直连按钮"
 
-grep -q 'RULE-SET,cn-ip,DIRECT,no-resolve' "$CONFIG" || fail "CN IP DIRECT 规则缺失"
+grep -qF 'RULE-SET,cn-ip,DIRECT,no-resolve' "$CONFIG" || fail "CN IP DIRECT 规则缺失"
 grep -qE 'GEOSITE,cn,DIRECT|RULE-SET,cn,DIRECT' "$CONFIG" || fail "国内服务 DIRECT 规则缺失"
 ok "国内服务：规则集/IP 层 DIRECT"
 
+# DNS 一致性：模板与生成结果必须使用统一的 DoH bootstrap / policy 设计。
+# 这里禁止历史上“注释写纯 IP、实际却使用域名”这种自相矛盾的状态。
+grep -qF 'hosts:' "$CONFIG" || fail "DNS 缺少 hosts bootstrap"
+grep -qF '"doh.pub"' "$CONFIG" || fail "DNS hosts 缺少 doh.pub bootstrap"
+grep -qF '"dns.alidns.com"' "$CONFIG" || fail "DNS hosts 缺少 dns.alidns.com bootstrap"
+grep -qF 'proxy-server-nameserver:' "$CONFIG" || fail "缺少 proxy-server-nameserver"
+grep -qF 'nameserver-policy:' "$CONFIG" || fail "缺少 nameserver-policy"
+if grep -qE '120\.53\.53\.53/dns-query|https://120\.53\.53\.53/dns-query' "$CONFIG"; then
+  fail "禁止使用已停止公开提供的 DNSPod 免费版 DoH IP 接入 120.53.53.53"
+fi
+ok "DNS bootstrap / proxy-node DNS / policy 结构完整，未使用已废弃的 DNSPod DoH IP 接入"
+
 # 规则目标引用完整性：防止 DOMAIN/RULE-SET/PROCESS 等规则指向不存在的 proxy-group。
-# 内置目标（DIRECT/REJECT/REJECT-DROP/fake-ip/real-ip 等）不要求出现在 proxy-groups。
 awk '
   /^proxy-groups:/ {in_groups=1; in_rules=0; next}
   /^rules:/ {in_groups=0; in_rules=1; next}
@@ -51,6 +60,7 @@ awk '
     n=split(line,a,",")
     if(n>=2){
       target=a[n]
+      if(a[n]=="no-resolve" && n>=3) target=a[n-1]
       gsub(/^ +| +$/,"",target)
       if(a[1]!="SUB-RULE" && target!="DIRECT" && target!="REJECT" && target!="REJECT-DROP" && target!="PASS" && target!="fake-ip" && target!="real-ip" && target!="MATCH" && target!="no-resolve" && target!="") refs[target]=1
     }
@@ -63,10 +73,7 @@ awk '
 ' "$CONFIG" || fail "存在规则引用了不存在的 proxy-group"
 ok "规则 → proxy-group 引用完整"
 
-if grep -qE '^\s*exclude-type:\s*vmess\s*
- "$CONFIG"; then
-  fail "最终配置仍排除 VMess 节点"
-fi
+grep -qE '^\s*exclude-type:\s*vmess\s*$' "$CONFIG" && fail "最终配置仍存在协议类型排除" || true
 ok "最终配置无协议类型排除"
 
 echo "主配置行为审计通过：$CONFIG"
