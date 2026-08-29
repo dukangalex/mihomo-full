@@ -109,13 +109,13 @@ function main(config) {
   var normalizedProxies = [];
   var regionsWithNodes = {};
   var hasOtherRegionNodes = false;
-  for (var raw of filteredRaw) {
+  for (var rawIndex = 0; rawIndex < filteredRaw.length; rawIndex++) { var raw = filteredRaw[rawIndex];
     var n = normalizeProxyName(raw);
     var finalName = n.name;
     if (Object.prototype.hasOwnProperty.call(nameCount, finalName)) {
       var count = nameCount[finalName] + 1;
       nameCount[finalName] = count;
-      finalName = "" + n.name + " #${count}";
+      finalName = n.name + " #" + count;
     } else {
       nameCount[finalName] = 1;
     }
@@ -160,7 +160,7 @@ function main(config) {
 
   var regionGroups = [];
   var activeRegions = REGIONS.filter(function(r) { return Object.prototype.hasOwnProperty.call(regionsWithNodes, r.name); });
-  for (var r of activeRegions) {
+  for (var ri = 0; ri < activeRegions.length; ri++) { var r = activeRegions[ri];
     regionGroups.push.apply(regionGroups, buildRegionTrio(r.name, { filter: r.filter }));
   }
   if (hasOtherRegionNodes) {
