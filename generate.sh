@@ -77,7 +77,7 @@ if ! grep -q '^  - name: "🛑 广告拦截"$' "$FULL_CONFIG"; then
       print "    type: select"
       print "    # 默认 REJECT-DROP；仅当免费站点依赖广告收入且被误伤/无法正常使用时，"
       print "    # 用户才主动切换 DIRECT。此 DIRECT 不是全局直连开关。"
-      print "    proxies: [\"REJECT-DROP\", \"DIRECT\"]"
+      print "    proxies: [\"REJECT\", \"DIRECT\"]"
       print ""
     }
     {print}
