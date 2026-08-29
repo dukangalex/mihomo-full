@@ -32,6 +32,8 @@ case "${DOMAIN:-}" in
     ;;
 esac
 
+[[ "$AIRPORT_SUB_URL" != *$'\n'* && "$AIRPORT_SUB_URL" != *$'\r'* ]] || err "机场订阅 URL 不能包含换行"
+[[ "$DOMAIN" != *$'\n'* && "$DOMAIN" != *$'\r'* ]] || err "域名不能包含换行"
 mkdir -p "$OUTPUT_DIR"
 TMP_NODES=$(mktemp)
 trap 'rm -f "$TMP_NODES"' EXIT

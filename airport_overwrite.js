@@ -16,7 +16,7 @@ function main(config) {
 
   var regionMatchCache = {};
 
-  const REGIONS = [
+  var REGIONS = [
     { key: "hk", name: "🇭🇰 香港节点", flag: "🇭🇰", jsPattern: "🇭🇰|香港|HKG?|hong\\s*kong", filter: "(?i)(🇭🇰|香港|HKG?|hong\\s*kong)", icon: "" },
     { key: "tw", name: "🇹🇼 台湾节点", flag: "🇹🇼", jsPattern: "🇹🇼|台湾|TWN?|taiwan", filter: "(?i)(🇹🇼|台湾|TWN?|taiwan)", icon: "" },
     { key: "jp", name: "🇯🇵 日本节点", flag: "🇯🇵", jsPattern: "🇯🇵|日本|JPN?|japan|tokyo|osaka|东京|大阪", filter: "(?i)(🇯🇵|日本|JPN?|japan|tokyo|osaka|东京|大阪)", icon: "" },
@@ -85,19 +85,19 @@ function main(config) {
     return out;
   }
 
-  const originalProxies = config.proxies || [];
+  var originalProxies = config.proxies || [];
 
   // 排除明显非节点的「公告/说明/营销」行（机场订阅常见垃圾项）。
   // 与早期「误杀真实节点」的激进过滤不同：本正则针对群/客服/流量/到期/
-  const excludeFilter =
+  var excludeFilter =
     /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|防失联|⚠️|@|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/i;
 
   // 1) 去掉 direct/reject/rematch 占位类型
   // 2) 去掉名称命中 excludeFilter 的公告伪节点
-  const filteredRaw = originalProxies.filter(proxy => {
-    const type = String(proxy.type != null ? proxy.type : "").toLowerCase();
+  var filteredRaw = originalProxies.filter(function(proxy) {
+    var type = String(proxy.type != null ? proxy.type : "").toLowerCase();
     if (type === "direct" || type === "reject" || type === "rematch") return false;
-    const name = String(proxy.name != null ? proxy.name : "");
+    var name = String(proxy.name != null ? proxy.name : "");
     if (excludeFilter.test(name)) return false;
     return true;
   });
@@ -106,16 +106,16 @@ function main(config) {
   // 唯一处理：mihomo 要求显示名唯一，标准化后撞名则追加 #2/#3。
   // 顺带统计各地区是否有节点，无节点的地区不生成分组。
   var nameCount = {};
-  const normalizedProxies = [];
+  var normalizedProxies = [];
   var regionsWithNodes = {};
-  let hasOtherRegionNodes = false;
-  for (const raw of filteredRaw) {
-    const n = normalizeProxyName(raw);
-    let finalName = n.name;
+  var hasOtherRegionNodes = false;
+  for (var rawIndex = 0; rawIndex < filteredRaw.length; rawIndex++) { var raw = filteredRaw[rawIndex];
+    var n = normalizeProxyName(raw);
+    var finalName = n.name;
     if (Object.prototype.hasOwnProperty.call(nameCount, finalName)) {
-      const count = nameCount[finalName] + 1;
+      var count = nameCount[finalName] + 1;
       nameCount[finalName] = count;
-      finalName = `${n.name} #${count}`;
+      finalName = n.name + " #" + count;
     } else {
       nameCount[finalName] = 1;
     }
@@ -128,9 +128,9 @@ function main(config) {
       normalizedProxies.push(n2);
     }
 
-    const matched = getMatchedRegions(raw.name || "");
+    var matched = getMatchedRegions(raw.name || "");
     if (matched.length > 0) {
-      matched.forEach(r => regionsWithNodes[r.name] = true);
+      for (var mi = 0; mi < matched.length; mi++) { regionsWithNodes[matched[mi].name] = true; }
     } else {
       hasOtherRegionNodes = true;
     }
@@ -138,8 +138,8 @@ function main(config) {
 
   config.proxies = normalizedProxies.length > 0 ? normalizedProxies : originalProxies;
 
-  const allRegionKeywords = REGIONS.map(r => r.jsPattern).join("|");
-  const OTHER_REGION_NAME = "🌐 其他地区";
+  var allRegionKeywords = REGIONS.map(function(r) { return r.jsPattern; }).join("|");
+  var OTHER_REGION_NAME = "🌐 其他地区";
 
   // 每个地区拆成三层：
   //   {地区}-自动选择（url-test，内部用，不对外暴露）
@@ -147,20 +147,20 @@ function main(config) {
   //   {地区}（select，其他分组实际引用的名字不变，但内部只有以上两个
   //          选项可选，不再罗列该地区下的每个原始节点做手动选择）
   function buildRegionTrio(name, matchField) {
-    const autoName = `${name}-自动选择`;
-    const lbName = `${name}-负载均衡`;
-    const common = { "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, "exclude-type": "DIRECT", "empty-fallback": "REJECT", icon: "", hidden: true };
+    var autoName = "" + name + "-自动选择";
+    var lbName = "" + name + "-负载均衡";
+    var common = { "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "", hidden: true };
     var auto = { name: autoName, type: "url-test", tolerance: 35, "max-failed-times": 2 };
     var lb = { name: lbName, type: "load-balance", strategy: "sticky-sessions" };
     for (var ck in common) { if (Object.prototype.hasOwnProperty.call(common, ck)) { auto[ck] = common[ck]; lb[ck] = common[ck]; } }
     for (var mk in matchField) { if (Object.prototype.hasOwnProperty.call(matchField, mk)) { auto[mk] = matchField[mk]; lb[mk] = matchField[mk]; } }
-    const select = { name, type: "select", proxies: [autoName, lbName], icon: "" };
+    var select = { name, type: "select", proxies: [autoName, lbName], icon: "" };
     return [auto, lb, select];
   }
 
-  const regionGroups = [];
-  const activeRegions = REGIONS.filter(r => Object.prototype.hasOwnProperty.call(regionsWithNodes, r.name));
-  for (const r of activeRegions) {
+  var regionGroups = [];
+  var activeRegions = REGIONS.filter(function(r) { return Object.prototype.hasOwnProperty.call(regionsWithNodes, r.name); });
+  for (var ri = 0; ri < activeRegions.length; ri++) { var r = activeRegions[ri];
     regionGroups.push.apply(regionGroups, buildRegionTrio(r.name, { filter: r.filter }));
   }
   if (hasOtherRegionNodes) {
@@ -171,100 +171,100 @@ function main(config) {
   // 没有节点的地区不会出现在这里，其他分组也就不会引用到不存在的分组名
   var regionNames = activeRegions.map(function(r) { return r.name; });
   if (hasOtherRegionNodes) regionNames.push(OTHER_REGION_NAME);
-  const regionNamesNoHK = regionNames.filter(n => n !== "🇭🇰 香港节点" && n !== "🇹🇼 台湾节点");
+  var regionNamesNoHK = regionNames.filter(function(n) { return n !== "🇭🇰 香港节点" && n !== "🇹🇼 台湾节点"; });
 
-  const AUTO_NAME = "♻️ 自动选择";
-  const LB_NAME = "⚖️ 负载均衡";
-  const SELECT_NAME = "🔰 节点选择";
+  var AUTO_NAME = "♻️ 自动选择";
+  var LB_NAME = "⚖️ 负载均衡";
+  var SELECT_NAME = "🔰 节点选择";
 
-  const autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, timeout: 3000, "expected-status": 204, "max-failed-times": 2, "exclude-type": "DIRECT", "empty-fallback": "REJECT", icon: "" };
-  const lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, "exclude-type": "DIRECT", "empty-fallback": "REJECT", icon: "" };
-  const selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames), icon: "" };
-  const adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
-  const privateGroup = { name: "🔒 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
-  const domesticGroup = { name: "🇨🇳 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME].concat(regionNames), icon: "" };
-  const aiGroup = { name: "🤖 AI服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNamesNoHK), icon: "" };
-  const mediaGroup = { name: "📺 Media", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  const youtubeGroup = { name: "📺 YouTube", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  const googleGroup = { name: "🔍 Google", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  const telegramGroup = { name: "📲 Telegram", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  const microsoftGroup = { name: "🪟 Microsoft", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  const appleGroup = { name: "🍎 Apple", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  const steamGroup = { name: "🎮 Steam", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  const tiktokGroup = { name: "📱 TikTok", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  const twitterGroup = { name: "🐦 Twitter", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  const spotifyGroup = { name: "🎵 Spotify", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  const globalServiceGroup = { name: "🌍 国外服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  const fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, timeout: 3000, "expected-status": 204, "max-failed-times": 2, icon: "" };
+  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "" };
+  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames), icon: "" };
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
+  var privateGroup = { name: "🔒 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
+  var domesticGroup = { name: "🇨🇳 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME].concat(regionNames), icon: "" };
+  var aiGroup = { name: "🤖 AI服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNamesNoHK), icon: "" };
+  var mediaGroup = { name: "📺 Media", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var youtubeGroup = { name: "📺 YouTube", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var googleGroup = { name: "🔍 Google", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var telegramGroup = { name: "📲 Telegram", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var microsoftGroup = { name: "🪟 Microsoft", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var appleGroup = { name: "🍎 Apple", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var steamGroup = { name: "🎮 Steam", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var tiktokGroup = { name: "📱 TikTok", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var twitterGroup = { name: "🐦 Twitter", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var spotifyGroup = { name: "🎵 Spotify", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var globalServiceGroup = { name: "🌍 国外服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
   // 直接在客户端里把这个分组切成 DIRECT 即可，不需要再回来改脚本
-  const remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };
 
   config["proxy-groups"] = [selectGroup, autoGroup, lbGroup, adBlockGroup, privateGroup, domesticGroup, aiGroup, mediaGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, steamGroup, tiktokGroup, twitterGroup, spotifyGroup, globalServiceGroup, fallbackGroup, remoteToolGroup].concat(regionGroups);
 
-  const ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
-  const ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
-  const ruleProviderClassical = { type: "http", behavior: "classical", interval: 86400 };
-  const ruleProviderTextDomain = { type: "http", format: "text", interval: 86400, behavior: "domain" };
+  var ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
+  var ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
+  var ruleProviderClassical = { type: "http", behavior: "classical", interval: 86400 };
+  var ruleProviderTextDomain = { type: "http", format: "text", interval: 86400, behavior: "domain" };
 
-  const BASE_META = "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo";
-  const BASE_BLACK = "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash";
+  var BASE_META = "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo";
+  var BASE_BLACK = "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash";
 
   config["rule-providers"] = {
-    private: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/private.mrs`, path: "./ruleset/private.mrs" }),
-    private_ip: assign({}, ruleProviderCommonIpcidr, { url: `${BASE_META}/geoip/private.mrs`, path: "./ruleset/private_ip.mrs" }),
-    cn: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/cn.mrs`, path: "./ruleset/cn.mrs" }),
-    "geolocation-cn": assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/geolocation-cn.mrs`, path: "./ruleset/geolocation-cn.mrs" }),
-    games_cn: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/category-games@cn.mrs`, path: "./ruleset/games_cn.mrs" }),
-    apple_cn: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/apple@cn.mrs`, path: "./ruleset/apple_cn.mrs" }),
-    microsoft_cn: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/microsoft@cn.mrs`, path: "./ruleset/microsoft_cn.mrs" }),
+    private: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/private.mrs", path: "./ruleset/private.mrs" }),
+    private_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/private.mrs", path: "./ruleset/private_ip.mrs" }),
+    cn: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/cn.mrs", path: "./ruleset/cn.mrs" }),
+    "geolocation-cn": assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/geolocation-cn.mrs", path: "./ruleset/geolocation-cn.mrs" }),
+    games_cn: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/category-games@cn.mrs", path: "./ruleset/games_cn.mrs" }),
+    apple_cn: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/apple@cn.mrs", path: "./ruleset/apple_cn.mrs" }),
+    microsoft_cn: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/microsoft@cn.mrs", path: "./ruleset/microsoft_cn.mrs" }),
     ads: assign({}, ruleProviderCommonDomain, { url: "https://cdn.jsdelivr.net/gh/217heidai/adblockfilters@main/rules/adblockmihomolite.mrs", path: "./ruleset/ads.mrs" }),
-    ai: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/category-ai-!cn.mrs`, path: "./ruleset/ai.mrs" }),
-    youtube: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/youtube.mrs`, path: "./ruleset/youtube.mrs" }),
-    google: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/google.mrs`, path: "./ruleset/google.mrs" }),
-    google_ip: assign({}, ruleProviderCommonIpcidr, { url: `${BASE_META}/geoip/google.mrs`, path: "./ruleset/google_ip.mrs" }),
-    telegram: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/telegram.mrs`, path: "./ruleset/telegram.mrs" }),
-    telegram_ip: assign({}, ruleProviderCommonIpcidr, { url: `${BASE_META}/geoip/telegram.mrs`, path: "./ruleset/telegram_ip.mrs" }),
-    microsoft: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/microsoft.mrs`, path: "./ruleset/microsoft.mrs" }),
-    github: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/github.mrs`, path: "./ruleset/github.mrs" }),
-    apple: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/apple.mrs`, path: "./ruleset/apple.mrs" }),
-    steam: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/steam.mrs`, path: "./ruleset/steam.mrs" }),
-    tiktok: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/tiktok.mrs`, path: "./ruleset/tiktok.mrs" }),
-    twitter: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/twitter.mrs`, path: "./ruleset/twitter.mrs" }),
-    twitter_ip: assign({}, ruleProviderCommonIpcidr, { url: `${BASE_META}/geoip/twitter.mrs`, path: "./ruleset/twitter_ip.mrs" }),
-    spotify: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/spotify.mrs`, path: "./ruleset/spotify.mrs" }),
-    netflix: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/netflix.mrs`, path: "./ruleset/netflix.mrs" }),
-    netflix_ip: assign({}, ruleProviderCommonIpcidr, { url: `${BASE_META}/geoip/netflix.mrs`, path: "./ruleset/netflix_ip.mrs" }),
-    disney: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/disney.mrs`, path: "./ruleset/disney.mrs" }),
-    hbo: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/hbo.mrs`, path: "./ruleset/hbo.mrs" }),
-    twitch: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/twitch.mrs`, path: "./ruleset/twitch.mrs" }),
-    gfw: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/gfw.mrs`, path: "./ruleset/gfw.mrs" }),
-    wechat: assign({}, ruleProviderClassical, { url: `${BASE_BLACK}/WeChat/WeChat.yaml`, path: "./ruleset/wechat.yaml" }),
+    ai: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/category-ai-!cn.mrs", path: "./ruleset/ai.mrs" }),
+    youtube: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/youtube.mrs", path: "./ruleset/youtube.mrs" }),
+    google: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/google.mrs", path: "./ruleset/google.mrs" }),
+    google_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/google.mrs", path: "./ruleset/google_ip.mrs" }),
+    telegram: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/telegram.mrs", path: "./ruleset/telegram.mrs" }),
+    telegram_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/telegram.mrs", path: "./ruleset/telegram_ip.mrs" }),
+    microsoft: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/microsoft.mrs", path: "./ruleset/microsoft.mrs" }),
+    github: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/github.mrs", path: "./ruleset/github.mrs" }),
+    apple: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/apple.mrs", path: "./ruleset/apple.mrs" }),
+    steam: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/steam.mrs", path: "./ruleset/steam.mrs" }),
+    tiktok: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/tiktok.mrs", path: "./ruleset/tiktok.mrs" }),
+    twitter: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/twitter.mrs", path: "./ruleset/twitter.mrs" }),
+    twitter_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/twitter.mrs", path: "./ruleset/twitter_ip.mrs" }),
+    spotify: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/spotify.mrs", path: "./ruleset/spotify.mrs" }),
+    netflix: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/netflix.mrs", path: "./ruleset/netflix.mrs" }),
+    netflix_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/netflix.mrs", path: "./ruleset/netflix_ip.mrs" }),
+    disney: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/disney.mrs", path: "./ruleset/disney.mrs" }),
+    hbo: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/hbo.mrs", path: "./ruleset/hbo.mrs" }),
+    twitch: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/twitch.mrs", path: "./ruleset/twitch.mrs" }),
+    gfw: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/gfw.mrs", path: "./ruleset/gfw.mrs" }),
+    wechat: assign({}, ruleProviderClassical, { url: BASE_BLACK + "/WeChat/WeChat.yaml", path: "./ruleset/wechat.yaml" }),
     phishing: assign({}, ruleProviderTextDomain, { url: "https://ruleset.skk.moe/Clash/domainset/reject_phishing.txt", path: "./ruleset/phishing.txt" }),
-    icloud: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/icloud.mrs`, path: "./ruleset/icloud.mrs" }),
-    gitlab: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/gitlab.mrs`, path: "./ruleset/gitlab.mrs" }),
-    facebook: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/facebook.mrs`, path: "./ruleset/facebook.mrs" }),
-    instagram: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/instagram.mrs`, path: "./ruleset/instagram.mrs" }),
-    linkedin: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/linkedin.mrs`, path: "./ruleset/linkedin.mrs" }),
-    discord: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/discord.mrs`, path: "./ruleset/discord.mrs" }),
-    epicgames: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/epicgames.mrs`, path: "./ruleset/epicgames.mrs" }),
-    ea: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/ea.mrs`, path: "./ruleset/ea.mrs" }),
-    ubisoft: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/ubisoft.mrs`, path: "./ruleset/ubisoft.mrs" }),
-    blizzard: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/blizzard.mrs`, path: "./ruleset/blizzard.mrs" }),
-    paypal: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/paypal.mrs`, path: "./ruleset/paypal.mrs" }),
-    aws: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/aws.mrs`, path: "./ruleset/aws.mrs" }),
-    azure: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/azure.mrs`, path: "./ruleset/azure.mrs" }),
-    dropbox: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/dropbox.mrs`, path: "./ruleset/dropbox.mrs" }),
-    onedrive: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/onedrive.mrs`, path: "./ruleset/onedrive.mrs" }),
-    scholar: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/category-scholar-!cn.mrs`, path: "./ruleset/scholar.mrs" }),
-    hulu: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/hulu.mrs`, path: "./ruleset/hulu.mrs" }),
-    amazon: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/amazon.mrs`, path: "./ruleset/amazon.mrs" }),
-    bahamut: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/bahamut.mrs`, path: "./ruleset/bahamut.mrs" }),
-    biliintl: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/biliintl.mrs`, path: "./ruleset/biliintl.mrs" }),
-    abema: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/abema.mrs`, path: "./ruleset/abema.mrs" }),
-    bbc: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/bbc.mrs`, path: "./ruleset/bbc.mrs" }),
-    cloudflare_ip: assign({}, ruleProviderCommonIpcidr, { url: `${BASE_META}/geoip/cloudflare.mrs`, path: "./ruleset/cloudflare_ip.mrs" }),
-    fastly_ip: assign({}, ruleProviderCommonIpcidr, { url: `${BASE_META}/geoip/fastly.mrs`, path: "./ruleset/fastly_ip.mrs" }),
-    tracker: assign({}, ruleProviderCommonDomain, { url: `${BASE_META}/geosite/tracker.mrs`, path: "./ruleset/tracker.mrs" })
+    icloud: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/icloud.mrs", path: "./ruleset/icloud.mrs" }),
+    gitlab: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/gitlab.mrs", path: "./ruleset/gitlab.mrs" }),
+    facebook: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/facebook.mrs", path: "./ruleset/facebook.mrs" }),
+    instagram: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/instagram.mrs", path: "./ruleset/instagram.mrs" }),
+    linkedin: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/linkedin.mrs", path: "./ruleset/linkedin.mrs" }),
+    discord: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/discord.mrs", path: "./ruleset/discord.mrs" }),
+    epicgames: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/epicgames.mrs", path: "./ruleset/epicgames.mrs" }),
+    ea: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/ea.mrs", path: "./ruleset/ea.mrs" }),
+    ubisoft: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/ubisoft.mrs", path: "./ruleset/ubisoft.mrs" }),
+    blizzard: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/blizzard.mrs", path: "./ruleset/blizzard.mrs" }),
+    paypal: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/paypal.mrs", path: "./ruleset/paypal.mrs" }),
+    aws: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/aws.mrs", path: "./ruleset/aws.mrs" }),
+    azure: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/azure.mrs", path: "./ruleset/azure.mrs" }),
+    dropbox: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/dropbox.mrs", path: "./ruleset/dropbox.mrs" }),
+    onedrive: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/onedrive.mrs", path: "./ruleset/onedrive.mrs" }),
+    scholar: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/category-scholar-!cn.mrs", path: "./ruleset/scholar.mrs" }),
+    hulu: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/hulu.mrs", path: "./ruleset/hulu.mrs" }),
+    amazon: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/amazon.mrs", path: "./ruleset/amazon.mrs" }),
+    bahamut: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/bahamut.mrs", path: "./ruleset/bahamut.mrs" }),
+    biliintl: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/biliintl.mrs", path: "./ruleset/biliintl.mrs" }),
+    abema: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/abema.mrs", path: "./ruleset/abema.mrs" }),
+    bbc: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/bbc.mrs", path: "./ruleset/bbc.mrs" }),
+    cloudflare_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/cloudflare.mrs", path: "./ruleset/cloudflare_ip.mrs" }),
+    fastly_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/fastly.mrs", path: "./ruleset/fastly_ip.mrs" }),
+    tracker: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/tracker.mrs", path: "./ruleset/tracker.mrs" })
   };
 
   config.rules = [
@@ -491,7 +491,7 @@ function main(config) {
     "udp-timeout": 300
   };
 
-  const DOMESTIC_DNS = ["223.5.5.5", "119.29.29.29"];
+  var DOMESTIC_DNS = ["223.5.5.5", "119.29.29.29"];
 
   config.dns = {
     enable: true, ipv6: false,
@@ -534,7 +534,6 @@ function main(config) {
       // 网络连通性检测：fake-ip会让系统误判"无网络"
       "DOMAIN-SUFFIX,msftconnecttest.com,real-ip", "DOMAIN-SUFFIX,msftncsi.com,real-ip",
       "DOMAIN,captive.apple.com,real-ip", "DOMAIN,connectivitycheck.gstatic.com,real-ip",
-      "DOMAIN-SUFFIX,gstatic.com,real-ip",
       // 游戏主机NAT探测
       "DOMAIN-SUFFIX,srv.nintendo.net,real-ip",
       "DOMAIN-SUFFIX,stun.playstation.net,real-ip",
@@ -610,8 +609,8 @@ function main(config) {
     // 误伤，导致mihomo自己解析境外域名的请求也被拦掉
     nameserver: ["https://1.1.1.1/dns-query#RULES", "https://8.8.8.8/dns-query#RULES"],
     // 旁路观察者识别，双厂商(腾讯/阿里)冗余
-    "proxy-server-nameserver": ["https://120.53.53.53/dns-query", "https://223.5.5.5/dns-query"],
-    "direct-nameserver": ["https://120.53.53.53/dns-query", "https://223.5.5.5/dns-query"],
+    "proxy-server-nameserver": ["https://doh.pub/dns-query", "https://dns.alidns.com/dns-query"],
+    "direct-nameserver": ["https://doh.pub/dns-query", "https://dns.alidns.com/dns-query"],
     "direct-nameserver-follow-policy": true,
     "respect-rules": true,
     "fast-queries": true,
@@ -679,7 +678,6 @@ function main(config) {
     "cloudflare-dns.com": ["1.1.1.1", "1.0.0.1"], "dns.google": ["8.8.8.8", "8.8.4.4"],
     "services.googleapis.cn": ["services.googleapis.com"],
     // （会自动挑选包括gcore在内的最优CDN节点），如果它在国内网络环境下
-    "cdn.jsdelivr.net": "testingcf.jsdelivr.net",
     "+.mcdn.bilivideo.com": "0.0.0.0", "+.mcdn.bilivideo.cn": "0.0.0.0", "+.edge.mountaintoys.cn": "0.0.0.0", "+.h2.smtcdns.net": "0.0.0.0"
   };
 
@@ -725,8 +723,8 @@ function main(config) {
     asn: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
   };
 
-  config.profile = { "store-selected": true, "store-fake-ip": true };
-  config.ntp = { enable: true, "write-to-system": false, server: "ntp.aliyun.com", port: 123, interval: 30 };
+  config.profile = { "store-selected": false, "store-fake-ip": false };
+  config.ntp = { enable: false, "write-to-system": false, server: "ntp.aliyun.com", port: 123, interval: 30 };
 
   return config;
 }
