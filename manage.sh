@@ -14,13 +14,14 @@ info(){ echo -e "${GREEN}[+]${NC} $1"; }
 [[ $EUID -eq 0 ]] || err "请使用 root 运行"
 [[ -f "$SETTINGS" ]] || err "找不到 $SETTINGS"
 [[ -x "$GENERATE" ]] || err "找不到可执行的 generate.sh"
+[[ -f "$RULES" ]] || { printf '%s\n' '# provider|https_mrs_url|behavior|target|enabled' > "$RULES"; chmod 600 "$RULES"; }
 
 get_current_url() {
   sed -n 's/^AIRPORT_SUB_URL="\(.*\)"$/\1/p' "$SETTINGS" | head -n1
 }
 
 valid_url() {
-  [[ "$1" =~ ^https?://[^[:space:]\"]+$ ]] &&
+  [[ "$1" =~ ^https://[^[:space:]\"]+$ ]] &&
   [[ "$1" != *$'\n'* && "$1" != *$'\r'* ]]
 }
 
@@ -29,7 +30,7 @@ mask_url() {
   if (( ${#u} > 28 )); then
     printf '%s...%s' "${u:0:18}" "${u: -8}"
   else
-    printf '%s' "${u}"
+    printf '%s' "$u"
   fi
 }
 
@@ -47,7 +48,7 @@ change_airport() {
   fi
 
   [[ -n "$new" ]] || { info "未修改"; return 0; }
-  valid_url "$new" || err "订阅地址必须是 http:// 或 https:// URL，且不能含空格、引号或换行"
+  valid_url "$new" || err "订阅地址必须是 HTTPS URL，且不能含空格、引号或换行"
 
   if command -v whiptail >/dev/null 2>&1; then
     whiptail --title "确认更换" --yesno "确定把机场更换为：\n\n$(mask_url "$new")\n\n保存后会自动重新生成完整配置。" 12 78 || return 0
@@ -69,7 +70,6 @@ change_airport() {
   info "完成：客户端固定订阅地址无需修改"
 }
 
-
 list_rules(){ echo; grep -vE '^[[:space:]]*(#|$)' "$RULES" || echo "（无本地覆盖）"; echo; }
 add_rule(){
  local n u b t
@@ -79,6 +79,7 @@ add_rule(){
  [[ "$n" =~ ^[A-Za-z0-9_-]+$ ]] || err "名称不合法"
  [[ "$u" =~ ^https://[^[:space:]\"|]+$ ]] || err "只允许 HTTPS"
  [[ "$b" == domain || "$b" == ipcidr ]] || err "类型错误"
+ [[ -n "$t" && "$t" != *'|'* && "$t" != *','* && "$t" != *$'\n'* && "$t" != *$'\r'* ]] || err "策略组名称不合法"
  sed -i "/^$n|/d" "$RULES"; printf '%s|%s|%s|%s|1\n' "$n" "$u" "$b" "$t" >> "$RULES"; bash "$GENERATE"; info "已增加/替换：$n"
 }
 disable_rule(){
@@ -86,7 +87,7 @@ disable_rule(){
  case "$n" in cn|cn-ip|private-ip|geolocation-cn|geolocation-!cn) err "核心安全规则禁止禁用：$n";; esac
  sed -i "/^$n|/d" "$RULES"; printf '%s|https://disabled.invalid/disabled|domain|国外服务|0\n' "$n" >> "$RULES"; bash "$GENERATE"; info "已禁用：$n"
 }
-restore_rule(){ local n; read -r -p "恢复哪个规则集： " n; sed -i "/^$n|/d" "$RULES"; bash "$GENERATE"; info "已恢复：$n"; }
+restore_rule(){ local n; read -r -p "恢复哪个规则集： " n; [[ "$n" =~ ^[A-Za-z0-9_-]+$ ]] || err "名称不合法"; sed -i "/^$n|/d" "$RULES"; bash "$GENERATE"; info "已恢复：$n"; }
 rules_menu(){
  local c
  if command -v whiptail >/dev/null; then c="$(whiptail --title "Mihomo-Full · 规则集管理" --menu "规则源失效时使用；核心安全规则不可禁用" 17 78 5 "1" "查看当前覆盖" "2" "增加/替换规则集" "3" "禁用规则集" "4" "恢复模板默认" "5" "返回" 3>&1 1>&2 2>&3)" || return
@@ -109,9 +110,9 @@ case "${1:-menu}" in
   status|4) show_status ;;
   *)
     if command -v whiptail >/dev/null 2>&1; then
-      choice="$(whiptail --title "Mihomo-Full 管理" --menu "请选择操作：" 18 78 5         "1" "更换机场订阅（自动重新生成）"         "2" "更新 VPS 落地节点"         "3" "规则集管理（增加/替换/禁用/恢复）"         "4" "查看当前状态"         "5" "退出" 3>&1 1>&2 2>&3)" || exit 0
+      choice="$(whiptail --title "Mihomo-Full 管理" --menu "请选择操作：" 18 78 5 "1" "更换机场订阅（自动重新生成）" "2" "更新 VPS 落地节点" "3" "规则集管理（增加/替换/禁用/恢复）" "4" "查看当前状态" "5" "退出" 3>&1 1>&2 2>&3)" || exit 0
     elif command -v dialog >/dev/null 2>&1; then
-      choice="$(dialog --title "Mihomo-Full 管理" --menu "请选择操作：" 18 78 5         "1" "更换机场订阅（自动重新生成）"         "2" "更新 VPS 落地节点"         "3" "规则集管理（增加/替换/禁用/恢复）"         "4" "查看当前状态"         "5" "退出" 3>&1 1>&2 2>&3)" || exit 0
+      choice="$(dialog --title "Mihomo-Full 管理" --menu "请选择操作：" 18 78 5 "1" "更换机场订阅（自动重新生成）" "2" "更新 VPS 落地节点" "3" "规则集管理（增加/替换/禁用/恢复）" "4" "查看当前状态" "5" "退出" 3>&1 1>&2 2>&3)" || exit 0
     else
       echo "Mihomo-Full 管理"
       echo "1) 更换机场订阅（自动重新生成）"
