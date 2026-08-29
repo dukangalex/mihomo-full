@@ -210,476 +210,1754 @@ function main(config) {
   var BASE_BLACK = "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash";
 
   config["rule-providers"] = {
-    private: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/private.mrs", path: "./ruleset/private.mrs" }),
-    private_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/private.mrs", path: "./ruleset/private_ip.mrs" }),
-    cn: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/cn.mrs", path: "./ruleset/cn.mrs" }),
-    "geolocation-cn": assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/geolocation-cn.mrs", path: "./ruleset/geolocation-cn.mrs" }),
-    games_cn: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/category-games@cn.mrs", path: "./ruleset/games_cn.mrs" }),
-    apple_cn: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/apple@cn.mrs", path: "./ruleset/apple_cn.mrs" }),
-    microsoft_cn: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/microsoft@cn.mrs", path: "./ruleset/microsoft_cn.mrs" }),
-    ads: assign({}, ruleProviderCommonDomain, { url: "https://cdn.jsdelivr.net/gh/217heidai/adblockfilters@main/rules/adblockmihomolite.mrs", path: "./ruleset/ads.mrs" }),
-    ai: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/category-ai-!cn.mrs", path: "./ruleset/ai.mrs" }),
-    youtube: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/youtube.mrs", path: "./ruleset/youtube.mrs" }),
-    google: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/google.mrs", path: "./ruleset/google.mrs" }),
-    google_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/google.mrs", path: "./ruleset/google_ip.mrs" }),
-    telegram: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/telegram.mrs", path: "./ruleset/telegram.mrs" }),
-    telegram_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/telegram.mrs", path: "./ruleset/telegram_ip.mrs" }),
-    microsoft: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/microsoft.mrs", path: "./ruleset/microsoft.mrs" }),
-    github: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/github.mrs", path: "./ruleset/github.mrs" }),
-    apple: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/apple.mrs", path: "./ruleset/apple.mrs" }),
-    steam: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/steam.mrs", path: "./ruleset/steam.mrs" }),
-    tiktok: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/tiktok.mrs", path: "./ruleset/tiktok.mrs" }),
-    twitter: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/twitter.mrs", path: "./ruleset/twitter.mrs" }),
-    twitter_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/twitter.mrs", path: "./ruleset/twitter_ip.mrs" }),
-    spotify: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/spotify.mrs", path: "./ruleset/spotify.mrs" }),
-    netflix: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/netflix.mrs", path: "./ruleset/netflix.mrs" }),
-    netflix_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/netflix.mrs", path: "./ruleset/netflix_ip.mrs" }),
-    disney: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/disney.mrs", path: "./ruleset/disney.mrs" }),
-    hbo: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/hbo.mrs", path: "./ruleset/hbo.mrs" }),
-    twitch: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/twitch.mrs", path: "./ruleset/twitch.mrs" }),
-    gfw: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/gfw.mrs", path: "./ruleset/gfw.mrs" }),
-    wechat: assign({}, ruleProviderClassical, { url: BASE_BLACK + "/WeChat/WeChat.yaml", path: "./ruleset/wechat.yaml" }),
-    phishing: assign({}, ruleProviderTextDomain, { url: "https://ruleset.skk.moe/Clash/domainset/reject_phishing.txt", path: "./ruleset/phishing.txt" }),
-    icloud: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/icloud.mrs", path: "./ruleset/icloud.mrs" }),
-    gitlab: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/gitlab.mrs", path: "./ruleset/gitlab.mrs" }),
-    facebook: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/facebook.mrs", path: "./ruleset/facebook.mrs" }),
-    instagram: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/instagram.mrs", path: "./ruleset/instagram.mrs" }),
-    linkedin: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/linkedin.mrs", path: "./ruleset/linkedin.mrs" }),
-    discord: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/discord.mrs", path: "./ruleset/discord.mrs" }),
-    epicgames: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/epicgames.mrs", path: "./ruleset/epicgames.mrs" }),
-    ea: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/ea.mrs", path: "./ruleset/ea.mrs" }),
-    ubisoft: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/ubisoft.mrs", path: "./ruleset/ubisoft.mrs" }),
-    blizzard: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/blizzard.mrs", path: "./ruleset/blizzard.mrs" }),
-    paypal: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/paypal.mrs", path: "./ruleset/paypal.mrs" }),
-    aws: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/aws.mrs", path: "./ruleset/aws.mrs" }),
-    azure: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/azure.mrs", path: "./ruleset/azure.mrs" }),
-    dropbox: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/dropbox.mrs", path: "./ruleset/dropbox.mrs" }),
-    onedrive: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/onedrive.mrs", path: "./ruleset/onedrive.mrs" }),
-    scholar: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/category-scholar-!cn.mrs", path: "./ruleset/scholar.mrs" }),
-    hulu: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/hulu.mrs", path: "./ruleset/hulu.mrs" }),
-    amazon: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/amazon.mrs", path: "./ruleset/amazon.mrs" }),
-    bahamut: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/bahamut.mrs", path: "./ruleset/bahamut.mrs" }),
-    biliintl: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/biliintl.mrs", path: "./ruleset/biliintl.mrs" }),
-    abema: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/abema.mrs", path: "./ruleset/abema.mrs" }),
-    bbc: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/bbc.mrs", path: "./ruleset/bbc.mrs" }),
-    cloudflare_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/cloudflare.mrs", path: "./ruleset/cloudflare_ip.mrs" }),
-    fastly_ip: assign({}, ruleProviderCommonIpcidr, { url: BASE_META + "/geoip/fastly.mrs", path: "./ruleset/fastly_ip.mrs" }),
-    tracker: assign({}, ruleProviderCommonDomain, { url: BASE_META + "/geosite/tracker.mrs", path: "./ruleset/tracker.mrs" })
-  };
+  "category-ads-all": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ads-all.mrs",
+    "path": "./ruleset/category-ads-all.mrs"
+  },
+  "category-ai-!cn": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ai-!cn.mrs",
+    "path": "./ruleset/category-ai-!cn.mrs"
+  },
+  "openai": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/openai.mrs",
+    "path": "./ruleset/openai.mrs"
+  },
+  "bilibili": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bilibili.mrs",
+    "path": "./ruleset/bilibili.mrs"
+  },
+  "geolocation-cn": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-cn.mrs",
+    "path": "./ruleset/geolocation-cn.mrs"
+  },
+  "cn": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cn.mrs",
+    "path": "./ruleset/cn.mrs"
+  },
+  "youtube": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/youtube.mrs",
+    "path": "./ruleset/youtube.mrs"
+  },
+  "netflix": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/netflix.mrs",
+    "path": "./ruleset/netflix.mrs"
+  },
+  "hulu": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hulu.mrs",
+    "path": "./ruleset/hulu.mrs"
+  },
+  "disney": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/disney.mrs",
+    "path": "./ruleset/disney.mrs"
+  },
+  "hbo": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hbo.mrs",
+    "path": "./ruleset/hbo.mrs"
+  },
+  "amazon": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/amazon.mrs",
+    "path": "./ruleset/amazon.mrs"
+  },
+  "bahamut": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bahamut.mrs",
+    "path": "./ruleset/bahamut.mrs"
+  },
+  "spotify": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/spotify.mrs",
+    "path": "./ruleset/spotify.mrs"
+  },
+  "tiktok": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tiktok.mrs",
+    "path": "./ruleset/tiktok.mrs"
+  },
+  "biliintl": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/biliintl.mrs",
+    "path": "./ruleset/biliintl.mrs"
+  },
+  "abema": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/abema.mrs",
+    "path": "./ruleset/abema.mrs"
+  },
+  "bbc": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bbc.mrs",
+    "path": "./ruleset/bbc.mrs"
+  },
+  "google": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google.mrs",
+    "path": "./ruleset/google.mrs"
+  },
+  "github": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/github.mrs",
+    "path": "./ruleset/github.mrs"
+  },
+  "gitlab": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/gitlab.mrs",
+    "path": "./ruleset/gitlab.mrs"
+  },
+  "apple": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple.mrs",
+    "path": "./ruleset/apple.mrs"
+  },
+  "microsoft": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft.mrs",
+    "path": "./ruleset/microsoft.mrs"
+  },
+  "facebook": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/facebook.mrs",
+    "path": "./ruleset/facebook.mrs"
+  },
+  "instagram": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/instagram.mrs",
+    "path": "./ruleset/instagram.mrs"
+  },
+  "twitter": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/twitter.mrs",
+    "path": "./ruleset/twitter.mrs"
+  },
+  "linkedin": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/linkedin.mrs",
+    "path": "./ruleset/linkedin.mrs"
+  },
+  "discord": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/discord.mrs",
+    "path": "./ruleset/discord.mrs"
+  },
+  "snapchat": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/snap.mrs",
+    "path": "./ruleset/snapchat.mrs"
+  },
+  "icloud": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/icloud.mrs",
+    "path": "./ruleset/icloud.mrs"
+  },
+  "apple-cn": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple-cn.mrs",
+    "path": "./ruleset/apple-cn.mrs"
+  },
+  "microsoft-cn": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft@cn.mrs",
+    "path": "./ruleset/microsoft-cn.mrs"
+  },
+  "steam": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam.mrs",
+    "path": "./ruleset/steam.mrs"
+  },
+  "epicgames": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/epicgames.mrs",
+    "path": "./ruleset/epicgames.mrs"
+  },
+  "ea": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ea.mrs",
+    "path": "./ruleset/ea.mrs"
+  },
+  "ubisoft": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ubisoft.mrs",
+    "path": "./ruleset/ubisoft.mrs"
+  },
+  "blizzard": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/blizzard.mrs",
+    "path": "./ruleset/blizzard.mrs"
+  },
+  "steam-cn": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam@cn.mrs",
+    "path": "./ruleset/steam-cn.mrs"
+  },
+  "category-games-cn": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-games@cn.mrs",
+    "path": "./ruleset/category-games-cn.mrs"
+  },
+  "paypal": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/paypal.mrs",
+    "path": "./ruleset/paypal.mrs"
+  },
+  "aws": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/aws.mrs",
+    "path": "./ruleset/aws.mrs"
+  },
+  "azure": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/azure.mrs",
+    "path": "./ruleset/azure.mrs"
+  },
+  "dropbox": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/dropbox.mrs",
+    "path": "./ruleset/dropbox.mrs"
+  },
+  "onedrive": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/onedrive.mrs",
+    "path": "./ruleset/onedrive.mrs"
+  },
+  "category-scholar-!cn": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-scholar-!cn.mrs",
+    "path": "./ruleset/category-scholar-!cn.mrs"
+  },
+  "tracker": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tracker.mrs",
+    "path": "./ruleset/tracker.mrs"
+  },
+  "geolocation-!cn": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.mrs",
+    "path": "./ruleset/geolocation-!cn.mrs"
+  },
+  "private-ip": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/private.mrs",
+    "path": "./ruleset/private-ip.mrs"
+  },
+  "cn-ip": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs",
+    "path": "./ruleset/cn-ip.mrs"
+  },
+  "google-ip": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/google.mrs",
+    "path": "./ruleset/google-ip.mrs"
+  },
+  "telegram-ip": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/telegram.mrs",
+    "path": "./ruleset/telegram-ip.mrs"
+  },
+  "netflix-ip": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/netflix.mrs",
+    "path": "./ruleset/netflix-ip.mrs"
+  },
+  "facebook-ip": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/facebook.mrs",
+    "path": "./ruleset/facebook-ip.mrs"
+  },
+  "twitter-ip": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/twitter.mrs",
+    "path": "./ruleset/twitter-ip.mrs"
+  },
+  "cloudflare-ip": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudflare.mrs",
+    "path": "./ruleset/cloudflare-ip.mrs"
+  },
+  "cloudfront-ip": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudfront.mrs",
+    "path": "./ruleset/cloudfront-ip.mrs"
+  },
+  "fastly-ip": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/fastly.mrs",
+    "path": "./ruleset/fastly-ip.mrs"
+  },
+  "sukka-phishing": {
+    "type": "http",
+    "behavior": "domain",
+    "format": "text",
+    "interval": 86400,
+    "url": "https://ruleset.skk.moe/Clash/domainset/reject_phishing.txt",
+    "path": "./ruleset/sukka-phishing.txt"
+  },
+  "cryptocurrency": {
+    "type": "http",
+    "behavior": "classical",
+    "format": "yaml",
+    "interval": 86400,
+    "url": "https://gcore.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Cryptocurrency/Cryptocurrency.yaml",
+    "path": "./ruleset/cryptocurrency.yaml"
+  }
+};
 
-  config.rules = [
-    // P0. TUN 私有IP快速通道（比常规RULE-SET匹配更早命中，减少无谓判断）
-    "AND,((IN-TYPE,TUN),(RULE-SET,private_ip)),DIRECT",
+  config["rules"] = [
+  "AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT",
+  "IP-CIDR6,::/0,REJECT-DROP,no-resolve",
+  "DOMAIN-SUFFIX,tongdun.net,DIRECT",
+  "DOMAIN-SUFFIX,tongduncdn.com,DIRECT",
+  "DOMAIN-SUFFIX,ishumei.com,DIRECT",
+  "DOMAIN-SUFFIX,riskradar.net,DIRECT",
+  "DOMAIN-SUFFIX,geetest.com,DIRECT",
+  "DOMAIN-SUFFIX,trustdevice.net,DIRECT",
+  "DOMAIN-SUFFIX,aegis.qq.com,DIRECT",
+  "DOMAIN-SUFFIX,rongcloud.cn,DIRECT",
+  "DOMAIN-SUFFIX,rongcloud.com,DIRECT",
+  "DOMAIN-SUFFIX,umeng.com,DIRECT",
+  "DOMAIN-SUFFIX,umengcloud.com,DIRECT",
+  "DOMAIN-SUFFIX,antpay.com,DIRECT",
+  "DOMAIN-SUFFIX,alipay.com,DIRECT",
+  "DOMAIN-SUFFIX,alipayobjects.com,DIRECT",
+  "DOMAIN-SUFFIX,12306.cn,DIRECT",
+  "DOMAIN-SUFFIX,railway12306.cn,DIRECT",
+  "DOMAIN-SUFFIX,chinatax.gov.cn,DIRECT",
+  "DOMAIN-SUFFIX,fuwu.nhsa.gov.cn,DIRECT",
+  "DOMAIN-SUFFIX,gjzwfw.gov.cn,DIRECT",
+  "DOMAIN-SUFFIX,xiaojukeji.com,DIRECT",
+  "DOMAIN-SUFFIX,didichuxing.com,DIRECT",
+  "DOMAIN-SUFFIX,work.weixin.qq.com,DIRECT",
+  "DOMAIN-SUFFIX,meeting.tencent.com,DIRECT",
+  "DOMAIN-SUFFIX,taobao.com,DIRECT",
+  "DOMAIN-SUFFIX,jd.com,DIRECT",
+  "DOMAIN-SUFFIX,pinduoduo.com,DIRECT",
+  "DOMAIN-SUFFIX,meituan.com,DIRECT",
+  "DOMAIN-SUFFIX,dianping.com,DIRECT",
+  "DOMAIN-SUFFIX,ele.me,DIRECT",
+  "DOMAIN-SUFFIX,amap.com,DIRECT",
+  "DOMAIN-SUFFIX,baidu.com,DIRECT",
+  "DOMAIN-SUFFIX,xiaohongshu.com,DIRECT",
+  "DOMAIN-SUFFIX,kuaishou.com,DIRECT",
+  "DOMAIN-SUFFIX,163.com,DIRECT",
+  "DOMAIN-SUFFIX,weibo.com,DIRECT",
+  "DOMAIN-SUFFIX,zhihu.com,DIRECT",
+  "DOMAIN-SUFFIX,ctrip.com,DIRECT",
+  "DOMAIN-SUFFIX,qunar.com,DIRECT",
+  "DOMAIN-SUFFIX,sf-express.com,DIRECT",
+  "DOMAIN-SUFFIX,dingtalk.com,DIRECT",
+  "DOMAIN-SUFFIX,feishu.cn,DIRECT",
+  "DOMAIN-SUFFIX,xuexi.cn,DIRECT",
+  "DOMAIN-SUFFIX,chsi.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,servicewechat.com,DIRECT",
+  "DOMAIN-SUFFIX,icbc.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,ccb.com,DIRECT",
+  "DOMAIN-SUFFIX,boc.cn,DIRECT",
+  "DOMAIN-SUFFIX,bankofchina.com,DIRECT",
+  "DOMAIN-SUFFIX,abchina.com,DIRECT",
+  "DOMAIN-SUFFIX,abchina.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,cmbchina.com,DIRECT",
+  "DOMAIN-SUFFIX,cmbi.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,bankcomm.com,DIRECT",
+  "DOMAIN-SUFFIX,psbc.com,DIRECT",
+  "DOMAIN-SUFFIX,spdb.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,cib.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,cmbc.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,pingan.com,DIRECT",
+  "DOMAIN-SUFFIX,cgbchina.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,hxb.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,cebbank.com,DIRECT",
+  "DOMAIN-SUFFIX,citicbank.com,DIRECT",
+  "DOMAIN-SUFFIX,ecitic.com,DIRECT",
+  "DOMAIN-SUFFIX,unionpaysecure.com,DIRECT",
+  "DOMAIN-SUFFIX,pingan.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,gfbazc.com,DIRECT",
+  "DOMAIN-SUFFIX,fzuol.com,DIRECT",
+  "DOMAIN-SUFFIX,netsunion.org.cn,DIRECT",
+  "DOMAIN-SUFFIX,cpic.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,zhongan.com,DIRECT",
+  "DOMAIN-SUFFIX,eastmoney.com,DIRECT",
+  "DOMAIN-SUFFIX,htsc.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,gtja.com,DIRECT",
+  "DOMAIN-SUFFIX,dingxiangyun.com,DIRECT",
+  "DOMAIN-SUFFIX,dingxiangyun.cn,DIRECT",
+  "DOMAIN-SUFFIX,rong360.com,DIRECT",
+  "DOMAIN-SUFFIX,yzf.com.cn,DIRECT",
+  "DOMAIN-SUFFIX,99bill.com,DIRECT",
+  "DOMAIN-SUFFIX,chinapay.com,DIRECT",
+  "DOMAIN-SUFFIX,yeepay.com,DIRECT",
+  "DOMAIN-SUFFIX,jdpay.com,DIRECT",
+  "DOMAIN-SUFFIX,weixin.qq.com,DIRECT",
+  "DOMAIN-SUFFIX,wx.qq.com,DIRECT",
+  "DOMAIN-SUFFIX,weixin.com,DIRECT",
+  "DOMAIN-SUFFIX,wxs.qq.com,DIRECT",
+  "DOMAIN-SUFFIX,pddpic.com,DIRECT",
+  "DOMAIN-SUFFIX,samsunghealth.com,DIRECT",
+  "DOMAIN,connectivitycheck.gstatic.com,DIRECT",
+  "DOMAIN,userlocation.googleapis.com,国外服务",
+  "DOMAIN,voilatile-pa.googleapis.com,国外服务",
+  "DOMAIN,geller-pa.googleapis.com,国外服务",
+  "DOMAIN,mobilemaps-pa-gz.googleapis.com,国外服务",
+  "DOMAIN-SUFFIX,app-measurement.com,国外服务",
+  "DOMAIN-SUFFIX,firebaselogging.googleapis.com,国外服务",
+  "DOMAIN-SUFFIX,in.appcenter.ms,国外服务",
+  "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,国外服务",
+  "DOMAIN-SUFFIX,connect.facebook.net,国外服务",
+  "DOMAIN-SUFFIX,a-cdn.anthropic.com,AI服务",
+  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,AI服务",
+  "DOMAIN-SUFFIX,bing.com,国外服务",
+  "DOMAIN-SUFFIX,samsungosp.com,DIRECT",
+  "DOMAIN-SUFFIX,crashlytics.com,国外服务",
+  "DOMAIN-SUFFIX,firebase.io,国外服务",
+  "DOMAIN,browser-intake-us5-datadoghq.com,国外服务",
+  "RULE-SET,sukka-phishing,REJECT-DROP",
+  "RULE-SET,category-ads-all,REJECT-DROP",
+  "DOMAIN,galaxystore.ad-survey.com,REJECT",
+  "DOMAIN,dls2.bigdata.samsung.com.cn,REJECT",
+  "RULE-SET,private-ip,DIRECT,no-resolve",
+  "DOMAIN-REGEX,^(stun|turn|stuns|turns)\\.,REJECT-DROP",
+  "DOMAIN-REGEX,[-.]stun[-.],REJECT-DROP",
+  "DOMAIN-REGEX,[-.]turn[-.],REJECT-DROP",
+  "DOMAIN-REGEX,[-.]stuns[-.],REJECT-DROP",
+  "DOMAIN-REGEX,[-.]turns[-.],REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,110),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,19302-19305)),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,3478-3480)),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,5349-5355)),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,19302-19305)),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,1900),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,443),(RULE-SET,cn-ip)),DIRECT",
+  "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "IP-CIDR,54.223.0.0/16,国外服务,no-resolve",
+  "IP-CIDR,52.80.168.0/24,国外服务,no-resolve",
+  "DOMAIN-SUFFIX,browserleaks.com,国外服务",
+  "DOMAIN-SUFFIX,browserleaks.org,国外服务",
+  "DOMAIN-SUFFIX,ipleak.net,国外服务",
+  "DOMAIN-SUFFIX,dnsleaktest.com,国外服务",
+  "DOMAIN-SUFFIX,dnsleak.com,国外服务",
+  "DOMAIN-SUFFIX,whoer.net,国外服务",
+  "DOMAIN-SUFFIX,whatismyipaddress.com,国外服务",
+  "DOMAIN-SUFFIX,ipinfo.io,国外服务",
+  "DOMAIN-SUFFIX,ip-api.com,国外服务",
+  "DOMAIN-SUFFIX,myip.com,国外服务",
+  "DOMAIN-SUFFIX,ifconfig.me,国外服务",
+  "DOMAIN-SUFFIX,ifconfig.co,国外服务",
+  "DOMAIN-SUFFIX,ipecho.net,国外服务",
+  "DOMAIN-SUFFIX,ip.sb,国外服务",
+  "DOMAIN-SUFFIX,ipleak.com,国外服务",
+  "DOMAIN-SUFFIX,dnsleaktest.org,国外服务",
+  "DOMAIN-SUFFIX,browserleaks.info,国外服务",
+  "DOMAIN-SUFFIX,whatismyip.com,国外服务",
+  "DOMAIN-SUFFIX,ipify.org,国外服务",
+  "DOMAIN-SUFFIX,api.ipify.org,国外服务",
+  "DOMAIN-SUFFIX,ipapi.co,国外服务",
+  "DOMAIN-SUFFIX,ipwho.is,国外服务",
+  "DOMAIN-SUFFIX,ident.me,国外服务",
+  "DOMAIN-SUFFIX,cloudflarestorage.com,国外服务",
+  "DOMAIN-SUFFIX,paddle.com,国外服务",
+  "SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN",
+  "SUB-RULE,(NETWORK,udp),DOMESTIC_DOMAIN",
+  "SUB-RULE,(NETWORK,tcp),DOMESTIC_IP",
+  "SUB-RULE,(NETWORK,udp),DOMESTIC_IP",
+  "PROCESS-NAME-WILDCARD,*revanced*,国外服务",
+  "PROCESS-NAME-WILDCARD,*youtube*,国外服务",
+  "PROCESS-NAME-WILDCARD,*com.android.bank*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.icbc*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.ccb*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.boc*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.abchina*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.cmbchina*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.cmbc*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.bankcomm*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.psbc*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.spdb*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.cib*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.pingan*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.cgbchina*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.hxb*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.cebbank*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.citic*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.tenpay*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.tencent.mm*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*WeChat*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*Weixin*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.MobileTicket*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.hicorenational.antifraud*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.service.android.gov.cn*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*cn.hsa.app*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*cn.gov.tax.its*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.greenpoint.android.mc10086*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.sinovatech.unicom.ui*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.ct.client*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.unionpay*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.eg.android.Alipay*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.chinamworld*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.bankabc*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*cmb.pb*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.yitong.mbank*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.cgb.mobilebank*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.czbank*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.bjrcb*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*com.android.mobilebank*,DIRECT",
+  "PROCESS-NAME-WILDCARD,*AnyDesk*,远控工具",
+  "PROCESS-NAME-WILDCARD,*ToDesk*,远控工具",
+  "PROCESS-NAME-WILDCARD,*TeamViewer*,远控工具",
+  "PROCESS-NAME-WILDCARD,*RustDesk*,远控工具",
+  "PROCESS-NAME-WILDCARD,*rustdesk*,远控工具",
+  "PROCESS-NAME-WILDCARD,*tailscale*,远控工具",
+  "PROCESS-NAME-WILDCARD,*tailscaled*,远控工具",
+  "PROCESS-NAME-WILDCARD,*zerotier*,远控工具",
+  "PROCESS-NAME-WILDCARD,*ngrok*,远控工具",
+  "PROCESS-NAME-WILDCARD,*frpc*,远控工具",
+  "PROCESS-NAME-WILDCARD,*frps*,远控工具",
+  "PROCESS-NAME-WILDCARD,*cloudflared*,远控工具",
+  "PROCESS-NAME-WILDCARD,*natapp*,远控工具",
+  "PROCESS-NAME-WILDCARD,*nblink*,远控工具",
+  "RULE-SET,icloud,国外服务",
+  "RULE-SET,apple,国外服务",
+  "RULE-SET,microsoft,国外服务",
+  "RULE-SET,openai,AI服务",
+  "RULE-SET,category-ai-!cn,AI服务",
+  "RULE-SET,netflix,流媒体",
+  "RULE-SET,netflix-ip,流媒体,no-resolve",
+  "RULE-SET,hulu,流媒体",
+  "RULE-SET,disney,流媒体",
+  "RULE-SET,hbo,流媒体",
+  "RULE-SET,amazon,流媒体",
+  "RULE-SET,bahamut,流媒体",
+  "RULE-SET,youtube,流媒体",
+  "RULE-SET,tiktok,流媒体",
+  "RULE-SET,biliintl,流媒体",
+  "RULE-SET,abema,流媒体",
+  "RULE-SET,bbc,流媒体",
+  "RULE-SET,spotify,流媒体",
+  "RULE-SET,google,国外服务",
+  "RULE-SET,google-ip,国外服务,no-resolve",
+  "RULE-SET,github,国外服务",
+  "RULE-SET,gitlab,国外服务",
+  "RULE-SET,facebook,国外服务",
+  "RULE-SET,instagram,国外服务",
+  "RULE-SET,twitter,国外服务",
+  "RULE-SET,twitter-ip,国外服务,no-resolve",
+  "RULE-SET,linkedin,国外服务",
+  "RULE-SET,discord,国外服务",
+  "RULE-SET,snapchat,国外服务",
+  "RULE-SET,telegram-ip,国外服务,no-resolve",
+  "RULE-SET,facebook-ip,国外服务,no-resolve",
+  "RULE-SET,cloudflare-ip,国外服务,no-resolve",
+  "RULE-SET,cloudfront-ip,国外服务,no-resolve",
+  "RULE-SET,fastly-ip,国外服务,no-resolve",
+  "RULE-SET,steam,国外服务",
+  "RULE-SET,epicgames,国外服务",
+  "RULE-SET,ea,国外服务",
+  "RULE-SET,ubisoft,国外服务",
+  "RULE-SET,blizzard,国外服务",
+  "RULE-SET,paypal,国外服务",
+  "RULE-SET,aws,国外服务",
+  "RULE-SET,azure,国外服务",
+  "RULE-SET,dropbox,国外服务",
+  "RULE-SET,onedrive,国外服务",
+  "RULE-SET,cryptocurrency,国外服务",
+  "RULE-SET,category-scholar-!cn,国外服务",
+  "RULE-SET,geolocation-!cn,国外服务",
+  "MATCH,漏网之鱼"
+];
 
-    // P1. IPv6 全封堵（配合全局 ipv6:false 双重保险，宁可断网不泄露）
-    "IP-CIDR6,::/0,REJECT-DROP,no-resolve",
-
-    // 噪音日志清理：腾讯统计上报走非标端口，运营商QoS导致大量超时噪音，
-    // 拦截不影响微信/腾讯任何正常功能
-    "DOMAIN-SUFFIX,teg.tencent-cloud.net,REJECT-DROP",
-
-    // ── 微信长连接域名白名单：断开会导致"无法使用当前WiFi"弹窗 ──
-    "DOMAIN-SUFFIX,szlong.weixin.qq.com,DIRECT", "DOMAIN-SUFFIX,szminorshort.weixin.qq.com,DIRECT",
-    "DOMAIN-SUFFIX,szshort.weixin.qq.com,DIRECT", "DOMAIN-SUFFIX,short.weixin.qq.com,DIRECT",
-
-    // ── 家电/IoT品牌直连 ──
-    "DOMAIN-SUFFIX,midea.com,🇨🇳 国内服务", "DOMAIN-SUFFIX,haier.com,🇨🇳 国内服务",
-    "DOMAIN-SUFFIX,hisense.com,🇨🇳 国内服务", "DOMAIN-SUFFIX,tuya.com,🇨🇳 国内服务",
-
-    // ── 推送SDK白名单：曾被广告规则集误杀导致App收不到推送 ──
-    "DOMAIN-SUFFIX,jpush.cn,🇨🇳 国内服务", "DOMAIN-SUFFIX,jpush.io,🇨🇳 国内服务", "DOMAIN-SUFFIX,jiguang.cn,🇨🇳 国内服务",
-    "DOMAIN,msg.umeng.com,🇨🇳 国内服务",
-    "DOMAIN-SUFFIX,getui.com,🇨🇳 国内服务", "DOMAIN-SUFFIX,getui.net,🇨🇳 国内服务",
-
-    // ── 小米账号/登录白名单：曾被广告规则集误杀导致登录/推送失败 ──
-    "DOMAIN,account.xiaomi.com,🇨🇳 国内服务", "DOMAIN,passport.xiaomi.com,🇨🇳 国内服务",
-    "DOMAIN,micloud.xiaomi.com,🇨🇳 国内服务", "DOMAIN,i.mi.com,🇨🇳 国内服务",
-
-    // ── 微信服务器IP段显式优先：防"无法连接当前WiFi"弹窗 ──
-    "IP-CIDR,101.226.0.0/16,🇨🇳 国内服务,no-resolve", "IP-CIDR,140.207.0.0/16,🇨🇳 国内服务,no-resolve",
-
-    // ── 误杀白名单：必须放在广告拦截/国内兜底之前 ──
-    // 这些域名历史上被广告规则集/国内规则集误收录过，前置放行避免功能异常
-    "DOMAIN-SUFFIX,wx.qq.com,DIRECT",
-    "DOMAIN-SUFFIX,pddpic.com,🇨🇳 国内服务",
-    "DOMAIN,connectivitycheck.gstatic.com,🇨🇳 国内服务",
-    "DOMAIN-SUFFIX,app-measurement.com,🌍 国外服务",
-    "DOMAIN-SUFFIX,firebaselogging.googleapis.com,🌍 国外服务",
-    "DOMAIN-SUFFIX,crashlytics.com,🌍 国外服务",
-    "DOMAIN-SUFFIX,firebase.io,🌍 国外服务",
-    "DOMAIN-SUFFIX,connect.facebook.net,🌍 国外服务",
-    "DOMAIN-SUFFIX,a-cdn.anthropic.com,🤖 AI服务",
-    "DOMAIN-SUFFIX,assets-proxy.anthropic.com,🤖 AI服务",
-    "DOMAIN-SUFFIX,bing.com,🌍 国外服务",
-    "DOMAIN,samsunghealth.com,🇨🇳 国内服务",
-    "DOMAIN,userlocation.googleapis.com,🌍 国外服务", "DOMAIN,voilatile-pa.googleapis.com,🌍 国外服务",
-    "DOMAIN,geller-pa.googleapis.com,🌍 国外服务", "DOMAIN,mobilemaps-pa-gz.googleapis.com,🌍 国外服务",
-    "DOMAIN,in.appcenter.ms,🪟 Microsoft", "DOMAIN,mobile.events.data.microsoft.com,🪟 Microsoft",
-    "DOMAIN,samsungosp.com,🇨🇳 国内服务",
-    "DOMAIN,browser-intake-us5-datadoghq.com,🌍 国外服务",
-
-    // ── 云存储/支付CDN 强制走代理（这两个域名常被国内规则集误收录成
-    //    国内域名，实际是境外服务，误判会导致访问失败）──
-    "DOMAIN-SUFFIX,cloudflarestorage.com,🌍 国外服务",
-    "DOMAIN-SUFFIX,paddle.com,🌍 国外服务",
-
-    // ── 精确广告拦截：三星系统级广告推送，域名级封堵比规则集更彻底 ──
-    "DOMAIN,galaxystore.ad-survey.com,REJECT",
-    "DOMAIN,dls2.bigdata.samsung.com.cn,REJECT",
-
-    // ── 证券/保险类金融白名单：直连避免境外IP触发异地登录风控 ──
-    "DOMAIN-SUFFIX,cpic.com.cn,🇨🇳 国内服务", "DOMAIN-SUFFIX,zhongan.com,🇨🇳 国内服务",
-    "DOMAIN-SUFFIX,eastmoney.com,🇨🇳 国内服务", "DOMAIN-SUFFIX,htsc.com.cn,🇨🇳 国内服务",
-    "DOMAIN-SUFFIX,gtja.com,🇨🇳 国内服务", "DOMAIN-SUFFIX,dingxiangyun.com,🇨🇳 国内服务",
-    "DOMAIN-SUFFIX,rong360.com,🇨🇳 国内服务", "DOMAIN-SUFFIX,99bill.com,🇨🇳 国内服务",
-    "DOMAIN-SUFFIX,chinapay.com,🇨🇳 国内服务", "DOMAIN-SUFFIX,yeepay.com,🇨🇳 国内服务",
-    "DOMAIN-SUFFIX,jdpay.com,🇨🇳 国内服务",
-
-    // ── STUN/TURN 域名+端口双重封堵（防WebRTC真实IP泄露）──
-    "DOMAIN-REGEX,^(stun|turn|stuns|turns)\\.,REJECT-DROP",
-    "DOMAIN-REGEX,[-.]stun[-.],REJECT-DROP",
-    "DOMAIN-REGEX,[-.]turn[-.],REJECT-DROP",
-    "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
-    "AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP",
-    "AND,((NETWORK,UDP),(DST-PORT,19302-19305)),REJECT-DROP",
-    "AND,((NETWORK,TCP),(DST-PORT,3478-3480)),REJECT-DROP",
-    "AND,((NETWORK,TCP),(DST-PORT,5349-5355)),REJECT-DROP",
-
-    // ── DNS 明文/加密泄露全端口封堵（境外DNS用REJECT-DROP静默丢包，
-    //    不返回RST/ICMP，避免暴露"这里有拦截行为"这个可探测特征）──
-    "AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((GEOIP,CN)))),REJECT-DROP",
-    "AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((GEOIP,CN)))),REJECT-DROP",
-    "AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((GEOIP,CN)))),REJECT-DROP",
-    "AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((GEOIP,CN)))),REJECT-DROP",
-    "DOMAIN,dns.google,REJECT-DROP", "DOMAIN,cloudflare-dns.com,REJECT-DROP",
-    "DOMAIN,mozilla.cloudflare-dns.com,REJECT-DROP", "DOMAIN,dns.quad9.net,REJECT-DROP",
-    "DOMAIN,doh.opendns.com,REJECT-DROP", "DOMAIN,dns.adguard.com,REJECT-DROP",
-    "DOMAIN,doh.pub,REJECT-DROP", "DOMAIN,dns.alidns.com,REJECT-DROP", "DOMAIN,doh.360.cn,REJECT-DROP",
-
-    // ── 明文协议境外封堵（防恶意软件/异常App通过代理外联明文协议）──
-    "AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((GEOIP,CN)))),REJECT-DROP",
-    "AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((GEOIP,CN)))),REJECT-DROP",
-    "AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((GEOIP,CN)))),REJECT-DROP",
-
-    // 反钓鱼：钓鱼网站域名，来自 SukkaW/Surge 维护的反钓鱼列表
-    "RULE-SET,phishing,REJECT-DROP",
-
-    "RULE-SET,private,🔒 私有网络", "RULE-SET,private_ip,🔒 私有网络,no-resolve",
-    // 苹果/微软/游戏 国内加速域名：硬编码直连，不经过"国内服务"分组
-    // ——即使用户把"国内服务"手动切到别的选项，这几个域名依然天然直连，
-    // 不受影响（这些是CDN加速用的国内专线域名，没有理由走代理）
-    "RULE-SET,games_cn,DIRECT", "RULE-SET,apple_cn,DIRECT", "RULE-SET,microsoft_cn,DIRECT",
-    "RULE-SET,ads,🛑 广告拦截",
-
-    // QUIC：境内直连，境外一律拒绝逼迫回退TCP（否则绕过下方域名分流）
-    "AND,((NETWORK,UDP),(DST-PORT,443),(GEOIP,CN)),🇨🇳 国内服务",
-    "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((GEOIP,CN)))),REJECT-DROP",
-
-    // ── IP泄露检测网站强制走代理：必须在国内兜底之前，
-    //    防止这类网站被误判成国内域名导致测试结果不准 ──
-    "DOMAIN-SUFFIX,browserleaks.com,🌍 国外服务", "DOMAIN-SUFFIX,browserleaks.org,🌍 国外服务",
-    "DOMAIN-SUFFIX,ipleak.net,🌍 国外服务", "DOMAIN-SUFFIX,dnsleaktest.com,🌍 国外服务",
-    "DOMAIN-SUFFIX,dnsleak.com,🌍 国外服务", "DOMAIN-SUFFIX,whoer.net,🌍 国外服务",
-    "DOMAIN-SUFFIX,whatismyipaddress.com,🌍 国外服务", "DOMAIN-SUFFIX,ipinfo.io,🌍 国外服务",
-    "DOMAIN-SUFFIX,ip-api.com,🌍 国外服务", "DOMAIN-SUFFIX,ifconfig.me,🌍 国外服务",
-    "DOMAIN-SUFFIX,ip.sb,🌍 国外服务", "DOMAIN-SUFFIX,ipify.org,🌍 国外服务",
-
-    // 微信：rule-provider + 关键域名兜底
-    "RULE-SET,wechat,DIRECT", "DOMAIN-SUFFIX,weixin.qq.com,DIRECT", "DOMAIN-SUFFIX,wechat.com,DIRECT", "DOMAIN-SUFFIX,servicewechat.com,DIRECT", "DOMAIN-SUFFIX,tenpay.com,DIRECT", "DOMAIN-SUFFIX,qq.com,DIRECT", "DOMAIN-SUFFIX,qpic.cn,DIRECT", "DOMAIN-SUFFIX,qlogo.cn,DIRECT", "DOMAIN-SUFFIX,gtimg.com,DIRECT", "PROCESS-NAME,com.tencent.mm,DIRECT",
-    // "Weixin"后部分安装仍沿用旧进程名，两个都匹配更保险）
-    "PROCESS-NAME-WILDCARD,*WeChat*,DIRECT", "PROCESS-NAME-WILDCARD,*Weixin*,DIRECT",
-
-    // ── 银行/支付App 进程级强制直连（TUN模式下银行App能感知代理层存在，
-    //    进程级DIRECT最彻底，比域名规则更可靠）──
-    "PROCESS-NAME-WILDCARD,*com.icbc*,DIRECT", "PROCESS-NAME-WILDCARD,*com.ccb*,DIRECT",
-    "PROCESS-NAME-WILDCARD,*com.boc*,DIRECT", "PROCESS-NAME-WILDCARD,*com.abchina*,DIRECT",
-    "PROCESS-NAME-WILDCARD,*com.cmbchina*,DIRECT", "PROCESS-NAME-WILDCARD,*com.cmbc*,DIRECT",
-    "PROCESS-NAME-WILDCARD,*com.bankcomm*,DIRECT", "PROCESS-NAME-WILDCARD,*com.psbc*,DIRECT",
-    "PROCESS-NAME-WILDCARD,*com.spdb*,DIRECT", "PROCESS-NAME-WILDCARD,*com.cib*,DIRECT",
-    "PROCESS-NAME-WILDCARD,*com.pingan*,DIRECT", "PROCESS-NAME-WILDCARD,*com.cgbchina*,DIRECT",
-    "PROCESS-NAME-WILDCARD,*com.hxb*,DIRECT", "PROCESS-NAME-WILDCARD,*com.cebbank*,DIRECT",
-    "PROCESS-NAME-WILDCARD,*com.citic*,DIRECT",
-    "PROCESS-NAME-WILDCARD,*com.tenpay*,DIRECT", "PROCESS-NAME-WILDCARD,*com.unionpay*,DIRECT",
-    "PROCESS-NAME-WILDCARD,*com.eg.android.Alipay*,DIRECT",
-    // 12306：反爬虫/反代理检测极严格，经常直接拒绝走代理的连接，
-    // 需要和银行同等级别的进程级直连保护
-    "PROCESS-NAME-WILDCARD,*com.MobileTicket*,DIRECT",
-
-    // ── 支付宝/银行 域名层硬编码直连：与上面的进程规则形成双重保护。
-    //    进程识别在部分国产系统上不一定100%可靠，域名层单独兜底一次，
-    //    不依赖末尾通用国内兜底规则（那条走的是可切换分组）──
-    "DOMAIN-SUFFIX,alipay.com,DIRECT", "DOMAIN-SUFFIX,alipayobjects.com,DIRECT",
-    "DOMAIN-SUFFIX,abchina.com,DIRECT", "DOMAIN-SUFFIX,abchina.com.cn,DIRECT",
-    "DOMAIN-SUFFIX,icbc.com.cn,DIRECT", "DOMAIN-SUFFIX,ccb.com,DIRECT",
-    "DOMAIN-SUFFIX,boc.cn,DIRECT", "DOMAIN-SUFFIX,bankofchina.com,DIRECT",
-    "DOMAIN-SUFFIX,cmbchina.com,DIRECT", "DOMAIN-SUFFIX,bankcomm.com,DIRECT",
-    "DOMAIN-SUFFIX,psbc.com,DIRECT", "DOMAIN-SUFFIX,spdb.com.cn,DIRECT",
-    "DOMAIN-SUFFIX,cib.com.cn,DIRECT", "DOMAIN-SUFFIX,cmbc.com.cn,DIRECT",
-    "DOMAIN-SUFFIX,pingan.com,DIRECT", "DOMAIN-SUFFIX,cgbchina.com.cn,DIRECT",
-    "DOMAIN-SUFFIX,hxb.com.cn,DIRECT", "DOMAIN-SUFFIX,cebbank.com,DIRECT",
-    "DOMAIN-SUFFIX,citicbank.com,DIRECT", "DOMAIN-SUFFIX,ecitic.com,DIRECT",
-    "DOMAIN-SUFFIX,unionpay.com,DIRECT", "DOMAIN-SUFFIX,95516.com,DIRECT",
-    "DOMAIN-SUFFIX,wechatpay.cn,DIRECT",
-    // 微博：日活巨大，有异地登录风控历史，域名层硬编码直连
-    "DOMAIN-SUFFIX,weibo.com,DIRECT", "DOMAIN-SUFFIX,weibocdn.com,DIRECT",
-    // 12306 域名层
-    "DOMAIN-SUFFIX,12306.cn,DIRECT",
-
-    "RULE-SET,ai,🤖 AI服务",
-    "RULE-SET,youtube,📺 YouTube",
-    "RULE-SET,netflix,📺 Media", "RULE-SET,netflix_ip,📺 Media,no-resolve", "RULE-SET,disney,📺 Media", "RULE-SET,hbo,📺 Media", "RULE-SET,twitch,📺 Media",
-    "RULE-SET,hulu,📺 Media", "RULE-SET,amazon,📺 Media", "RULE-SET,bahamut,📺 Media", "RULE-SET,biliintl,📺 Media", "RULE-SET,abema,📺 Media", "RULE-SET,bbc,📺 Media",
-    "RULE-SET,google,🔍 Google", "RULE-SET,google_ip,🔍 Google,no-resolve",
-    "RULE-SET,telegram,📲 Telegram", "RULE-SET,telegram_ip,📲 Telegram,no-resolve",
-    "RULE-SET,github,🪟 Microsoft", "RULE-SET,microsoft,🪟 Microsoft", "RULE-SET,azure,🪟 Microsoft", "RULE-SET,onedrive,🪟 Microsoft",
-    "RULE-SET,apple,🍎 Apple", "RULE-SET,icloud,🍎 Apple",
-    "RULE-SET,steam,🎮 Steam", "RULE-SET,epicgames,🎮 Steam", "RULE-SET,ea,🎮 Steam", "RULE-SET,ubisoft,🎮 Steam", "RULE-SET,blizzard,🎮 Steam",
-    "RULE-SET,tiktok,📱 TikTok",
-    "RULE-SET,twitter,🐦 Twitter", "RULE-SET,twitter_ip,🐦 Twitter,no-resolve",
-    "RULE-SET,spotify,🎵 Spotify",
-
-    "RULE-SET,gitlab,🌍 国外服务", "RULE-SET,facebook,🌍 国外服务", "RULE-SET,instagram,🌍 国外服务",
-    "RULE-SET,linkedin,🌍 国外服务", "RULE-SET,discord,🌍 国外服务", "RULE-SET,paypal,🌍 国外服务",
-    "RULE-SET,aws,🌍 国外服务", "RULE-SET,dropbox,🌍 国外服务", "RULE-SET,scholar,🌍 国外服务",
-    "RULE-SET,cloudflare_ip,🌍 国外服务,no-resolve", "RULE-SET,fastly_ip,🌍 国外服务,no-resolve",
-
-    // BT Tracker：国内种子tracker走直连提升连接成功率
-    "RULE-SET,tracker,🇨🇳 国内服务",
-
-    // AWS中国区FCM边缘IP段：属于Google推送但走AWS中国区中转，
-    // GEOIP,CN会误判为国内，这里显式提前指定走代理避免推送异常
-    "IP-CIDR,54.223.0.0/16,🤖 AI服务,no-resolve",
-
-    // ── 远控/内网穿透工具：进程级强制拒绝并静默丢包 ──
-    // 请删除对应那一行，否则该工具将完全无法连接。
-    // ── 远控/内网穿透工具：进程级路由到"🔧 远控工具"分组（默认REJECT-
-    //    DROP静默拒绝，未来要用时在客户端里把该分组切成DIRECT即可，
-    //    上的可执行文件名大多首字母大写，大小写敏感的匹配可能导致
-    //    全小写写法在Windows上失效，两种大小写都写上更保险。
-    "PROCESS-NAME-WILDCARD,*teamviewer*,🔧 远控工具", "PROCESS-NAME-WILDCARD,*TeamViewer*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*anydesk*,🔧 远控工具", "PROCESS-NAME-WILDCARD,*AnyDesk*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*rustdesk*,🔧 远控工具", "PROCESS-NAME-WILDCARD,*RustDesk*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*todesk*,🔧 远控工具", "PROCESS-NAME-WILDCARD,*ToDesk*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*sunlogin*,🔧 远控工具", "PROCESS-NAME-WILDCARD,*SunloginClient*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*oray*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*tailscale*,🔧 远控工具", "PROCESS-NAME-WILDCARD,*Tailscale*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*zerotier*,🔧 远控工具", "PROCESS-NAME-WILDCARD,*ZeroTier*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*frpc*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*frps*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*cloudflared*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*ngrok*,🔧 远控工具",
-    "PROCESS-NAME-WILDCARD,*natapp*,🔧 远控工具",
-
-    "RULE-SET,cn,🇨🇳 国内服务", "RULE-SET,geolocation-cn,🇨🇳 国内服务", "GEOIP,CN,🇨🇳 国内服务,no-resolve",
-    "RULE-SET,gfw,🌍 国外服务",
-    "MATCH,🐟 漏网之鱼"
-  ];
-
-  config.tun = {
-    enable: true,
-    // mixed：TCP 走 system、UDP 走 gvisor（2025–2026 社区主流推荐）
-    stack: "mixed",
-    "auto-route": true,
-    "strict-route": true,
-    "auto-redirect": false,
-    "auto-detect-interface": true,
-    "dns-hijack": ["any:53", "tcp://any:53"],
-    "inet4-route-only": false,
-    mtu: 1500,
-    gso: false,
-    "gso-max-size": 65536,
-    "udp-timeout": 300
-  };
+  config["tun"] = {
+  "enable": true,
+  "stack": "mixed",
+  "auto-route": true,
+  "auto-redirect": false,
+  "strict-route": true,
+  "auto-detect-interface": true,
+  "inet4-route-only": false,
+  "mtu": 1500,
+  "gso": false,
+  "gso-max-size": 65536,
+  "udp-timeout": 300,
+  "dns-hijack": [
+    "any:53",
+    "tcp://any:53"
+  ]
+};
 
   var DOMESTIC_DNS = ["223.5.5.5", "223.6.6.6"];
 
-  config.dns = {
-    enable: true, ipv6: false,
-    "cache-algorithm": "arc",
-    "prefer-h3": false,
-    "use-hosts": true, "use-system-hosts": true,
-    "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/16",
-    "fake-ip-filter-mode": "rule",
-    "fake-ip-filter": [
-      "DOMAIN-SUFFIX,abchina.com,real-ip", "DOMAIN-SUFFIX,abchina.com.cn,real-ip",
-      "DOMAIN-SUFFIX,icbc.com.cn,real-ip", "DOMAIN-SUFFIX,ccb.com,real-ip",
-      "DOMAIN-SUFFIX,boc.cn,real-ip", "DOMAIN-SUFFIX,bankofchina.com,real-ip",
-      "DOMAIN-SUFFIX,cmbchina.com,real-ip", "DOMAIN-SUFFIX,bankcomm.com,real-ip",
-      "DOMAIN-SUFFIX,psbc.com,real-ip", "DOMAIN-SUFFIX,spdb.com.cn,real-ip",
-      "DOMAIN-SUFFIX,cib.com.cn,real-ip", "DOMAIN-SUFFIX,cmbc.com.cn,real-ip",
-      "DOMAIN-SUFFIX,pingan.com,real-ip", "DOMAIN-SUFFIX,cgbchina.com.cn,real-ip",
-      "DOMAIN-SUFFIX,hxb.com.cn,real-ip", "DOMAIN-SUFFIX,cebbank.com,real-ip",
-      "DOMAIN-SUFFIX,citicbank.com,real-ip", "DOMAIN-SUFFIX,ecitic.com,real-ip",
-      "DOMAIN-SUFFIX,unionpay.com,real-ip", "DOMAIN-SUFFIX,95516.com,real-ip",
-      "DOMAIN-SUFFIX,alipay.com,real-ip", "DOMAIN-SUFFIX,alipayobjects.com,real-ip",
-      "DOMAIN-SUFFIX,tenpay.com,real-ip", "DOMAIN-SUFFIX,wechatpay.cn,real-ip",
-      "DOMAIN-SUFFIX,servicewechat.com,real-ip", "DOMAIN-SUFFIX,weixinbridge.com,real-ip",
-      "DOMAIN-SUFFIX,weixin.qq.com,real-ip", "DOMAIN-SUFFIX,wx.qq.com,real-ip",
-      // 银行风控SDK：这些需要拿到真实IP才能正常完成设备指纹校验
-      "DOMAIN-SUFFIX,tongdun.net,real-ip", "DOMAIN-SUFFIX,ishumei.com,real-ip",
-      "DOMAIN-SUFFIX,geetest.com,real-ip", "DOMAIN-SUFFIX,trustdevice.net,real-ip",
-      "DOMAIN-SUFFIX,aegis.qq.com,real-ip", "DOMAIN-SUFFIX,jpush.cn,real-ip",
-      "DOMAIN-SUFFIX,jpush.io,real-ip", "DOMAIN-SUFFIX,jiguang.cn,real-ip",
-      "DOMAIN-SUFFIX,rongcloud.cn,real-ip", "DOMAIN-SUFFIX,rongcloud.com,real-ip",
-      "DOMAIN-SUFFIX,umeng.com,real-ip", "DOMAIN-SUFFIX,umengcloud.com,real-ip",
-      "DOMAIN-SUFFIX,yeepay.com,real-ip", "DOMAIN-SUFFIX,jdpay.com,real-ip",
-      // 反诈/清算机构
-      "DOMAIN-SUFFIX,gfbazc.com,real-ip", "DOMAIN-SUFFIX,netsunion.org.cn,real-ip",
-      // 国内基础设施
-      "GEOSITE,private,real-ip",
-      "DOMAIN-SUFFIX,lan,real-ip",
-      "DOMAIN,localhost.ptlogin2.qq.com,real-ip",
-      // 三大运营商WiFi认证门户：fake-ip会导致认证页面无法弹出
-      "DOMAIN-SUFFIX,10086.cn,real-ip", "DOMAIN-SUFFIX,10010.com,real-ip", "DOMAIN-SUFFIX,10000.cn,real-ip",
-      // 网络连通性检测：fake-ip会让系统误判"无网络"
-      "DOMAIN-SUFFIX,msftconnecttest.com,real-ip", "DOMAIN-SUFFIX,msftncsi.com,real-ip",
-      "DOMAIN,captive.apple.com,real-ip", "DOMAIN,connectivitycheck.gstatic.com,real-ip",
-      // 游戏主机NAT探测
-      "DOMAIN-SUFFIX,srv.nintendo.net,real-ip",
-      "DOMAIN-SUFFIX,stun.playstation.net,real-ip",
-      "DOMAIN-SUFFIX,xboxlive.com,real-ip",
-      "DOMAIN-KEYWORD,xbox,real-ip",
-      // 国内主流品牌/服务：fake-ip会破坏这些服务自身的CDN调度精度
-      "DOMAIN-SUFFIX,mi.com,real-ip", "DOMAIN-SUFFIX,xiaomi.com,real-ip", "DOMAIN-SUFFIX,miui.com,real-ip",
-      "DOMAIN-SUFFIX,huawei.com,real-ip", "DOMAIN-SUFFIX,huaweicloud.com,real-ip", "DOMAIN-SUFFIX,hicloud.com,real-ip",
-      "DOMAIN-SUFFIX,vivo.com,real-ip", "DOMAIN-SUFFIX,oppo.com,real-ip", "DOMAIN-SUFFIX,meizu.com,real-ip",
-      "DOMAIN-SUFFIX,qq.com,real-ip", "DOMAIN-SUFFIX,wechat.com,real-ip", "DOMAIN-SUFFIX,tencent.com,real-ip",
-      "DOMAIN-SUFFIX,qpic.cn,real-ip", "DOMAIN-SUFFIX,qlogo.cn,real-ip", "DOMAIN-SUFFIX,gtimg.com,real-ip",
-      "DOMAIN-SUFFIX,myqcloud.com,real-ip",
-      "DOMAIN-SUFFIX,taobao.com,real-ip", "DOMAIN-SUFFIX,tmall.com,real-ip", "DOMAIN-SUFFIX,alicdn.com,real-ip",
-      "DOMAIN-SUFFIX,aliyun.com,real-ip", "DOMAIN-SUFFIX,amap.com,real-ip", "DOMAIN-SUFFIX,dingtalk.com,real-ip",
-      "DOMAIN-SUFFIX,bytedance.com,real-ip", "DOMAIN-SUFFIX,byteimg.com,real-ip", "DOMAIN-SUFFIX,douyin.com,real-ip",
-      "DOMAIN-SUFFIX,toutiao.com,real-ip",
-      "DOMAIN-SUFFIX,baidu.com,real-ip", "DOMAIN-SUFFIX,bdstatic.com,real-ip", "DOMAIN-SUFFIX,bcebos.com,real-ip",
-      "DOMAIN-SUFFIX,meituan.com,real-ip", "DOMAIN-SUFFIX,pinduoduo.com,real-ip", "DOMAIN-SUFFIX,jd.com,real-ip",
-      "DOMAIN-SUFFIX,kuaishou.com,real-ip", "DOMAIN-SUFFIX,xiaohongshu.com,real-ip",
-      "DOMAIN-SUFFIX,163.com,real-ip", "DOMAIN-SUFFIX,126.net,real-ip",
-      "DOMAIN-SUFFIX,bilibili.com,real-ip",
-      // 滴滴出行：位置敏感度和地图同级，fake-ip会导致叫车定位/派单异常
-      "DOMAIN-SUFFIX,didichuxing.com,real-ip", "DOMAIN-SUFFIX,xiaojukeji.com,real-ip",
-      // 饿了么
-      "DOMAIN-SUFFIX,ele.me,real-ip",
-      "DOMAIN-SUFFIX,mihoyo.com,real-ip", "DOMAIN-SUFFIX,hoyoverse.com,real-ip",
-      // 阿里云盘：大文件传输对CDN调度精度敏感
-      "DOMAIN-SUFFIX,aliyundrive.com,real-ip", "DOMAIN-SUFFIX,alipan.com,real-ip",
-      // 微博：日活巨大，此前完全未覆盖
-      "DOMAIN-SUFFIX,weibo.com,real-ip", "DOMAIN-SUFFIX,weibocdn.com,real-ip",
-      // 知乎/喜马拉雅/豆瓣
-      "DOMAIN-SUFFIX,zhihu.com,real-ip", "DOMAIN-SUFFIX,zhimg.com,real-ip",
-      "DOMAIN-SUFFIX,ximalaya.com,real-ip", "DOMAIN-SUFFIX,douban.com,real-ip",
-      // 国内 AI 服务商
-      "DOMAIN-SUFFIX,deepseek.com,real-ip", "DOMAIN-SUFFIX,moonshot.cn,real-ip", "DOMAIN-SUFFIX,zhipuai.cn,real-ip",
-      "DOMAIN-SUFFIX,chatglm.cn,real-ip", "DOMAIN-SUFFIX,minimax.chat,real-ip", "DOMAIN-SUFFIX,iflytek.com,real-ip",
-      // 视频
-      "DOMAIN-SUFFIX,iqiyi.com,real-ip", "DOMAIN-SUFFIX,youku.com,real-ip", "DOMAIN-SUFFIX,bilivideo.cn,real-ip",
-      // 路由器管理后台
-      "DOMAIN-SUFFIX,router.asus.com,real-ip", "DOMAIN-SUFFIX,tplinkwifi.net,real-ip",
-      "DOMAIN-SUFFIX,tendawifi.com,real-ip", "DOMAIN-SUFFIX,routerlogin.com,real-ip", "DOMAIN-SUFFIX,tplogin.cn,real-ip",
-      // 不代表这些工具被放行
-      "DOMAIN-SUFFIX,todesk.com,real-ip", "DOMAIN-SUFFIX,teamviewer.com,real-ip",
-      "DOMAIN-SUFFIX,anydesk.com,real-ip", "DOMAIN-SUFFIX,rustdesk.com,real-ip",
-      // 本地回环/内部域名
-      "DOMAIN,localhost.sec.qq.com,real-ip", "DOMAIN,localhost.work.weixin.qq.com,real-ip",
-      // NTP
-      "DOMAIN-SUFFIX,ntp.aliyun.com,real-ip", "DOMAIN-SUFFIX,ntp.tencent.com,real-ip",
-      "DOMAIN-SUFFIX,pool.ntp.org,real-ip", "DOMAIN,time.cloudflare.com,real-ip",
-      // 国内DoH自身（防死锁：解析DoH服务器域名不能依赖DoH本身）
-      "DOMAIN,doh.pub,real-ip", "DOMAIN,dns.alidns.com,real-ip",
-      // Google FCM推送：直连保持推送可用
-      "DOMAIN,mtalk.google.com,real-ip",
-      // 政务/铁路
-      "DOMAIN-SUFFIX,gov.cn,real-ip", "DOMAIN-SUFFIX,12306.cn,real-ip",
-      // 仍被端口层REJECT-DROP规则拦截，不会真正泄露
-      "DOMAIN-SUFFIX,stun.l.google.com,real-ip", "DOMAIN,global.turn.twilio.com,real-ip",
-      // IP-in-domain服务（如 1-2-3-4.sslip.io）
-      "DOMAIN-SUFFIX,sslip.io,real-ip", "DOMAIN-SUFFIX,nip.io,real-ip",
-      // PTR反向查询
-      "DOMAIN-SUFFIX,in-addr.arpa,real-ip", "DOMAIN-SUFFIX,ip6.arpa,real-ip",
-      // 补充：来自 SukkaW ruleset 的边缘情况
-      "DOMAIN-SUFFIX,bogon,real-ip", "DOMAIN-SUFFIX,internal,real-ip", "DOMAIN-SUFFIX,localdomain,real-ip",
-      "DOMAIN-KEYWORD,stun,real-ip", // 与端口层REJECT-DROP配合，仅消除DNS噪音
-      "DOMAIN,lancache.steamcontent.com,real-ip", // Steam局域网加速探测
-      "DOMAIN,dns.msftncsi.com,real-ip",
-      // 显式兜底：未命中以上任何条目的境外域名 → fake-ip
-      "MATCH,fake-ip"
+  config["dns"] = {
+  "enable": true,
+  "listen": "127.0.0.1:1053",
+  "ipv6": false,
+  "enhanced-mode": "fake-ip",
+  "fake-ip-range": "198.18.0.1/16",
+  "fake-ip-cache-size": 4096,
+  "ttl": 600,
+  "min-ttl": 60,
+  "max-ttl": 3600,
+  "cache-size": 8192,
+  "cache-algorithm": "arc",
+  "prefer-h3": false,
+  "use-hosts": true,
+  "use-system-hosts": false,
+  "disable-qtype-65": true,
+  "fake-ip-filter-mode": "rule",
+  "fake-ip-filter": [
+    "DOMAIN-SUFFIX,abchina.com,real-ip",
+    "DOMAIN-SUFFIX,icbc.com.cn,real-ip",
+    "DOMAIN-SUFFIX,ccb.com,real-ip",
+    "DOMAIN-SUFFIX,boc.cn,real-ip",
+    "DOMAIN-SUFFIX,cmbchina.com,real-ip",
+    "DOMAIN-SUFFIX,bankcomm.com,real-ip",
+    "DOMAIN-SUFFIX,psbc.com,real-ip",
+    "DOMAIN-SUFFIX,spdb.com.cn,real-ip",
+    "DOMAIN-SUFFIX,cib.com.cn,real-ip",
+    "DOMAIN-SUFFIX,cmbc.com.cn,real-ip",
+    "DOMAIN-SUFFIX,pingan.com,real-ip",
+    "DOMAIN-SUFFIX,cgbchina.com.cn,real-ip",
+    "DOMAIN-SUFFIX,hxb.com.cn,real-ip",
+    "DOMAIN-SUFFIX,cebbank.com,real-ip",
+    "DOMAIN-SUFFIX,citicbank.com,real-ip",
+    "DOMAIN-SUFFIX,ecitic.com,real-ip",
+    "DOMAIN-SUFFIX,bankofchina.com,real-ip",
+    "DOMAIN-SUFFIX,cmbi.com.cn,real-ip",
+    "DOMAIN-SUFFIX,netsunion.org.cn,real-ip",
+    "DOMAIN-SUFFIX,gfbazc.com,real-ip",
+    "DOMAIN-SUFFIX,fzuol.com,real-ip",
+    "DOMAIN-SUFFIX,mps.gov.cn,real-ip",
+    "DOMAIN-SUFFIX,unionpay.com,real-ip",
+    "DOMAIN-SUFFIX,95516.com,real-ip",
+    "DOMAIN-SUFFIX,alipay.com,real-ip",
+    "DOMAIN-SUFFIX,alipayobjects.com,real-ip",
+    "DOMAIN-SUFFIX,tenpay.com,real-ip",
+    "DOMAIN-SUFFIX,wechatpay.cn,real-ip",
+    "DOMAIN-SUFFIX,servicewechat.com,real-ip",
+    "DOMAIN-SUFFIX,weixinbridge.com,real-ip",
+    "DOMAIN-SUFFIX,url.cn,real-ip",
+    "DOMAIN-SUFFIX,tongdun.net,real-ip",
+    "DOMAIN-SUFFIX,tongduncdn.com,real-ip",
+    "DOMAIN-SUFFIX,ishumei.com,real-ip",
+    "DOMAIN-SUFFIX,geetest.com,real-ip",
+    "DOMAIN-SUFFIX,trustdevice.net,real-ip",
+    "DOMAIN-SUFFIX,aegis.qq.com,real-ip",
+    "DOMAIN-SUFFIX,antpay.com,real-ip",
+    "DOMAIN-SUFFIX,riskradar.net,real-ip",
+    "DOMAIN-SUFFIX,abchina.com.cn,real-ip",
+    "DOMAIN-SUFFIX,jpush.cn,real-ip",
+    "DOMAIN-SUFFIX,jpush.io,real-ip",
+    "DOMAIN-SUFFIX,jiguang.cn,real-ip",
+    "DOMAIN-SUFFIX,rongcloud.cn,real-ip",
+    "DOMAIN-SUFFIX,rongcloud.com,real-ip",
+    "DOMAIN-SUFFIX,umeng.com,real-ip",
+    "DOMAIN-SUFFIX,umengcloud.com,real-ip",
+    "DOMAIN-SUFFIX,dingxiangyun.com,real-ip",
+    "DOMAIN-SUFFIX,dingxiangyun.cn,real-ip",
+    "DOMAIN-SUFFIX,rong360.com,real-ip",
+    "DOMAIN-SUFFIX,yzf.com.cn,real-ip",
+    "DOMAIN-SUFFIX,99bill.com,real-ip",
+    "DOMAIN-SUFFIX,chinapay.com,real-ip",
+    "DOMAIN-SUFFIX,yeepay.com,real-ip",
+    "DOMAIN-SUFFIX,jdpay.com,real-ip",
+    "DOMAIN-SUFFIX,weixin.qq.com,real-ip",
+    "DOMAIN-SUFFIX,wx.qq.com,real-ip",
+    "DOMAIN-SUFFIX,weixin.com,real-ip",
+    "RULE-SET,category-ads-all,fake-ip",
+    "RULE-SET,geolocation-cn,real-ip",
+    "RULE-SET,cn,real-ip",
+    "RULE-SET,bilibili,real-ip",
+    "GEOSITE,cn,real-ip",
+    "DOMAIN-SUFFIX,localhost,real-ip",
+    "DOMAIN-SUFFIX,local,real-ip",
+    "DOMAIN-SUFFIX,lan,real-ip",
+    "DOMAIN-SUFFIX,internal,real-ip",
+    "DOMAIN-SUFFIX,localdomain,real-ip",
+    "DOMAIN-SUFFIX,home.arpa,real-ip",
+    "DOMAIN-SUFFIX,example,real-ip",
+    "DOMAIN-SUFFIX,invalid,real-ip",
+    "DOMAIN-SUFFIX,test,real-ip",
+    "DOMAIN-SUFFIX,msftconnecttest.com,real-ip",
+    "DOMAIN-SUFFIX,msftncsi.com,real-ip",
+    "DOMAIN,captive.apple.com,real-ip",
+    "DOMAIN,connectivitycheck.gstatic.com,real-ip",
+    "DOMAIN-SUFFIX,gstatic.com,real-ip",
+    "DOMAIN-SUFFIX,10086.cn,real-ip",
+    "DOMAIN-SUFFIX,10010.com,real-ip",
+    "DOMAIN-SUFFIX,10000.cn,real-ip",
+    "DOMAIN-SUFFIX,minorshield.qq.com,real-ip",
+    "DOMAIN-SUFFIX,icloud.com.cn,real-ip",
+    "DOMAIN-SUFFIX,apple.com.cn,real-ip",
+    "DOMAIN-SUFFIX,mzstatic.com.cn,real-ip",
+    "DOMAIN,gsa.apple.com,real-ip",
+    "DOMAIN,configuration.apple.com,real-ip",
+    "DOMAIN,mesu.apple.com,real-ip",
+    "DOMAIN,time.apple.com,real-ip",
+    "DOMAIN-SUFFIX,windowsupdate.com,real-ip",
+    "DOMAIN-SUFFIX,update.microsoft.com,real-ip",
+    "DOMAIN-SUFFIX,download.microsoft.com,real-ip",
+    "DOMAIN-SUFFIX,microsoft.com.cn,real-ip",
+    "DOMAIN-SUFFIX,chinacloudapi.cn,real-ip",
+    "DOMAIN-SUFFIX,azure.cn,real-ip",
+    "DOMAIN-SUFFIX,microsoftonline.cn,real-ip",
+    "DOMAIN-SUFFIX,msftauth.net,real-ip",
+    "DOMAIN,time.windows.com,real-ip",
+    "DOMAIN-SUFFIX,mi.com,real-ip",
+    "DOMAIN-SUFFIX,xiaomi.com,real-ip",
+    "DOMAIN-SUFFIX,miui.com,real-ip",
+    "DOMAIN-SUFFIX,micloud.com,real-ip",
+    "DOMAIN-SUFFIX,mi-img.com,real-ip",
+    "DOMAIN-SUFFIX,miwifi.com,real-ip",
+    "DOMAIN-SUFFIX,xiaomiev.com,real-ip",
+    "DOMAIN-SUFFIX,huawei.com,real-ip",
+    "DOMAIN-SUFFIX,huaweicloud.com,real-ip",
+    "DOMAIN-SUFFIX,hicloud.com,real-ip",
+    "DOMAIN-SUFFIX,vmall.com,real-ip",
+    "DOMAIN-SUFFIX,honor.com,real-ip",
+    "DOMAIN-SUFFIX,vivo.com,real-ip",
+    "DOMAIN-SUFFIX,vivoglobal.com,real-ip",
+    "DOMAIN-SUFFIX,oppo.com,real-ip",
+    "DOMAIN-SUFFIX,oppomobile.com,real-ip",
+    "DOMAIN-SUFFIX,meizu.com,real-ip",
+    "DOMAIN-SUFFIX,samsung.com.cn,real-ip",
+    "DOMAIN-SUFFIX,samsungapps.com,real-ip",
+    "DOMAIN-SUFFIX,samsungcloud.com,real-ip",
+    "DOMAIN-SUFFIX,samsungknox.com,real-ip",
+    "DOMAIN-SUFFIX,samsungdm.com,real-ip",
+    "DOMAIN-SUFFIX,qq.com,real-ip",
+    "DOMAIN-SUFFIX,wechat.com,real-ip",
+    "DOMAIN-SUFFIX,tencent.com,real-ip",
+    "DOMAIN-SUFFIX,tencent-cloud.com,real-ip",
+    "DOMAIN-SUFFIX,qpic.cn,real-ip",
+    "DOMAIN-SUFFIX,qlogo.cn,real-ip",
+    "DOMAIN-SUFFIX,gtimg.com,real-ip",
+    "DOMAIN-SUFFIX,gdtimg.com,real-ip",
+    "DOMAIN-SUFFIX,myqcloud.com,real-ip",
+    "DOMAIN-SUFFIX,taobao.com,real-ip",
+    "DOMAIN-SUFFIX,tmall.com,real-ip",
+    "DOMAIN-SUFFIX,tbcdn.cn,real-ip",
+    "DOMAIN-SUFFIX,alicdn.com,real-ip",
+    "DOMAIN-SUFFIX,aliyun.com,real-ip",
+    "DOMAIN-SUFFIX,amap.com,real-ip",
+    "DOMAIN-SUFFIX,autonavi.com,real-ip",
+    "DOMAIN-SUFFIX,ele.me,real-ip",
+    "DOMAIN-SUFFIX,dingtalk.com,real-ip",
+    "DOMAIN-SUFFIX,1688.com,real-ip",
+    "DOMAIN-SUFFIX,bytedance.com,real-ip",
+    "DOMAIN-SUFFIX,byteimg.com,real-ip",
+    "DOMAIN-SUFFIX,tosv.com,real-ip",
+    "DOMAIN-SUFFIX,douyin.com,real-ip",
+    "DOMAIN-SUFFIX,iesdouyin.com,real-ip",
+    "DOMAIN-SUFFIX,pstatp.com,real-ip",
+    "DOMAIN-SUFFIX,snssdk.com,real-ip",
+    "DOMAIN-SUFFIX,volccdn.com,real-ip",
+    "DOMAIN-SUFFIX,toutiao.com,real-ip",
+    "DOMAIN-SUFFIX,ixigua.com,real-ip",
+    "DOMAIN-SUFFIX,baidu.com,real-ip",
+    "DOMAIN-SUFFIX,bdstatic.com,real-ip",
+    "DOMAIN-SUFFIX,bdimg.com,real-ip",
+    "DOMAIN-SUFFIX,bcebos.com,real-ip",
+    "DOMAIN-SUFFIX,meituan.com,real-ip",
+    "DOMAIN-SUFFIX,meituan.net,real-ip",
+    "DOMAIN-SUFFIX,dianping.com,real-ip",
+    "DOMAIN-SUFFIX,pinduoduo.com,real-ip",
+    "DOMAIN-SUFFIX,jd.com,real-ip",
+    "DOMAIN-SUFFIX,jdcdn.com,real-ip",
+    "DOMAIN-SUFFIX,kuaishou.com,real-ip",
+    "DOMAIN-SUFFIX,ksyun.com,real-ip",
+    "DOMAIN-SUFFIX,xiaohongshu.com,real-ip",
+    "DOMAIN-SUFFIX,xhscdn.com,real-ip",
+    "DOMAIN-SUFFIX,netease.com,real-ip",
+    "DOMAIN-SUFFIX,163.com,real-ip",
+    "DOMAIN-SUFFIX,126.net,real-ip",
+    "DOMAIN-SUFFIX,unionpaysecure.com,real-ip",
+    "DOMAIN-SUFFIX,pingan.com.cn,real-ip",
+    "DOMAIN-SUFFIX,cpic.com.cn,real-ip",
+    "DOMAIN-SUFFIX,zhongan.com,real-ip",
+    "DOMAIN-SUFFIX,eastmoney.com,real-ip",
+    "DOMAIN-SUFFIX,htsc.com.cn,real-ip",
+    "DOMAIN-SUFFIX,gtja.com,real-ip",
+    "DOMAIN-SUFFIX,deepseek.com,real-ip",
+    "DOMAIN-SUFFIX,deepseek.ai,real-ip",
+    "DOMAIN-SUFFIX,moonshot.cn,real-ip",
+    "DOMAIN-SUFFIX,kimichat.com,real-ip",
+    "DOMAIN-SUFFIX,zhipuai.cn,real-ip",
+    "DOMAIN-SUFFIX,chatglm.cn,real-ip",
+    "DOMAIN-SUFFIX,baichuan-ai.com,real-ip",
+    "DOMAIN-SUFFIX,sensetime.com,real-ip",
+    "DOMAIN-SUFFIX,minimax.chat,real-ip",
+    "DOMAIN-SUFFIX,stepfun.com,real-ip",
+    "DOMAIN-SUFFIX,iflytek.com,real-ip",
+    "DOMAIN-SUFFIX,bilivideo.cn,real-ip",
+    "DOMAIN-SUFFIX,iqiyi.com,real-ip",
+    "DOMAIN-SUFFIX,youku.com,real-ip",
+    "DOMAIN-SUFFIX,asusrouter.com,real-ip",
+    "DOMAIN-SUFFIX,router.asus.com,real-ip",
+    "DOMAIN-SUFFIX,tplinkwifi.net,real-ip",
+    "DOMAIN-SUFFIX,tendawifi.com,real-ip",
+    "DOMAIN-SUFFIX,routerlogin.com,real-ip",
+    "DOMAIN-SUFFIX,tplogin.cn,real-ip",
+    "DOMAIN-SUFFIX,hiwifi.com,real-ip",
+    "DOMAIN-SUFFIX,phicomm.me,real-ip",
+    "DOMAIN-SUFFIX,local.adguard.org,real-ip",
+    "DOMAIN-SUFFIX,plex.direct,real-ip",
+    "DOMAIN-SUFFIX,ts.net,real-ip",
+    "DOMAIN-SUFFIX,todesk.com,real-ip",
+    "DOMAIN-SUFFIX,oray.com,real-ip",
+    "DOMAIN-SUFFIX,sunlogin.com,real-ip",
+    "DOMAIN-SUFFIX,teamviewer.com,real-ip",
+    "DOMAIN-SUFFIX,anydesk.com,real-ip",
+    "DOMAIN-SUFFIX,rustdesk.com,real-ip",
+    "DOMAIN,localhost.ptlogin2.qq.com,real-ip",
+    "DOMAIN,localhost.sec.qq.com,real-ip",
+    "DOMAIN,localhost.work.weixin.qq.com,real-ip",
+    "DOMAIN-SUFFIX,market.xiaomi.com,real-ip",
+    "DOMAIN-SUFFIX,pool.ntp.org,real-ip",
+    "DOMAIN-SUFFIX,ntp.org,real-ip",
+    "DOMAIN-SUFFIX,ntp.aliyun.com,real-ip",
+    "DOMAIN-SUFFIX,ntp1.aliyun.com,real-ip",
+    "DOMAIN-SUFFIX,ntp.tencent.com,real-ip",
+    "DOMAIN-SUFFIX,ntp.ubuntu.com,real-ip",
+    "DOMAIN-SUFFIX,time.nist.gov,real-ip",
+    "DOMAIN,time.cloudflare.com,real-ip",
+    "DOMAIN,doh.pub,real-ip",
+    "DOMAIN,dns.alidns.com,real-ip",
+    "DOMAIN,mtalk.google.com,real-ip",
+    "DOMAIN-SUFFIX,gov.cn,real-ip",
+    "DOMAIN-SUFFIX,edu.cn,real-ip",
+    "DOMAIN-SUFFIX,12306.cn,real-ip",
+    "DOMAIN-SUFFIX,chinatax.gov.cn,real-ip",
+    "DOMAIN-SUFFIX,fuwu.nhsa.gov.cn,real-ip",
+    "DOMAIN-SUFFIX,gjzwfw.gov.cn,real-ip",
+    "DOMAIN-SUFFIX,xiaojukeji.com,real-ip",
+    "DOMAIN-SUFFIX,didichuxing.com,real-ip",
+    "DOMAIN-SUFFIX,work.weixin.qq.com,real-ip",
+    "DOMAIN-SUFFIX,meeting.tencent.com,real-ip",
+    "DOMAIN-SUFFIX,weibo.com,real-ip",
+    "DOMAIN-SUFFIX,zhihu.com,real-ip",
+    "DOMAIN-SUFFIX,ctrip.com,real-ip",
+    "DOMAIN-SUFFIX,qunar.com,real-ip",
+    "DOMAIN-SUFFIX,sf-express.com,real-ip",
+    "DOMAIN-SUFFIX,feishu.cn,real-ip",
+    "DOMAIN-SUFFIX,xuexi.cn,real-ip",
+    "DOMAIN-SUFFIX,chsi.com.cn,real-ip",
+    "DOMAIN-SUFFIX,railway12306.cn,real-ip",
+    "DOMAIN-SUFFIX,mcdn.bilivideo.cn,real-ip",
+    "DOMAIN-SUFFIX,szbdyd.com,real-ip",
+    "DOMAIN-SUFFIX,battlenet.com.cn,real-ip",
+    "DOMAIN-SUFFIX,blzstatic.cn,real-ip",
+    "DOMAIN-SUFFIX,wotgame.cn,real-ip",
+    "DOMAIN-SUFFIX,wggames.cn,real-ip",
+    "DOMAIN-SUFFIX,wowsgame.cn,real-ip",
+    "DOMAIN-SUFFIX,stun.l.google.com,real-ip",
+    "DOMAIN-SUFFIX,stun1.l.google.com,real-ip",
+    "DOMAIN-SUFFIX,stun2.l.google.com,real-ip",
+    "DOMAIN-SUFFIX,stun3.l.google.com,real-ip",
+    "DOMAIN-SUFFIX,stun4.l.google.com,real-ip",
+    "DOMAIN,global.turn.twilio.com,real-ip",
+    "DOMAIN-SUFFIX,stun.playstation.net,real-ip",
+    "DOMAIN-SUFFIX,stun.syncthing.net,real-ip",
+    "DOMAIN-SUFFIX,sslip.io,real-ip",
+    "DOMAIN-SUFFIX,nip.io,real-ip",
+    "DOMAIN-SUFFIX,m2m,real-ip",
+    "DOMAIN-SUFFIX,bogon,real-ip",
+    "DOMAIN-SUFFIX,in-addr.arpa,real-ip",
+    "DOMAIN-SUFFIX,ip6.arpa,real-ip",
+    "MATCH,fake-ip"
+  ],
+  "respect-rules": true,
+  "fast-queries": true,
+  "query-v6": false,
+  "default-nameserver": [
+    "223.5.5.5",
+    "223.6.6.6"
+  ],
+  "proxy-server-nameserver": [
+    "https://doh.pub/dns-query",
+    "https://dns.alidns.com/dns-query"
+  ],
+  "nameserver": [
+    "https://dns.google/dns-query#RULES",
+    "https://1.1.1.1/dns-query#RULES"
+  ],
+  "direct-nameserver": [
+    "https://doh.pub/dns-query",
+    "https://dns.alidns.com/dns-query"
+  ],
+  "direct-nameserver-follow-policy": true,
+  "nameserver-policy": {
+    "geosite:category-ads-all": "rcode://name_error",
+    "rule-set:cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
     ],
-    "default-nameserver": DOMESTIC_DNS,
-    // 这条查询遵循下方路由规则走代理。用纯IP而非域名是关键：如果用
-    // "dns.google"这种域名形式，会被下方泄露防护规则里的
-    // 误伤，导致mihomo自己解析境外域名的请求也被拦掉
-    nameserver: ["https://1.1.1.1/dns-query#RULES", "https://8.8.8.8/dns-query#RULES"],
-    // 旁路观察者识别，双厂商(腾讯/阿里)冗余
-    "proxy-server-nameserver": ["https://doh.pub/dns-query", "https://dns.alidns.com/dns-query"],
-    "direct-nameserver": ["https://doh.pub/dns-query", "https://dns.alidns.com/dns-query"],
-    "direct-nameserver-follow-policy": true,
-    "respect-rules": true,
-    "fast-queries": true,
-    "query-v6": false,
-    "nameserver-policy": {
-      // 应用连尝试连接都不会尝试，日志更干净
-      "geosite:category-ads-all": "rcode://name_error",
-      "geosite:cn": DOMESTIC_DNS,
-      "rule-set:cn": DOMESTIC_DNS,
-      "rule-set:private": DOMESTIC_DNS,
-      // 宽泛国内域名前缀兜底：减少冷门国内域名（不在geosite:cn库里的）
-      // 误走境外DNS解析的情况
-      "+.cn": DOMESTIC_DNS, "+.com.cn": DOMESTIC_DNS, "+.net.cn": DOMESTIC_DNS,
-      "+.org.cn": DOMESTIC_DNS, "+.edu.cn": DOMESTIC_DNS, "+.gov.cn": DOMESTIC_DNS
-    },
-  };
+    "rule-set:geolocation-cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "rule-set:bilibili": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "geosite:cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.com.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.net.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.org.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.edu.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.gov.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.mi.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.xiaomi.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.miui.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.micloud.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.mi-img.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.miwifi.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.xiaomiev.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.huawei.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.huaweicloud.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.hicloud.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.vmall.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.honor.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.vivo.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.vivoglobal.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.oppo.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.oppomobile.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.meizu.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.samsung.com.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.samsungapps.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.samsungcloud.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.samsungknox.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.samsungdm.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.qq.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.wechat.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.weixin.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.wx.qq.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.tencent.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.tencent-cloud.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.qpic.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.qlogo.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.gtimg.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.gdtimg.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.myqcloud.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.wechatpay.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.alipay.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.alipayobjects.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.taobao.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.tmall.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.tbcdn.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.alicdn.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.aliyun.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.amap.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.autonavi.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.ele.me": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.dingtalk.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.1688.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.bytedance.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.byteimg.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.tosv.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.douyin.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.iesdouyin.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.pstatp.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.snssdk.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.volccdn.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.toutiao.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.ixigua.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.feishu.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.feishu.net": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.volces.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.baidu.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.bdstatic.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.bdimg.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.bcebos.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.iqiyi.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.iqiyipic.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.baidubce.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.tenpay.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.unionpay.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.unionpaysecure.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.95516.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.icbc.com.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.ccb.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.boc.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.cmbchina.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.abchina.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.bankcomm.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.psbc.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.spdb.com.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.cmbc.com.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.cib.com.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.tongdun.net": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.ishumei.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.geetest.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.trustdevice.net": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.rongcloud.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.rongcloud.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.umeng.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.umengcloud.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.servicewechat.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.weixinbridge.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.url.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.aegis.qq.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.deepseek.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.deepseek.ai": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.moonshot.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.kimichat.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.zhipuai.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.chatglm.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.baichuan-ai.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.sensetime.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.minimax.chat": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.stepfun.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.iflytek.com": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.12306.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "+.railway12306.cn": [
+      "https://doh.pub/dns-query",
+      "https://dns.alidns.com/dns-query"
+    ],
+    "geosite:google": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "geosite:youtube": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "geosite:telegram": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.twitter.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.t.co": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.x.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.openai.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.chatgpt.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.oaistatic.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.oaiusercontent.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.anthropic.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.claude.ai": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.gemini.google.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.aistudio.google.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "geosite:geolocation-!cn": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ]
+  }
+};
 
   // （比如App硬编码IP直连）的情况下依然能按域名正确分流，
   // 提升规则匹配准确度，减少误判进国内/境外分组
-  config.sniffer = {
-    enable: true,
-    "force-dns-mapping": true,
-    "parse-pure-ip": true,
-    // 域名才能正确匹配分流规则）
-    "override-destination": true,
-    sniff: {
-      TLS: { ports: [443, 8443], "override-destination": true },
-      HTTP: { ports: [80, "8080-8880"], "override-destination": true }
-      // 关闭后减少部分内核历史上的 QUIC sniffer 崩溃面
+  config["sniffer"] = {
+  "enable": true,
+  "force-dns-mapping": true,
+  "parse-pure-ip": true,
+  "override-destination": true,
+  "sniff": {
+    "HTTP": {
+      "ports": [
+        80,
+        "8080-8880"
+      ],
+      "enable": true,
+      "override-destination": true
     },
-    // 强制嗅探（即使DNS已解析成功，仍以嗅探结果为准）：这几个服务
-    // 域名量大且CDN共用IP池，仅靠DNS解析容易错判分组
-    "force-domain": [
-      "+.google.com", "+.youtube.com", "+.telegram.org", "+.openai.com",
-      "+.anthropic.com", "+.twitter.com", "+.x.com"
-    ],
-    // 即使最终流量走DIRECT也可能触发风控。跳过嗅探=握手全程不经过分析，
-    // 银行App感知不到Mihomo的存在。
-    "skip-domain": [
-      "+.unionpay.com", "+.95516.com", "+.alipay.com", "+.alipayobjects.com",
-      "+.tenpay.com", "+.wechatpay.cn",
-      "+.abchina.com", "+.abchina.com.cn", "+.icbc.com.cn", "+.ccb.com",
-      "+.boc.cn", "+.bankofchina.com", "+.cmbchina.com", "+.bankcomm.com",
-      "+.psbc.com", "+.spdb.com.cn", "+.cib.com.cn", "+.cmbc.com.cn",
-      "+.pingan.com", "+.cgbchina.com.cn", "+.hxb.com.cn", "+.cebbank.com",
-      "+.citicbank.com", "+.ecitic.com",
-      "+.tongdun.net", "+.ishumei.com", "+.geetest.com", "+.trustdevice.net",
-      "+.rongcloud.cn", "+.rongcloud.com", "+.umeng.com", "+.umengcloud.com",
-      "+.jpush.cn", "+.jpush.io", "+.jiguang.cn",
-      // 连通性检测：嗅探/劫持这些域名会导致系统误判"无网络"
-      "+.msftconnecttest.com", "+.msftncsi.com", "captive.apple.com", "+.gstatic.com",
-      // 路由器管理后台、本地/内网域名：嗅探无意义且可能干扰局域网管理
-      "+.tplinkwifi.net", "+.tendawifi.com", "+.routerlogin.com", "+.tplogin.cn",
-      "+.lan", "+.local", "+.home.arpa",
-      // 当作伪域名走TLS SNI，不是真实可解析的域名。如果被嗅探功能当成
-      // 必须让嗅探跳过这个特殊字符串
-      "Mijia Cloud",
-      // 12306：反爬虫检测极严格，跳过嗅探降低被识别为"存在中间层"的概率
-      "+.12306.cn", "+.12306.gov.cn"
-    ],
-    "skip-dst-address": ["91.108.4.0/22", "91.108.8.0/22", "91.108.16.0/22", "149.154.160.0/20"]
-  };
+    "TLS": {
+      "ports": [
+        443,
+        8443
+      ],
+      "enable": true,
+      "override-destination": true
+    }
+  },
+  "force-domain": [
+    "+.google.com",
+    "+.youtube.com",
+    "+.telegram.org",
+    "+.openai.com",
+    "+.anthropic.com",
+    "+.twitter.com",
+    "+.x.com",
+    "+.googlevideo.com",
+    "+.ytimg.com",
+    "+.chatgpt.com",
+    "+.claude.ai"
+  ],
+  "skip-dst-address": [
+    "91.105.192.0/23",
+    "91.108.4.0/22",
+    "91.108.8.0/21",
+    "91.108.16.0/21",
+    "91.108.56.0/22",
+    "95.161.64.0/20",
+    "149.154.160.0/20",
+    "185.76.151.0/24"
+  ],
+  "skip-domain": [
+    "geosite:cn",
+    "geosite:geolocation-cn",
+    "geosite:category-ads-all",
+    "geosite:category-games-cn",
+    "+.gstatic.com",
+    "+.msftconnecttest.com",
+    "+.msftncsi.com",
+    "+.captive.apple.com",
+    "+.router.asus.com",
+    "+.tplogin.cn",
+    "+.hiwifi.com",
+    "+.phicomm.me",
+    "+.local",
+    "+.lan",
+    "+.home.arpa",
+    "+.unionpay.com",
+    "+.95516.com",
+    "+.alipay.com",
+    "+.alipayobjects.com",
+    "+.tenpay.com",
+    "+.wechatpay.cn",
+    "+.abchina.com",
+    "+.abchina.com.cn",
+    "+.icbc.com.cn",
+    "+.ccb.com",
+    "+.boc.cn",
+    "+.bankofchina.com",
+    "+.cmbchina.com",
+    "+.bankcomm.com",
+    "+.psbc.com",
+    "+.spdb.com.cn",
+    "+.cib.com.cn",
+    "+.cmbc.com.cn",
+    "+.pingan.com",
+    "+.cgbchina.com.cn",
+    "+.hxb.com.cn",
+    "+.cebbank.com",
+    "+.citicbank.com",
+    "+.ecitic.com",
+    "+.gfbazc.com",
+    "+.fzuol.com",
+    "+.netsunion.org.cn",
+    "+.tongdun.net",
+    "+.ishumei.com",
+    "+.geetest.com",
+    "+.trustdevice.net",
+    "+.rongcloud.cn",
+    "+.rongcloud.com",
+    "+.umeng.com",
+    "+.umengcloud.com",
+    "+.tongduncdn.com",
+    "+.dingxiangyun.com",
+    "+.dingxiangyun.cn",
+    "+.rong360.com",
+    "+.99bill.com",
+    "+.chinapay.com",
+    "+.yeepay.com",
+    "+.jdpay.com",
+    "+.unionpaysecure.com",
+    "+.pingan.com.cn",
+    "+.aegis.qq.com",
+    "+.riskradar.net",
+    "+.cpic.com.cn",
+    "+.zhongan.com",
+    "+.eastmoney.com",
+    "+.htsc.com.cn",
+    "+.gtja.com",
+    "+.jpush.cn",
+    "+.jpush.io",
+    "+.jiguang.cn",
+    "+.weixin.qq.com",
+    "+.wx.qq.com",
+    "+.servicewechat.com",
+    "+.12306.cn",
+    "+.railway12306.cn",
+    "+.chinatax.gov.cn",
+    "+.fuwu.nhsa.gov.cn",
+    "+.gjzwfw.gov.cn",
+    "+.xiaojukeji.com",
+    "+.didichuxing.com",
+    "+.work.weixin.qq.com",
+    "+.meeting.tencent.com",
+    "+.taobao.com",
+    "+.jd.com",
+    "+.pinduoduo.com",
+    "+.meituan.com",
+    "+.dianping.com",
+    "+.ele.me",
+    "+.amap.com",
+    "+.baidu.com",
+    "+.xiaohongshu.com",
+    "+.kuaishou.com",
+    "+.163.com",
+    "+.weibo.com",
+    "+.zhihu.com",
+    "+.ctrip.com",
+    "+.qunar.com",
+    "+.sf-express.com",
+    "+.dingtalk.com",
+    "+.feishu.cn",
+    "+.xuexi.cn",
+    "+.chsi.com.cn"
+  ]
+};
 
-  config.hosts = {
-    "cloudflare-dns.com": ["1.1.1.1", "1.0.0.1"], "dns.google": ["8.8.8.8", "8.8.4.4"],
-    "services.googleapis.cn": ["services.googleapis.com"],
-    // （会自动挑选包括gcore在内的最优CDN节点），如果它在国内网络环境下
-    "+.mcdn.bilivideo.com": "0.0.0.0", "+.mcdn.bilivideo.cn": "0.0.0.0", "+.edge.mountaintoys.cn": "0.0.0.0", "+.h2.smtcdns.net": "0.0.0.0"
-  };
+  config["hosts"] = {
+  "dns.google": [
+    "8.8.8.8",
+    "8.8.4.4"
+  ]
+};
 
   config["mixed-port"] = config["mixed-port"] || 17890;
   // （仅本机监听），而非无条件强制开放局域网——降低公共网络下被同网段
@@ -725,6 +2003,173 @@ function main(config) {
 
   config.profile = { "store-selected": false, "store-fake-ip": false };
   config.ntp = { enable: false, "write-to-system": false, server: "ntp.aliyun.com", port: 123, interval: 30 };
+
+  config["sub-rules"] = {
+  "DOMESTIC_DOMAIN": [
+    "DOMAIN-SUFFIX,teg.tencent-cloud.net,REJECT-DROP",
+    "DOMAIN-SUFFIX,szlong.weixin.qq.com,DIRECT",
+    "DOMAIN-SUFFIX,szminorshort.weixin.qq.com,DIRECT",
+    "DOMAIN-SUFFIX,szshort.weixin.qq.com,DIRECT",
+    "DOMAIN-SUFFIX,sz.weixin.qq.com,DIRECT",
+    "DOMAIN-SUFFIX,long.weixin.qq.com,DIRECT",
+    "DOMAIN-SUFFIX,short.weixin.qq.com,DIRECT",
+    "DOMAIN-SUFFIX,weixin.qq.com,DIRECT",
+    "DOMAIN-SUFFIX,servicewechat.com,DIRECT",
+    "DOMAIN-SUFFIX,weixinbridge.com,DIRECT",
+    "DOMAIN-SUFFIX,url.cn,DIRECT",
+    "DOMAIN-SUFFIX,midea.com,DIRECT",
+    "DOMAIN-SUFFIX,smartmidea.net,DIRECT",
+    "DOMAIN-SUFFIX,haier.net,DIRECT",
+    "DOMAIN-SUFFIX,haier.com,DIRECT",
+    "DOMAIN-SUFFIX,hisense.com,DIRECT",
+    "DOMAIN-SUFFIX,yeelight.com,DIRECT",
+    "DOMAIN-SUFFIX,aqara.com,DIRECT",
+    "DOMAIN-SUFFIX,tuya.com,DIRECT",
+    "DOMAIN-SUFFIX,tuyaus.com,DIRECT",
+    "DOMAIN-SUFFIX,tcl.com,DIRECT",
+    "DOMAIN-SUFFIX,jpush.cn,DIRECT",
+    "DOMAIN-SUFFIX,jpush.io,DIRECT",
+    "DOMAIN-SUFFIX,jiguang.cn,DIRECT",
+    "DOMAIN,msg.umeng.com,DIRECT",
+    "DOMAIN-SUFFIX,getui.com,DIRECT",
+    "DOMAIN-SUFFIX,getui.net,DIRECT",
+    "DOMAIN-SUFFIX,gepush.com,DIRECT",
+    "DOMAIN,account.xiaomi.com,DIRECT",
+    "DOMAIN,passport.xiaomi.com,DIRECT",
+    "DOMAIN,micloud.xiaomi.com,DIRECT",
+    "DOMAIN,i.mi.com,DIRECT",
+    "DOMAIN,auth.be.sec.miui.com,DIRECT",
+    "DOMAIN,idm.api.io.mi.com,DIRECT",
+    "DOMAIN,api.installer.xiaomi.com,DIRECT",
+    "DOMAIN,flash.sec.miui.com,DIRECT",
+    "DOMAIN,mazu.sec.miui.com,DIRECT",
+    "DOMAIN,ccc.sys.miui.com,DIRECT",
+    "DOMAIN,register.xmpush.xiaomi.com,DIRECT",
+    "RULE-SET,geolocation-cn,DIRECT",
+    "RULE-SET,cn,DIRECT",
+    "RULE-SET,bilibili,DIRECT",
+    "RULE-SET,apple-cn,DIRECT",
+    "RULE-SET,microsoft-cn,DIRECT",
+    "GEOSITE,cn,DIRECT",
+    "RULE-SET,steam-cn,DIRECT",
+    "RULE-SET,category-games-cn,DIRECT",
+    "RULE-SET,tracker,DIRECT"
+  ],
+  "DOMESTIC_IP": [
+    "IP-CIDR,101.226.0.0/16,DIRECT,no-resolve",
+    "IP-CIDR,140.207.0.0/16,DIRECT,no-resolve",
+    "RULE-SET,cn-ip,DIRECT,no-resolve",
+    "GEOIP,CN,DIRECT,no-resolve"
+  ]
+};
+
+  // BEGIN AUTO-SYNC: template.yaml common behavior
+  var CANONICAL = {
+  "mode": "rule",
+  "allow-lan": false,
+  "bind-address": "127.0.0.1",
+  "mixed-port": 17890,
+  "log-level": "info",
+  "ipv6": false,
+  "unified-delay": true,
+  "tcp-concurrent": true,
+  "keep-alive-interval": 15,
+  "keep-alive-idle": 15,
+  "disable-keep-alive": false,
+  "find-process-mode": "strict",
+  "etag-support": true,
+  "external-controller": "127.0.0.1:19090",
+  "global-ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "geodata-mode": true,
+  "geodata-loader": "memconservative",
+  "geo-auto-update": true,
+  "geo-update-interval": 168,
+  "profile": {
+    "store-selected": false,
+    "store-fake-ip": false
+  },
+  "ntp": {
+    "enable": false,
+    "write-to-system": false,
+    "server": "ntp.aliyun.com",
+    "port": 123,
+    "interval": 30
+  },
+  "experimental": {
+    "quic-go-disable-gso": false,
+    "quic-go-disable-ecn": false
+  },
+  "external-controller-cors": {
+    "allow-origins": [
+      "http://127.0.0.1:19090",
+      "https://127.0.0.1:19090",
+      "http://localhost:19090",
+      "https://localhost:19090"
+    ],
+    "allow-private-network": false
+  },
+  "geox-url": {
+    "geoip": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat",
+    "geosite": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat",
+    "mmdb": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb",
+    "asn": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
+  }
+};
+  config["mode"] = CANONICAL["mode"];
+  config["allow-lan"] = CANONICAL["allow-lan"];
+  config["bind-address"] = CANONICAL["bind-address"];
+  config["mixed-port"] = CANONICAL["mixed-port"];
+  config["log-level"] = CANONICAL["log-level"];
+  config["ipv6"] = CANONICAL["ipv6"];
+  config["unified-delay"] = CANONICAL["unified-delay"];
+  config["tcp-concurrent"] = CANONICAL["tcp-concurrent"];
+  config["keep-alive-interval"] = CANONICAL["keep-alive-interval"];
+  config["keep-alive-idle"] = CANONICAL["keep-alive-idle"];
+  config["disable-keep-alive"] = CANONICAL["disable-keep-alive"];
+  config["find-process-mode"] = CANONICAL["find-process-mode"];
+  config["etag-support"] = CANONICAL["etag-support"];
+  config["external-controller"] = CANONICAL["external-controller"];
+  config["global-ua"] = CANONICAL["global-ua"];
+  config["geodata-mode"] = CANONICAL["geodata-mode"];
+  config["geodata-loader"] = CANONICAL["geodata-loader"];
+  config["geo-auto-update"] = CANONICAL["geo-auto-update"];
+  config["geo-update-interval"] = CANONICAL["geo-update-interval"];
+  config["profile"] = CANONICAL["profile"];
+  config["ntp"] = CANONICAL["ntp"];
+  config["experimental"] = CANONICAL["experimental"];
+  config["external-controller-cors"] = CANONICAL["external-controller-cors"];
+  config["geox-url"] = CANONICAL["geox-url"];
+  // Pure-airport groups keep the same functional semantics as template.yaml.
+  // Only chain-specific VPS/dialer groups are replaced by airport-local groups.
+  if (config["proxy-groups"] && config["proxy-groups"].forEach) {
+    config["proxy-groups"].forEach(function (g) {
+      if (!g || !g.name) return;
+      var oldName = g.name;
+      if (oldName === "♻️ 自动选择") g.name = "机场优选";
+      else if (oldName === "⚖️ 负载均衡") g.name = "机场负载均衡";
+      else if (oldName === "🔰 节点选择") g.name = "机场手动选择";
+      else if (oldName === "📺 Media") g.name = "流媒体";
+      else if (oldName === "🐟 漏网之鱼") g.name = "漏网之鱼";
+      if (g.type === "select" && g.proxies && g.proxies.filter) {
+        var mapped = [];
+        for (var pi = 0; pi < g.proxies.length; pi++) {
+          var p = g.proxies[pi];
+          if (p === "♻️ 自动选择") p = "机场优选";
+          else if (p === "⚖️ 负载均衡") p = "机场负载均衡";
+          else if (p === "🔰 节点选择") p = "机场手动选择";
+          else if (p === "📺 Media") p = "流媒体";
+          else if (p === "🐟 漏网之鱼") p = "漏网之鱼";
+          if (p === "DIRECT") continue;
+          if (mapped.indexOf(p) < 0) mapped.push(p);
+        }
+        g.proxies = mapped;
+      }
+      if (g.name === "🔧 远控工具") g.proxies = ["REJECT-DROP", "机场优选"];
+      if (g.name === "🛑 广告拦截") g.proxies = ["REJECT", "REJECT-DROP"];
+    });
+  }
+  // DIRECT remains a bottom-layer rule target, not a user-selectable proxy-group option.
+  // END AUTO-SYNC: template.yaml common behavior
 
   return config;
 }
