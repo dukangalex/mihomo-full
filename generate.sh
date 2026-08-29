@@ -61,7 +61,7 @@ cp "$TEMPLATE" "$FULL_CONFIG"
 # 1. 落地节点不按协议类型排除：公开模板必须保留 v2ray-agent 提供的全部协议。
 sed -i '/^[[:space:]]*exclude-type:[[:space:]]*vmess[[:space:]]*$/d' "$FULL_CONFIG"
 
-# 2. 广告拦截与机场覆盖模式保持一致：默认 REJECT-DROP，同时允许用户主动 DIRECT。
+# 2. 广告拦截与机场覆盖模式保持一致：默认 REJECT，同时允许用户主动 DIRECT。
 #    DNS 层不能先把广告域名强制 rcode://name_error，否则 DIRECT 无法恢复网站。
 sed -i '/^[[:space:]]*"geosite:category-ads-all":[[:space:]]*"rcode:\/\/name_error"[[:space:]]*$/d' "$FULL_CONFIG"
 
@@ -75,7 +75,7 @@ if ! grep -q '^  - name: "🛑 广告拦截"$' "$FULL_CONFIG"; then
     /^  - name: "远控工具"$/ {
       print "  - name: \"🛑 广告拦截\""
       print "    type: select"
-      print "    # 默认 REJECT-DROP；仅当免费站点依赖广告收入且被误伤/无法正常使用时，"
+      print "    # 默认 REJECT；仅当免费站点依赖广告收入且被误伤/无法正常使用时，"
       print "    # 用户才主动切换 DIRECT。此 DIRECT 不是全局直连开关。"
       print "    proxies: [\"REJECT\", \"DIRECT\"]"
       print ""
