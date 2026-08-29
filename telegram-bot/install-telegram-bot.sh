@@ -5,6 +5,7 @@ BASE="/opt/mihomo-full"; BOT_DIR="$BASE/telegram-bot"; ENV_FILE="$BASE/telegram-
 RED='\033[0;31m'; GREEN='\033[0;32m'; NC='\033[0m'
 info(){ echo -e "${GREEN}[+]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || err "请使用 root 运行"; [[ -f "$BOT_DIR/bot.py" ]] || err "找不到 $BOT_DIR/bot.py，请先安装 mihomo-full"
+[[ -f "$BOT_DIR/vps_usage.py" ]] || err "缺少 VPS 流量统计模块，请重新安装/更新 mihomo-full"
 command -v python3 >/dev/null || err "需要 python3"; python3 -m pip --version >/dev/null 2>&1 || err "需要 python3-pip"
 if [[ ! -f "$ENV_FILE" ]]; then
   cp "$BASE/telegram-bot.example.env" "$ENV_FILE"; chmod 600 "$ENV_FILE"; echo "已创建 $ENV_FILE"; echo "请填写 TG_BOT_TOKEN 与 TG_ADMIN_IDS 后重新运行本脚本。"; exit 0
@@ -12,11 +13,15 @@ fi
 set -a; source "$ENV_FILE"; set +a
 [[ -n "${TG_BOT_TOKEN:-}" && "$TG_BOT_TOKEN" != REPLACE_WITH_BOT_TOKEN ]] || err "请在 $ENV_FILE 设置 TG_BOT_TOKEN"
 [[ -n "${TG_ADMIN_IDS:-}" ]] || err "请在 $ENV_FILE 设置 TG_ADMIN_IDS"
+[[ "${VPS_MONTHLY_GB:-0}" =~ ^([0-9]+([.][0-9]+)?)$ ]] || err "VPS_MONTHLY_GB 必须是非负数字"
+[[ "${VPS_TRAFFIC_ALERT_PERCENT:-80}" =~ ^([0-9]+([.][0-9]+)?)$ ]] || err "VPS_TRAFFIC_ALERT_PERCENT 必须是数字"
+python3 -m py_compile "$BOT_DIR/bot.py" "$BOT_DIR/vps_usage.py"
 python3 -m pip install --disable-pip-version-check --no-input -r "$BOT_DIR/requirements.txt"
-chmod 700 "$BOT_DIR/bot.py"
+chmod 700 "$BOT_DIR/bot.py" "$BOT_DIR/vps_usage.py"
 install -m 644 "$SERVICE_SRC" /etc/systemd/system/mihomo-full-bot.service
 systemctl daemon-reload
 systemctl enable --now mihomo-full-bot.service
 systemctl --no-pager --full status mihomo-full-bot.service || true
 info "Telegram 管理机器人已启动。"
+info "VPS 流量统计：$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); from vps_usage import report; print(report()["interface"] or "未识别")' "$BOT_DIR")"
 info "查看日志：journalctl -u mihomo-full-bot -f"
