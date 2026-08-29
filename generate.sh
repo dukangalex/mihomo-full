@@ -87,31 +87,34 @@ sed -i "s|__EXIT_NODES_URL__|$EXIT_ESCAPED|g" "$FULL_CONFIG"
 
 
 apply_ruleset_overrides() {
- local f="$RULES_LOCAL" name url behavior target enabled esc tmp
- [[ -f "$f" ]] || return 0
- while IFS='|' read -r name url behavior target enabled; do
-  [[ -z "$name" || "$name" == \#* ]] && continue
-  [[ "$name" =~ ^[A-Za-z0-9_-]+$ ]] || { warn "忽略非法规则集: $name"; continue; }
-  [[ "$enabled" == 0 || "$enabled" == 1 ]] || { warn "忽略 $name"; continue; }
-  if [[ "$enabled" == 1 ]]; then
-   [[ "$url" =~ ^https://[^[:space:]\"|]+$ ]] || { warn "忽略 $name：URL 必须 HTTPS"; continue; }
-   [[ "$behavior" == domain || "$behavior" == ipcidr ]] || { warn "忽略 $name：类型错误"; continue; }
-   esc=$(printf '%s' "$url"|sed 's/[&|\\]/\\&/g')
-   if grep -qE "^  [\"']?$name[\"']?:$" "$FULL_CONFIG"; then
-    sed -i -E "/^  [\"']?$name[\"']?:$/,/^  [^[:space:]#].*:$/ { s|^    url:.*$|    url: \"$esc\"|; }" "$FULL_CONFIG"
-   else
-    tmp="$FULL_CONFIG.tmp"
-    awk -v n="$name" -v u="$url" '/^rules:/&&!done{printf "  %s:\n    <<: *DA\n    url: \"%s\"\n    path: \"./ruleset/%s.mrs\"\n\n",n,u,n;done=1}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
-    tmp="$FULL_CONFIG.tmp"
-    awk -v n="$name" -v t="$target" '/^rules:/&&!done{print;printf "  - RULE-SET,%s,%s\n",n,t;done=1;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
-   fi
-  else
-   case "$name" in cn|cn-ip|private-ip|geolocation-cn|geolocation-!cn) warn "拒绝禁用核心安全规则: $name"; continue;; esac
-   sed -i -E "s|^([[:space:]]*- RULE-SET,$name,)|# [disabled] \1|" "$FULL_CONFIG"
-  fi
- done < "$f"
+  local f="$RULES_LOCAL" name url behavior target enabled esc tmp anchor
+  [[ -f "$f" ]] || return 0
+  while IFS='|' read -r name url behavior target enabled; do
+    [[ -z "$name" || "$name" == \#* ]] && continue
+    [[ "$name" =~ ^[A-Za-z0-9_-]+$ ]] || { warn "忽略非法规则集名称: $name"; continue; }
+    [[ "$enabled" == 0 || "$enabled" == 1 ]] || { warn "忽略 $name：enabled 必须 0/1"; continue; }
+    if [[ "$enabled" == 1 ]]; then
+      [[ "$url" =~ ^https://[^[:space:]\"|]+$ ]] || { warn "忽略 $name：URL 必须 HTTPS"; continue; }
+      [[ "$behavior" == domain || "$behavior" == ipcidr ]] || { warn "忽略 $name：类型必须 domain/ipcidr"; continue; }
+      [[ -n "$target" && "$target" != *$'\n'* && "$target" != *$'\r'* && "$target" != *'|'* && "$target" != *','* ]] || { warn "忽略 $name：策略组名称非法"; continue; }
+      esc=$(printf '%s' "$url" | sed 's/[&|\\]/\\&/g')
+      if grep -qE "^  [\"']?$name[\"']?:$" "$FULL_CONFIG"; then
+        sed -i -E "/^  [\"']?$name[\"']?:$/,/^  [^[:space:]#].*:$/ { s|^    url:.*$|    url: \"$esc\"|; }" "$FULL_CONFIG"
+      else
+        [[ "$behavior" == domain ]] && anchor="DA" || anchor="IA"
+        tmp="$FULL_CONFIG.tmp"
+        awk -v n="$name" -v u="$url" -v a="$anchor" '/^rule-providers:/{print;printf "\n  %s:\n    <<: *%s\n    url: \"%s\"\n    path: \"./ruleset/%s.mrs\"\n",n,a,u,n;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
+        tmp="$FULL_CONFIG.tmp"
+        awk -v n="$name" -v t="$target" '/^rules:/{print;printf "\n  - RULE-SET,%s,%s\n",n,t;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
+      fi
+    else
+      case "$name" in
+        cn|cn-ip|private-ip|geolocation-cn|geolocation-!cn) warn "拒绝禁用核心安全规则集: $name"; continue ;;
+      esac
+      sed -i -E "s|^([[:space:]]*- RULE-SET,$name,)|# [disabled] \1|" "$FULL_CONFIG"
+    fi
+  done < "$f"
 }
-
 apply_ruleset_overrides
 chmod 644 "$FULL_CONFIG" "$EXIT_NODES" 2>/dev/null || true
 
