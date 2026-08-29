@@ -42,13 +42,21 @@ fi
   if [[ -s "$TMP_NODES" ]]; then
     awk '
       BEGIN { block="" }
-      /^  - name:/ { if (block != "") print block; block=$0; next }
-      { block=block "\n" $0 }
+      {
+        line=$0
+        first=substr(line,1,1)
+        if (tolower(line) ~ /^  - name:[[:space:]]*/) {
+          if (block != "") print block
+          block=line
+          next
+        }
+        if (block != "") block=block "\n" line
+      }
       END { if (block != "") print block }
     ' "$TMP_NODES"
   fi
 } > "$EXIT_NODES"
-NODE_COUNT=$(grep -c "^  - name:" "$EXIT_NODES" 2>/dev/null || true); NODE_COUNT=${NODE_COUNT:-0}
+NODE_COUNT=$(grep -cE "^  - [Nn][Aa][Mm][Ee]:" "$EXIT_NODES" 2>/dev/null || true); NODE_COUNT=${NODE_COUNT:-0}
 log "落地节点数量: $NODE_COUNT（未按协议类型排除）"
 
 log "生成完整配置..."
@@ -58,17 +66,9 @@ cp "$TEMPLATE" "$FULL_CONFIG"
 
 # ── 主配置公共行为增强 ─────────────────────────────────────────────
 # 机场覆盖脚本与链式主配置应共享安全底线；链式专属能力（VPS/dialer-proxy）除外。
-# 1. 落地节点不按协议类型排除：公开模板必须保留 v2ray-agent 提供的全部协议。
 sed -i '/^[[:space:]]*exclude-type:[[:space:]]*vmess[[:space:]]*$/d' "$FULL_CONFIG"
-
-# 2. 广告拦截与机场覆盖模式保持一致：默认 REJECT，同时允许用户主动 DIRECT。
-#    DNS 层不能先把广告域名强制 rcode://name_error，否则 DIRECT 无法恢复网站。
-sed -i '/^[[:space:]]*"geosite:category-ads-all":[[:space:]]*"rcode:\/\/name_error"[[:space:]]*$/d' "$FULL_CONFIG"
-
-# 3. 远控工具与机场覆盖脚本保持同一交互原则：默认拒绝；需要时可选择代理或 DIRECT。
+sed -i '/^[[:space::]]*"geosite:category-ads-all":[[:space:]]*"rcode:\/\/name_error"[[:space:]]*$/d' "$FULL_CONFIG"
 sed -i 's/^\([[:space:]]*proxies: \["REJECT-DROP", "落地优选出口"\]\)[[:space:]]*$/    proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]/' "$FULL_CONFIG"
-
-# 4. 广告策略组只允许一个实例；放在远控工具之前，避免重复注入。
 if ! grep -q '^  - name: "🛑 广告拦截"$' "$FULL_CONFIG"; then
   TMP_CFG="$FULL_CONFIG.tmp"
   awk '
@@ -83,18 +83,29 @@ if ! grep -q '^  - name: "🛑 广告拦截"$' "$FULL_CONFIG"; then
     {print}
   ' "$FULL_CONFIG" > "$TMP_CFG" && mv "$TMP_CFG" "$FULL_CONFIG"
 fi
-
-# 5. 广告规则指向策略组；钓鱼/恶意域名仍然保持强制 REJECT-DROP。
-#    不给 classical rule 的策略组名称添加引号，避免引号被解析成组名的一部分。
 sed -i 's/- RULE-SET,category-ads-all,REJECT-DROP  # 广告域名/- RULE-SET,category-ads-all,🛑 广告拦截  # 默认拦截；需要时可切换 DIRECT/' "$FULL_CONFIG"
 sed -i 's/- RULE-SET,category-ads-all,REJECT-DROP$/- RULE-SET,category-ads-all,🛑 广告拦截/' "$FULL_CONFIG"
 
-# 6. 私有网络与国内服务不暴露 DIRECT 选择器：私网底层直连；国内服务由规则集/IP 规则负责。
-
-escape_sed() { printf '%s' "$1" | sed 's/[&|\\]/\\&/g'; }
-AIRPORT_ESCAPED=$(escape_sed "$AIRPORT_SUB_URL"); EXIT_ESCAPED=$(escape_sed "$EXIT_URL")
-sed -i "s|__AIRPORT_SUB_URL__|$AIRPORT_ESCAPED|g" "$FULL_CONFIG"
-sed -i "s|__EXIT_NODES_URL__|$EXIT_ESCAPED|g" "$FULL_CONFIG"
+# 链式 URL 替换使用 Bash 参数展开，避免 sed replacement 对 &, |, \\ 等字符的解释。
+replace_literal() {
+  local file="$1" needle="$2" value="$3" tmp
+  [[ -f "$file" ]] || err "文件不存在: $file"
+  tmp="${file}.tmp"
+  NEEDLE="$needle" VALUE="$value" python3 - "$file" "$tmp" <<'PY'
+import os, sys
+from pathlib import Path
+src, dst = map(Path, sys.argv[1:])
+s = src.read_text(encoding='utf-8')
+needle = os.environ['NEEDLE']
+value = os.environ['VALUE']
+if needle not in s:
+    raise SystemExit(f'placeholder not found: {needle}')
+dst.write_text(s.replace(needle, value), encoding='utf-8')
+PY
+  mv "$tmp" "$file"
+}
+replace_literal "$FULL_CONFIG" '__AIRPORT_SUB_URL__' "$AIRPORT_SUB_URL"
+replace_literal "$FULL_CONFIG" '__EXIT_NODES_URL__' "$EXIT_URL"
 
 apply_ruleset_overrides() {
   local f="$RULES_LOCAL" name url behavior target enabled esc tmp anchor
@@ -113,6 +124,7 @@ apply_ruleset_overrides() {
       else
         [[ "$behavior" == domain ]] && anchor="DA" || anchor="IA"
         tmp="$FULL_CONFIG.tmp"
+        # URL 已校验不含双引号/空白；这里仍使用 printf 风格的 awk -v，避免 shell 拼接 awk 程序。
         awk -v n="$name" -v u="$url" -v a="$anchor" '/^rule-providers:/{print;printf "\n  %s:\n    <<: *%s\n    url: \"%s\"\n    path: \"./ruleset/%s.mrs\"\n",n,a,u,n;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
         tmp="$FULL_CONFIG.tmp"
         awk -v n="$name" -v t="$target" '/^rules:/{print;printf "\n  - RULE-SET,%s,%s\n",n,t;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
@@ -130,11 +142,8 @@ grep -q '^  - name: "🛑 广告拦截"$' "$FULL_CONFIG" || err "生成配置缺
 grep -q 'proxies: \["REJECT", "DIRECT"\]' "$FULL_CONFIG" || err "广告拦截策略组缺少 DIRECT 例外"
 grep -q 'RULE-SET,category-ads-all,🛑 广告拦截' "$FULL_CONFIG" || err "广告规则未指向广告拦截策略组"
 grep -q 'RULE-SET,sukka-phishing,REJECT-DROP' "$FULL_CONFIG" || err "钓鱼规则被意外修改"
-if grep -qE '^[[:space:]]*exclude-type:[[:space:]]*vmess[[:space:]]*$' "$FULL_CONFIG"; then
-  err "生成配置仍存在 VMess 协议排除"
-fi
+if grep -qE '^[[:space:]]*exclude-type:[[:space:]]*vmess[[:space:]]*$' "$FULL_CONFIG"; then err "生成配置仍存在 VMess 协议排除"; fi
 
-# 最终引用完整性与行为审计必须针对生成结果执行，而不是只检查模板文本。
 if [[ -f "$SCRIPT_DIR/tools/audit-generated-config.sh" ]]; then
   bash "$SCRIPT_DIR/tools/audit-generated-config.sh" "$FULL_CONFIG" || err "最终配置审计失败，拒绝发布配置"
 fi
