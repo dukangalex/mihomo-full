@@ -92,6 +92,16 @@ apply_ruleset_overrides() {
   while IFS='|' read -r name url behavior target enabled; do
     [[ -z "$name" || "$name" == \#* ]] && continue
     [[ "$name" =~ ^[A-Za-z0-9_-]+$ ]] || { warn "忽略非法规则集名称: $name"; continue; }
+
+    # 与 template.yaml 的安全基线建立硬边界：核心规则集既不能改 URL，
+    # 也不能禁用。rulesets.local.conf 只能扩展/替换非核心业务规则集。
+    case "$name" in
+      cn|cn-ip|private-ip|geolocation-cn|geolocation-!cn|category-ads-all|sukka-phishing)
+        warn "拒绝修改核心安全规则集: $name"
+        continue
+        ;;
+    esac
+
     [[ "$enabled" == 0 || "$enabled" == 1 ]] || { warn "忽略 $name：enabled 必须 0/1"; continue; }
     if [[ "$enabled" == 1 ]]; then
       [[ "$url" =~ ^https://[^[:space:]\"|]+$ ]] || { warn "忽略 $name：URL 必须 HTTPS"; continue; }
@@ -108,7 +118,6 @@ apply_ruleset_overrides() {
         awk -v n="$name" -v t="$target" '/^rules:/{print;printf "\n  - RULE-SET,%s,%s\n",n,t;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
       fi
     else
-      case "$name" in cn|cn-ip|private-ip|geolocation-cn|geolocation-!cn) warn "拒绝禁用核心安全规则集: $name"; continue;; esac
       sed -i -E "s|^([[:space:]]*- RULE-SET,$name,)|# [disabled] \1|" "$FULL_CONFIG"
     fi
   done < "$f"
