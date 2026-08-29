@@ -39,10 +39,11 @@ chmod 600 "${INSTALL_DIR}/settings.conf"
 curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 -o "${INSTALL_DIR}/generate.sh" "${RAW_BASE}/generate.sh" || err "无法下载同一代码快照的 generate.sh"
 curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 -o "${INSTALL_DIR}/template.yaml" "${RAW_BASE}/template.yaml" || err "无法下载同一代码快照的 template.yaml"
 curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 -o "${INSTALL_DIR}/manage.sh" "${RAW_BASE}/manage.sh" || err "无法下载同一代码快照的 manage.sh"
+curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 -o "${INSTALL_DIR}/uninstall.sh" "${RAW_BASE}/uninstall.sh" || err "无法下载同一代码快照的 uninstall.sh"
 curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 -o "${INSTALL_DIR}/tools-audit-generated-config.sh" "${RAW_BASE}/tools/audit-generated-config.sh" || err "无法下载同一代码快照的最终配置审计脚本"
 mkdir -p "${INSTALL_DIR}/tools"
 mv "${INSTALL_DIR}/tools-audit-generated-config.sh" "${INSTALL_DIR}/tools/audit-generated-config.sh"
-chmod 700 "${INSTALL_DIR}/manage.sh"; chmod 700 "${INSTALL_DIR}/generate.sh"; chmod 700 "${INSTALL_DIR}/tools/audit-generated-config.sh"
+chmod 700 "${INSTALL_DIR}/manage.sh"; chmod 700 "${INSTALL_DIR}/generate.sh"; chmod 700 "${INSTALL_DIR}/uninstall.sh"; chmod 700 "${INSTALL_DIR}/tools/audit-generated-config.sh"
 ln -sf "${INSTALL_DIR}/manage.sh" /usr/local/bin/mihomo-full
 if [[ ! -f "${INSTALL_DIR}/rulesets.local.conf" ]]; then printf '%s\n' '# provider|https_mrs_url|behavior|target|enabled' > "${INSTALL_DIR}/rulesets.local.conf"; fi
 chmod 600 "${INSTALL_DIR}/rulesets.local.conf"
@@ -68,4 +69,4 @@ location /assets/static/ { return 404; }
 EOF
 if command -v nginx >/dev/null 2>&1; then info "检测到 Nginx 已安装"; else warn "未检测到 Nginx，请自行配置 Web 服务器"; fi
 title "完成"
-echo -e "客户端导入：${GREEN}https://${DOMAIN}${FULL_PATH}${NC}"; echo "更新落地：${INSTALL_DIR}/generate.sh"; echo "管理入口：mihomo-full"; info "全部完成"
+echo -e "客户端导入：${GREEN}https://${DOMAIN}${FULL_PATH}${NC}"; echo "更新落地：${INSTALL_DIR}/generate.sh"; echo "管理入口：mihomo-full"; echo "安全卸载：${INSTALL_DIR}/uninstall.sh"; info "全部完成"
