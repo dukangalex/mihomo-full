@@ -67,7 +67,7 @@ EOF
 
 # 写入精简版 generate.sh（与仓库 generate.sh 逻辑一致）
 curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/generate.sh" \
-  "https://raw.githubusercontent.com/dukangalex/mihomo-full/dcb207249ad85587124bd4978c5701f94ca367e5/generate.sh" || true
+  "https://raw.githubusercontent.com/dukangalex/mihomo-full/1d3de122cded0f6a68ae1e4ec79f9a6e75233b0f/generate.sh" || true
 if [[ ! -s "${INSTALL_DIR}/generate.sh" ]]; then
   warn "无法下载 generate.sh，请手动复制仓库中的 generate.sh"
 else
@@ -77,7 +77,7 @@ fi
 if [[ ! -f "${INSTALL_DIR}/template.yaml" ]]; then
   info "下载 template.yaml..."
   curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/template.yaml" \
-    "https://raw.githubusercontent.com/dukangalex/mihomo-full/dcb207249ad85587124bd4978c5701f94ca367e5/template.yaml" || \
+    "https://raw.githubusercontent.com/dukangalex/mihomo-full/1d3de122cded0f6a68ae1e4ec79f9a6e75233b0f/template.yaml" || \
     warn "请手动把 template.yaml 放到 ${INSTALL_DIR}/"
 fi
 
@@ -85,7 +85,7 @@ chmod 600 "${INSTALL_DIR}/settings.conf"
 
 # 安装小白管理入口：mihomo-full
 curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/manage.sh" \\
-  "https://raw.githubusercontent.com/dukangalex/mihomo-full/main/manage.sh" || \\
+  "https://raw.githubusercontent.com/dukangalex/mihomo-full/1d3de122cded0f6a68ae1e4ec79f9a6e75233b0f/manage.sh" || \\
   warn "无法下载 manage.sh，请手动复制"
 if [[ -s "${INSTALL_DIR}/manage.sh" ]]; then
   chmod 700 "${INSTALL_DIR}/manage.sh"
