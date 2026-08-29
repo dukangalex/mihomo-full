@@ -22,7 +22,7 @@ mkdir -p "$INSTALL_DIR" "$OUTPUT_DIR"
 chmod 600 "${INSTALL_DIR}/settings.conf"
 
 # 核心文件均固定到已审核版本，避免安装时随 main 漂移
-curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/generate.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/7eb2c6b3b4575dde362397504268065cde994266/generate.sh" || err "无法下载已审核 generate.sh"
+curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/generate.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/97097bd1b21566d3b7105ea4301477170beec414/generate.sh" || err "无法下载已审核 generate.sh"
 curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/template.yaml" "https://raw.githubusercontent.com/dukangalex/mihomo-full/cac1205ce0e8955ac2ac8c476c21dc1fd86540c9/template.yaml" || err "无法下载 template.yaml"
 curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/manage.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/d7818c0bdec077f23ae177da25853f0c6975008a/manage.sh" || err "无法下载 manage.sh"
 curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/tools-audit-generated-config.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/2165983adde9a4f234f7c647a30a9676b1636898/tools/audit-generated-config.sh" || err "无法下载最终配置审计脚本"
