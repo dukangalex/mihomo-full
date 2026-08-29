@@ -184,6 +184,14 @@ VPS 运行时（勿提交公开仓）
 
 ---
 
+## 安全与可复现性
+
+- `install.sh` 下载的仓库文件固定到已审计 commit，而不是跟随 `main` 漂移；升级前应重新审核并更新 pin。
+- 公开模板不包含任何真实订阅、UUID、域名密码或控制器密钥。
+- `airport_overwrite.js` 不使用 `empty-fallback`，并保持 ES5 语法子集，避免旧版脚本引擎加载失败。
+- VMess 按节点实际 `type` 使用 `exclude-type` 排除，不依赖节点名称。
+- DNSPod 使用官方域名 DoH `doh.pub`，不再依赖 IP DoH；阿里公共 DNS 使用 `dns.alidns.com`。
+
 ## 日常维护
 
 | 操作 | 命令 / 做法 |
@@ -196,12 +204,13 @@ VPS 运行时（勿提交公开仓）
 
 ## 注意事项
 
-1. 落地节点生成时会排除 VMess。
+1. 落地节点生成时会按实际协议类型排除 VMess；不要仅通过节点名称判断协议类型。
 2. 完整配置通过第二个固定路径拉取落地列表，客户端只需导入主订阅。
 3. Nginx 示例已带 `Cache-Control: no-cache`，避免缓存旧节点。
 4. **公开模板纪律**：仓库内只保留占位符；真实订阅、域名、节点仅存在于你的 VPS。
 5. `generate.sh` 会拒绝仍为 `REPLACE_…` / `example.com` 的占位配置，避免误生成。
-6. 固定路径 `a7f3c21e9b` / `e9b2f1a7c3` 可自行更换，须与 Nginx 一致。
+6. 安装器使用固定 commit；升级模板时请同步更新安装器中的 commit pin。
+7. 固定路径 `a7f3c21e9b` / `e9b2f1a7c3` 可自行更换，须与 Nginx 一致。
 
 ---
 

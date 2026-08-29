@@ -31,7 +31,7 @@
 #    filter 硬凑负向先行断言 (?!...)——Go 标准库正则引擎(RE2)根本不
 #    支持这种断言语法，写了也是静默失效。落地两个分组（url-test/
 #    load-balance）排除 vmess 节点，之前用 filter 写法，实测确认
-#    Vmess 节点照样出现，已改用 exclude-filter: "(?i)vmess" 修复。
+#    Vmess 节点照样出现，已改用 exclude-type: vmess 修复。
 #    前置入口（机场）原本也用同样错误写法排除 CN2/GIA 线路，同样
 #    从未真正生效过；用户明确要求前置不做任何排除，已直接删除，
 #    不是"改成 exclude-filter"，是彻底移除这个限制。
@@ -689,7 +689,7 @@ proxy-groups:
     # 根本不支持 (?!...) 这种断言语法，这条规则要么编译失败要么被
     # 静默忽略，从头到尾没生效过。exclude-filter 本身就是排除语义，
     # 不需要再套断言语法，直接写要排除的关键词即可。
-    exclude-filter: "(?i)vmess"
+    exclude-type: vmess
     url: https://www.gstatic.com/generate_204
     expected-status: 204
     interval: 180
@@ -711,7 +711,7 @@ proxy-groups:
     # 已加入 AI服务/国外服务/流媒体/漏网之鱼 四个功能分组的可选项。
     # 每个功能分组现支持：落地优选出口（默认）、落地负载均衡、落地手动选择。
     use: [provider_exit]
-    exclude-filter: "(?i)vmess"
+    exclude-type: vmess
     url: https://www.gstatic.com/generate_204
     expected-status: 204
     interval: 180
@@ -723,7 +723,7 @@ proxy-groups:
     # 仅暴露落地 VPS 节点，供功能分组手动挑选具体协议/端口。
     # 严格止于落地节点，不包含前置入口、DIRECT、REJECT。
     use: [provider_exit]
-    exclude-filter: "(?i)vmess"
+    exclude-type: vmess
 
   - name: "AI服务"
     type: select
@@ -1128,22 +1128,22 @@ dns:
 
   default-nameserver:
     - 223.5.5.5
-    - 119.29.29.29
+    - 223.6.6.6
 
   # 全部使用纯 IP，消除启动期 DNS 查询（doh.pub 域名解析改为直接 IP）
   # 最优方案：120.53.53.53（腾讯纯IP）+ 223.5.5.5（阿里纯IP）
   # 纯IP访问DoH：无需域名解析、无SNI特征、双厂商冗余，三优合一
   proxy-server-nameserver:
-    - https://120.53.53.53/dns-query  # 腾讯 DNSPod 纯IP，无SNI特征
-    - https://223.5.5.5/dns-query     # 阿里 AliDNS 纯IP，双厂商冗余
+    - https://doh.pub/dns-query  # 腾讯 DNSPod 纯IP，无SNI特征
+    - https://dns.alidns.com/dns-query     # 阿里 AliDNS 纯IP，双厂商冗余
 
   nameserver:
     - "https://dns.google/dns-query#RULES"
     - "https://1.1.1.1/dns-query#RULES"
 
   direct-nameserver:
-    - https://120.53.53.53/dns-query
-    - https://223.5.5.5/dns-query
+    - https://doh.pub/dns-query
+    - https://dns.alidns.com/dns-query
 
   direct-nameserver-follow-policy: true
 
@@ -1151,8 +1151,8 @@ dns:
     "geosite:category-ads-all": "rcode://name_error"
 
     "rule-set:cn": &CN_DNS
-      - https://120.53.53.53/dns-query  # 腾讯纯IP
-      - https://223.5.5.5/dns-query     # 阿里纯IP
+      - https://doh.pub/dns-query  # 腾讯纯IP
+      - https://dns.alidns.com/dns-query     # 阿里纯IP
     "rule-set:geolocation-cn": *CN_DNS
     "rule-set:bilibili": *CN_DNS
     "geosite:cn": *CN_DNS
@@ -1191,7 +1191,7 @@ dns:
     "+.samsungknox.com":  *CN_DNS
     "+.samsungdm.com":    *CN_DNS
     # 腾讯（+.qq.com 覆盖所有子域含微信探测域名）
-    "+.qq.com":            &TENCENT [https://120.53.53.53/dns-query, https://223.5.5.5/dns-query]
+    "+.qq.com":            &TENCENT [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
     "+.wechat.com":        *TENCENT
     "+.weixin.com":        *TENCENT
     "+.wx.qq.com":         *TENCENT
@@ -1204,7 +1204,7 @@ dns:
     "+.myqcloud.com":      *TENCENT
     "+.wechatpay.cn":      *TENCENT
     # 阿里
-    "+.alipay.com":        &ALIBABA [https://120.53.53.53/dns-query, https://223.5.5.5/dns-query]
+    "+.alipay.com":        &ALIBABA [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
     "+.alipayobjects.com": *ALIBABA
     "+.taobao.com":        *ALIBABA
     "+.tmall.com":         *ALIBABA
@@ -1219,7 +1219,7 @@ dns:
     # 字节跳动：原用 180.184.2.2 裸 IP（明文 UDP:53，与全局纯 DoH 原则矛盾）。
     # 官方文档显示该 DNS 服务截至目前 DoH/DoT/DoQ 支持情况未经确认，无法安全启用；
     # 改用已验证可用的 DoH 端点，牺牲少量抖音/头条 CDN 调度精度换取零明文泄露。
-    "+.bytedance.com":  &BYTEDANCE [https://120.53.53.53/dns-query, https://223.5.5.5/dns-query]
+    "+.bytedance.com":  &BYTEDANCE [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
     "+.byteimg.com":    *BYTEDANCE
     "+.tosv.com":       *BYTEDANCE
     "+.douyin.com":     *BYTEDANCE
@@ -1233,7 +1233,7 @@ dns:
     "+.feishu.net":     *BYTEDANCE
     "+.volces.com":     *BYTEDANCE
     # 百度：同上，180.76.76.76 是明文 DNS，无已验证的 DoH 端点，改用已验证的 DoH 解析器
-    "+.baidu.com":    &BAIDU [https://120.53.53.53/dns-query, https://223.5.5.5/dns-query]
+    "+.baidu.com":    &BAIDU [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
     "+.bdstatic.com": *BAIDU
     "+.bdimg.com":    *BAIDU
     "+.bcebos.com":   *BAIDU
@@ -1242,7 +1242,7 @@ dns:
     "+.baidubce.com": *BAIDU
     # 金融
     "+.tenpay.com":          *TENCENT
-    "+.unionpay.com":        &FINANCE [https://120.53.53.53/dns-query, https://223.5.5.5/dns-query]
+    "+.unionpay.com":        &FINANCE [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
     "+.unionpaysecure.com":  *FINANCE
     "+.95516.com":           *FINANCE
     "+.icbc.com.cn":         *FINANCE
@@ -1270,7 +1270,7 @@ dns:
     "+.url.cn":            *TENCENT
     "+.aegis.qq.com":      *TENCENT
     # 国内 AI
-    "+.deepseek.com":    &DOMESTIC_AI [https://120.53.53.53/dns-query, https://223.5.5.5/dns-query]
+    "+.deepseek.com":    &DOMESTIC_AI [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
     "+.deepseek.ai":     *DOMESTIC_AI
     "+.moonshot.cn":     *DOMESTIC_AI
     "+.kimichat.com":    *DOMESTIC_AI
