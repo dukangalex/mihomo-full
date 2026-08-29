@@ -83,6 +83,14 @@ fi
 
 info "文件已写入 ${INSTALL_DIR}"
 
+# 安装小白管理入口
+curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "$INSTALL_DIR/manage.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/18288d4dbdd024f44e776444dbce4b682043bc93/manage.sh" || warn "无法下载 manage.sh"
+chmod 700 "$INSTALL_DIR/manage.sh" 2>/dev/null || true
+ln -sf "$INSTALL_DIR/manage.sh" /usr/local/bin/mihomo-full
+if [[ ! -f "$INSTALL_DIR/rulesets.local.conf" ]]; then printf '%s
+' '# provider|https_mrs_url|behavior|target|enabled' > "$INSTALL_DIR/rulesets.local.conf"; fi
+chmod 600 "$INSTALL_DIR/rulesets.local.conf"
+
 title "3. 生成配置"
 if [[ -f "${INSTALL_DIR}/template.yaml" && -x "${INSTALL_DIR}/generate.sh" ]]; then
   bash "${INSTALL_DIR}/generate.sh"
