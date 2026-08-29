@@ -3,26 +3,10 @@ name: Static repository audit
 on:
   push:
     paths:
-      - 'template.yaml'
-      - 'airport_overwrite.js'
-      - 'generate.sh'
-      - 'manage.sh'
-      - 'install.sh'
-      - 'telegram-bot/**'
-      - 'tools/**'
-      - 'COMMON_BEHAVIOR.md'
-      - 'docs/**'
+      - '**'
   pull_request:
     paths:
-      - 'template.yaml'
-      - 'airport_overwrite.js'
-      - 'generate.sh'
-      - 'manage.sh'
-      - 'install.sh'
-      - 'telegram-bot/**'
-      - 'tools/**'
-      - 'COMMON_BEHAVIOR.md'
-      - 'docs/**'
+      - '**'
   workflow_dispatch:
 
 permissions:
