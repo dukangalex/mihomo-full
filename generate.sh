@@ -19,6 +19,7 @@ command -v sed >/dev/null || err "需要 sed"
 command -v grep >/dev/null || err "需要 grep"
 command -v find >/dev/null || err "需要 find"
 command -v awk >/dev/null || err "需要 awk"
+command -v python3 >/dev/null || err "需要 python3"
 
 [[ -f "$TEMPLATE" ]] || err "找不到模板: $TEMPLATE"
 case "${AIRPORT_SUB_URL:-}" in ""|"REPLACE_WITH_YOUR_AIRPORT_SUBSCRIPTION_URL"|"这里填入你的机场订阅链接") err "请先设置机场订阅链接";; esac
@@ -44,7 +45,6 @@ fi
       BEGIN { block="" }
       {
         line=$0
-        first=substr(line,1,1)
         if (tolower(line) ~ /^  - name:[[:space:]]*/) {
           if (block != "") print block
           block=line
@@ -67,7 +67,7 @@ cp "$TEMPLATE" "$FULL_CONFIG"
 # ── 主配置公共行为增强 ─────────────────────────────────────────────
 # 机场覆盖脚本与链式主配置应共享安全底线；链式专属能力（VPS/dialer-proxy）除外。
 sed -i '/^[[:space:]]*exclude-type:[[:space:]]*vmess[[:space:]]*$/d' "$FULL_CONFIG"
-sed -i '/^[[:space::]]*"geosite:category-ads-all":[[:space:]]*"rcode:\/\/name_error"[[:space:]]*$/d' "$FULL_CONFIG"
+sed -i '/^[[:space:]]*"geosite:category-ads-all":[[:space:]]*"rcode:\/\/name_error"[[:space:]]*$/d' "$FULL_CONFIG"
 sed -i 's/^\([[:space:]]*proxies: \["REJECT-DROP", "落地优选出口"\]\)[[:space:]]*$/    proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]/' "$FULL_CONFIG"
 if ! grep -q '^  - name: "🛑 广告拦截"$' "$FULL_CONFIG"; then
   TMP_CFG="$FULL_CONFIG.tmp"
@@ -86,7 +86,7 @@ fi
 sed -i 's/- RULE-SET,category-ads-all,REJECT-DROP  # 广告域名/- RULE-SET,category-ads-all,🛑 广告拦截  # 默认拦截；需要时可切换 DIRECT/' "$FULL_CONFIG"
 sed -i 's/- RULE-SET,category-ads-all,REJECT-DROP$/- RULE-SET,category-ads-all,🛑 广告拦截/' "$FULL_CONFIG"
 
-# 链式 URL 替换使用 Bash 参数展开，避免 sed replacement 对 &, |, \\ 等字符的解释。
+# 链式 URL 使用 Python 字面替换，不把用户输入放进 sed replacement。
 replace_literal() {
   local file="$1" needle="$2" value="$3" tmp
   [[ -f "$file" ]] || err "文件不存在: $file"
@@ -124,7 +124,6 @@ apply_ruleset_overrides() {
       else
         [[ "$behavior" == domain ]] && anchor="DA" || anchor="IA"
         tmp="$FULL_CONFIG.tmp"
-        # URL 已校验不含双引号/空白；这里仍使用 printf 风格的 awk -v，避免 shell 拼接 awk 程序。
         awk -v n="$name" -v u="$url" -v a="$anchor" '/^rule-providers:/{print;printf "\n  %s:\n    <<: *%s\n    url: \"%s\"\n    path: \"./ruleset/%s.mrs\"\n",n,a,u,n;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
         tmp="$FULL_CONFIG.tmp"
         awk -v n="$name" -v t="$target" '/^rules:/{print;printf "\n  - RULE-SET,%s,%s\n",n,t;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
