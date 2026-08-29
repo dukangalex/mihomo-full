@@ -67,7 +67,7 @@ EOF
 
 # 写入精简版 generate.sh（与仓库 generate.sh 逻辑一致）
 curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/generate.sh" \
-  "https://raw.githubusercontent.com/dukangalex/mihomo-full/2ebe9de092442add4236331affce4ad3085d7615/generate.sh" || true
+  "https://raw.githubusercontent.com/dukangalex/mihomo-full/4aae05944537a082481ae7efd69001dbd5ccb5bf/generate.sh" || true
 if [[ ! -s "${INSTALL_DIR}/generate.sh" ]]; then
   warn "无法下载 generate.sh，请手动复制仓库中的 generate.sh"
 else
@@ -77,7 +77,7 @@ fi
 if [[ ! -f "${INSTALL_DIR}/template.yaml" ]]; then
   info "下载 template.yaml..."
   curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/template.yaml" \
-    "https://raw.githubusercontent.com/dukangalex/mihomo-full/2ebe9de092442add4236331affce4ad3085d7615/template.yaml" || \
+    "https://raw.githubusercontent.com/dukangalex/mihomo-full/4aae05944537a082481ae7efd69001dbd5ccb5bf/template.yaml" || \
     warn "请手动把 template.yaml 放到 ${INSTALL_DIR}/"
 fi
 
