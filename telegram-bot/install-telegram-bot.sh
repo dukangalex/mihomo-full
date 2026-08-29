@@ -39,8 +39,8 @@ VPS_TRAFFIC_ALERT_PERCENT="${CFG[VPS_TRAFFIC_ALERT_PERCENT]:-80}"
 VPS_TRAFFIC_INTERFACE="${CFG[VPS_TRAFFIC_INTERFACE]:-}"
 
 [[ "$MIHOMO_FULL_DIR" == "$BASE" ]] || err "MIHOMO_FULL_DIR 必须保持为 $BASE"
-[[ -n "$TG_BOT_TOKEN" && "$TG_BOT_TOKEN" != REPLACE_WITH_BOT_TOKEN ]] || err "请在 $ENV_FILE 设置 TG_BOT_TOKEN"
-[[ -n "$TG_ADMIN_IDS" ]] || err "请在 $ENV_FILE 设置 TG_ADMIN_IDS"
+[[ "$TG_BOT_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]{20,}$ ]] || err "TG_BOT_TOKEN 格式不合法"
+[[ "$TG_ADMIN_IDS" =~ ^[0-9]+(,[0-9]+)*$ ]] || err "TG_ADMIN_IDS 必须是逗号分隔的数字 Telegram 用户 ID"
 [[ "$VPS_MONTHLY_GB" =~ ^([0-9]+([.][0-9]+)?)$ ]] || err "VPS_MONTHLY_GB 必须是非负数字"
 [[ "$VPS_TRAFFIC_ALERT_PERCENT" =~ ^([0-9]+([.][0-9]+)?)$ ]] || err "VPS_TRAFFIC_ALERT_PERCENT 必须是数字"
 python3 - "$VPS_TRAFFIC_ALERT_PERCENT" <<'PY'
