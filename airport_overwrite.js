@@ -774,22 +774,22 @@ function main(config) {
   "DOMAIN-SUFFIX,pddpic.com,DIRECT",
   "DOMAIN-SUFFIX,samsunghealth.com,DIRECT",
   "DOMAIN,connectivitycheck.gstatic.com,DIRECT",
-  "DOMAIN,userlocation.googleapis.com,国外服务",
-  "DOMAIN,voilatile-pa.googleapis.com,国外服务",
-  "DOMAIN,geller-pa.googleapis.com,国外服务",
-  "DOMAIN,mobilemaps-pa-gz.googleapis.com,国外服务",
-  "DOMAIN-SUFFIX,app-measurement.com,国外服务",
-  "DOMAIN-SUFFIX,firebaselogging.googleapis.com,国外服务",
-  "DOMAIN-SUFFIX,in.appcenter.ms,国外服务",
-  "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,国外服务",
-  "DOMAIN-SUFFIX,connect.facebook.net,国外服务",
-  "DOMAIN-SUFFIX,a-cdn.anthropic.com,AI服务",
-  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,AI服务",
-  "DOMAIN-SUFFIX,bing.com,国外服务",
+  "DOMAIN,userlocation.googleapis.com,🌍 国外服务",
+  "DOMAIN,voilatile-pa.googleapis.com,🌍 国外服务",
+  "DOMAIN,geller-pa.googleapis.com,🌍 国外服务",
+  "DOMAIN,mobilemaps-pa-gz.googleapis.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,app-measurement.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,firebaselogging.googleapis.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,in.appcenter.ms,🌍 国外服务",
+  "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,connect.facebook.net,🌍 国外服务",
+  "DOMAIN-SUFFIX,a-cdn.anthropic.com,🤖 AI服务",
+  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,🤖 AI服务",
+  "DOMAIN-SUFFIX,bing.com,🌍 国外服务",
   "DOMAIN-SUFFIX,samsungosp.com,DIRECT",
-  "DOMAIN-SUFFIX,crashlytics.com,国外服务",
-  "DOMAIN-SUFFIX,firebase.io,国外服务",
-  "DOMAIN,browser-intake-us5-datadoghq.com,国外服务",
+  "DOMAIN-SUFFIX,crashlytics.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,firebase.io,🌍 国外服务",
+  "DOMAIN,browser-intake-us5-datadoghq.com,🌍 国外服务",
   "RULE-SET,sukka-phishing,REJECT-DROP",
   "RULE-SET,category-ads-all,🛑 广告拦截",
   "DOMAIN,galaxystore.ad-survey.com,REJECT",
@@ -819,39 +819,39 @@ function main(config) {
   "AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,443),(RULE-SET,cn-ip)),DIRECT",
   "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "IP-CIDR,54.223.0.0/16,国外服务,no-resolve",
-  "IP-CIDR,52.80.168.0/24,国外服务,no-resolve",
-  "DOMAIN-SUFFIX,browserleaks.com,国外服务",
-  "DOMAIN-SUFFIX,browserleaks.org,国外服务",
-  "DOMAIN-SUFFIX,ipleak.net,国外服务",
-  "DOMAIN-SUFFIX,dnsleaktest.com,国外服务",
-  "DOMAIN-SUFFIX,dnsleak.com,国外服务",
-  "DOMAIN-SUFFIX,whoer.net,国外服务",
-  "DOMAIN-SUFFIX,whatismyipaddress.com,国外服务",
-  "DOMAIN-SUFFIX,ipinfo.io,国外服务",
-  "DOMAIN-SUFFIX,ip-api.com,国外服务",
-  "DOMAIN-SUFFIX,myip.com,国外服务",
-  "DOMAIN-SUFFIX,ifconfig.me,国外服务",
-  "DOMAIN-SUFFIX,ifconfig.co,国外服务",
-  "DOMAIN-SUFFIX,ipecho.net,国外服务",
-  "DOMAIN-SUFFIX,ip.sb,国外服务",
-  "DOMAIN-SUFFIX,ipleak.com,国外服务",
-  "DOMAIN-SUFFIX,dnsleaktest.org,国外服务",
-  "DOMAIN-SUFFIX,browserleaks.info,国外服务",
-  "DOMAIN-SUFFIX,whatismyip.com,国外服务",
-  "DOMAIN-SUFFIX,ipify.org,国外服务",
-  "DOMAIN-SUFFIX,api.ipify.org,国外服务",
-  "DOMAIN-SUFFIX,ipapi.co,国外服务",
-  "DOMAIN-SUFFIX,ipwho.is,国外服务",
-  "DOMAIN-SUFFIX,ident.me,国外服务",
-  "DOMAIN-SUFFIX,cloudflarestorage.com,国外服务",
-  "DOMAIN-SUFFIX,paddle.com,国外服务",
+  "IP-CIDR,54.223.0.0/16,🌍 国外服务,no-resolve",
+  "IP-CIDR,52.80.168.0/24,🌍 国外服务,no-resolve",
+  "DOMAIN-SUFFIX,browserleaks.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,browserleaks.org,🌍 国外服务",
+  "DOMAIN-SUFFIX,ipleak.net,🌍 国外服务",
+  "DOMAIN-SUFFIX,dnsleaktest.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,dnsleak.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,whoer.net,🌍 国外服务",
+  "DOMAIN-SUFFIX,whatismyipaddress.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,ipinfo.io,🌍 国外服务",
+  "DOMAIN-SUFFIX,ip-api.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,myip.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,ifconfig.me,🌍 国外服务",
+  "DOMAIN-SUFFIX,ifconfig.co,🌍 国外服务",
+  "DOMAIN-SUFFIX,ipecho.net,🌍 国外服务",
+  "DOMAIN-SUFFIX,ip.sb,🌍 国外服务",
+  "DOMAIN-SUFFIX,ipleak.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,dnsleaktest.org,🌍 国外服务",
+  "DOMAIN-SUFFIX,browserleaks.info,🌍 国外服务",
+  "DOMAIN-SUFFIX,whatismyip.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,ipify.org,🌍 国外服务",
+  "DOMAIN-SUFFIX,api.ipify.org,🌍 国外服务",
+  "DOMAIN-SUFFIX,ipapi.co,🌍 国外服务",
+  "DOMAIN-SUFFIX,ipwho.is,🌍 国外服务",
+  "DOMAIN-SUFFIX,ident.me,🌍 国外服务",
+  "DOMAIN-SUFFIX,cloudflarestorage.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,paddle.com,🌍 国外服务",
   "SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN",
   "SUB-RULE,(NETWORK,udp),DOMESTIC_DOMAIN",
   "SUB-RULE,(NETWORK,tcp),DOMESTIC_IP",
   "SUB-RULE,(NETWORK,udp),DOMESTIC_IP",
-  "PROCESS-NAME-WILDCARD,*revanced*,国外服务",
-  "PROCESS-NAME-WILDCARD,*youtube*,国外服务",
+  "PROCESS-NAME-WILDCARD,*revanced*,🌍 国外服务",
+  "PROCESS-NAME-WILDCARD,*youtube*,🌍 国外服务",
   "PROCESS-NAME-WILDCARD,*com.android.bank*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.icbc*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.ccb*,DIRECT",
@@ -890,68 +890,68 @@ function main(config) {
   "PROCESS-NAME-WILDCARD,*com.czbank*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.bjrcb*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.android.mobilebank*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*AnyDesk*,远控工具",
-  "PROCESS-NAME-WILDCARD,*ToDesk*,远控工具",
-  "PROCESS-NAME-WILDCARD,*TeamViewer*,远控工具",
-  "PROCESS-NAME-WILDCARD,*RustDesk*,远控工具",
-  "PROCESS-NAME-WILDCARD,*rustdesk*,远控工具",
-  "PROCESS-NAME-WILDCARD,*tailscale*,远控工具",
-  "PROCESS-NAME-WILDCARD,*tailscaled*,远控工具",
-  "PROCESS-NAME-WILDCARD,*zerotier*,远控工具",
-  "PROCESS-NAME-WILDCARD,*ngrok*,远控工具",
-  "PROCESS-NAME-WILDCARD,*frpc*,远控工具",
-  "PROCESS-NAME-WILDCARD,*frps*,远控工具",
-  "PROCESS-NAME-WILDCARD,*cloudflared*,远控工具",
-  "PROCESS-NAME-WILDCARD,*natapp*,远控工具",
-  "PROCESS-NAME-WILDCARD,*nblink*,远控工具",
-  "RULE-SET,icloud,国外服务",
-  "RULE-SET,apple,国外服务",
-  "RULE-SET,microsoft,国外服务",
-  "RULE-SET,openai,AI服务",
-  "RULE-SET,category-ai-!cn,AI服务",
-  "RULE-SET,netflix,流媒体",
-  "RULE-SET,netflix-ip,流媒体,no-resolve",
-  "RULE-SET,hulu,流媒体",
-  "RULE-SET,disney,流媒体",
-  "RULE-SET,hbo,流媒体",
-  "RULE-SET,amazon,流媒体",
-  "RULE-SET,bahamut,流媒体",
-  "RULE-SET,youtube,流媒体",
-  "RULE-SET,tiktok,流媒体",
-  "RULE-SET,biliintl,流媒体",
-  "RULE-SET,abema,流媒体",
-  "RULE-SET,bbc,流媒体",
-  "RULE-SET,spotify,流媒体",
-  "RULE-SET,google,国外服务",
-  "RULE-SET,google-ip,国外服务,no-resolve",
-  "RULE-SET,github,国外服务",
-  "RULE-SET,gitlab,国外服务",
-  "RULE-SET,facebook,国外服务",
-  "RULE-SET,instagram,国外服务",
-  "RULE-SET,twitter,国外服务",
-  "RULE-SET,twitter-ip,国外服务,no-resolve",
-  "RULE-SET,linkedin,国外服务",
-  "RULE-SET,discord,国外服务",
-  "RULE-SET,snapchat,国外服务",
-  "RULE-SET,telegram-ip,国外服务,no-resolve",
-  "RULE-SET,facebook-ip,国外服务,no-resolve",
-  "RULE-SET,cloudflare-ip,国外服务,no-resolve",
-  "RULE-SET,cloudfront-ip,国外服务,no-resolve",
-  "RULE-SET,fastly-ip,国外服务,no-resolve",
-  "RULE-SET,steam,国外服务",
-  "RULE-SET,epicgames,国外服务",
-  "RULE-SET,ea,国外服务",
-  "RULE-SET,ubisoft,国外服务",
-  "RULE-SET,blizzard,国外服务",
-  "RULE-SET,paypal,国外服务",
-  "RULE-SET,aws,国外服务",
-  "RULE-SET,azure,国外服务",
-  "RULE-SET,dropbox,国外服务",
-  "RULE-SET,onedrive,国外服务",
-  "RULE-SET,cryptocurrency,国外服务",
-  "RULE-SET,category-scholar-!cn,国外服务",
-  "RULE-SET,geolocation-!cn,国外服务",
-  "MATCH,漏网之鱼"
+  "PROCESS-NAME-WILDCARD,*AnyDesk*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*ToDesk*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*TeamViewer*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*RustDesk*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*rustdesk*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*tailscale*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*tailscaled*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*zerotier*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*ngrok*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*frpc*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*frps*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*cloudflared*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*natapp*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*nblink*,🔧 远控工具",
+  "RULE-SET,icloud,🌍 国外服务",
+  "RULE-SET,apple,🌍 国外服务",
+  "RULE-SET,microsoft,🌍 国外服务",
+  "RULE-SET,openai,🤖 AI服务",
+  "RULE-SET,category-ai-!cn,🤖 AI服务",
+  "RULE-SET,netflix,📺 Media",
+  "RULE-SET,netflix-ip,📺 Media,no-resolve",
+  "RULE-SET,hulu,📺 Media",
+  "RULE-SET,disney,📺 Media",
+  "RULE-SET,hbo,📺 Media",
+  "RULE-SET,amazon,📺 Media",
+  "RULE-SET,bahamut,📺 Media",
+  "RULE-SET,youtube,📺 Media",
+  "RULE-SET,tiktok,📺 Media",
+  "RULE-SET,biliintl,📺 Media",
+  "RULE-SET,abema,📺 Media",
+  "RULE-SET,bbc,📺 Media",
+  "RULE-SET,spotify,📺 Media",
+  "RULE-SET,google,🌍 国外服务",
+  "RULE-SET,google-ip,🌍 国外服务,no-resolve",
+  "RULE-SET,github,🌍 国外服务",
+  "RULE-SET,gitlab,🌍 国外服务",
+  "RULE-SET,facebook,🌍 国外服务",
+  "RULE-SET,instagram,🌍 国外服务",
+  "RULE-SET,twitter,🌍 国外服务",
+  "RULE-SET,twitter-ip,🌍 国外服务,no-resolve",
+  "RULE-SET,linkedin,🌍 国外服务",
+  "RULE-SET,discord,🌍 国外服务",
+  "RULE-SET,snapchat,🌍 国外服务",
+  "RULE-SET,telegram-ip,🌍 国外服务,no-resolve",
+  "RULE-SET,facebook-ip,🌍 国外服务,no-resolve",
+  "RULE-SET,cloudflare-ip,🌍 国外服务,no-resolve",
+  "RULE-SET,cloudfront-ip,🌍 国外服务,no-resolve",
+  "RULE-SET,fastly-ip,🌍 国外服务,no-resolve",
+  "RULE-SET,steam,🌍 国外服务",
+  "RULE-SET,epicgames,🌍 国外服务",
+  "RULE-SET,ea,🌍 国外服务",
+  "RULE-SET,ubisoft,🌍 国外服务",
+  "RULE-SET,blizzard,🌍 国外服务",
+  "RULE-SET,paypal,🌍 国外服务",
+  "RULE-SET,aws,🌍 国外服务",
+  "RULE-SET,azure,🌍 国外服务",
+  "RULE-SET,dropbox,🌍 国外服务",
+  "RULE-SET,onedrive,🌍 国外服务",
+  "RULE-SET,cryptocurrency,🌍 国外服务",
+  "RULE-SET,category-scholar-!cn,🌍 国外服务",
+  "RULE-SET,geolocation-!cn,🌍 国外服务",
+  "MATCH,🐟 漏网之鱼"
 ];
 
   config["tun"] = {
@@ -1957,14 +1957,14 @@ function main(config) {
   ]
 };
 
-  config["mixed-port"] = config["mixed-port"] || 17890;
+  config["mixed-port"] = 17890;
   // （仅本机监听），而非无条件强制开放局域网——降低公共网络下被同网段
   // 设备探测到开放代理端口的风险。如需给家里其他设备共享代理，手动改回
   // allow-lan: true 即可。
-  config["allow-lan"] = config["allow-lan"] !== undefined ? config["allow-lan"] : false;
-  config["bind-address"] = config["bind-address"] || "127.0.0.1";
-  config.ipv6 = false;
-  config.mode = "rule";
+  config["allow-lan"] = false;
+  config["bind-address"] = "127.0.0.1";
+  config["ipv6"] = false;
+  config["mode"] = "rule";
   config["log-level"] = "info";
   config["unified-delay"] = true;
   config["tcp-concurrent"] = true;
@@ -1974,16 +1974,21 @@ function main(config) {
   config["find-process-mode"] = "strict";
   config["etag-support"] = true;
   config["experimental"] = {
-    "quic-go-disable-gso": false,
-    "quic-go-disable-ecn": false
-  };
+  "quic-go-disable-gso": false,
+  "quic-go-disable-ecn": false
+};
   config["external-controller"] = "127.0.0.1:19090";
   // CORS防护：只允许本地origin访问控制器，防止CDN被劫持/投毒后
   // 其JS通过CORS读取本地控制器数据（节点列表、连接记录等敏感信息）
   config["external-controller-cors"] = {
-    "allow-origins": ["http://127.0.0.1:19090", "http://localhost:19090"],
-    "allow-private-network": false
-  };
+  "allow-origins": [
+    "http://127.0.0.1:19090",
+    "https://127.0.0.1:19090",
+    "http://localhost:19090",
+    "https://localhost:19090"
+  ],
+  "allow-private-network": false
+};
   config["external-ui"] = "ui";
   config["external-ui-url"] = "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip";
 
@@ -1993,14 +1998,23 @@ function main(config) {
   config["geo-auto-update"] = true;
   config["geo-update-interval"] = 168;
   config["geox-url"] = {
-    geoip: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat",
-    geosite: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat",
-    mmdb: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb",
-    asn: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
-  };
+  "geoip": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat",
+  "geosite": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat",
+  "mmdb": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb",
+  "asn": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
+};
 
-  config.profile = { "store-selected": false, "store-fake-ip": false };
-  config.ntp = { enable: false, "write-to-system": false, server: "ntp.aliyun.com", port: 123, interval: 30 };
+  config["profile"] = {
+  "store-selected": false,
+  "store-fake-ip": false
+};
+  config["ntp"] = {
+  "enable": false,
+  "write-to-system": false,
+  "server": "ntp.aliyun.com",
+  "port": 123,
+  "interval": 30
+};
 
   config["sub-rules"] = {
   "DOMESTIC_DOMAIN": [
@@ -2127,7 +2141,7 @@ function main(config) {
   config["find-process-mode"] = CANONICAL["find-process-mode"];
   config["etag-support"] = CANONICAL["etag-support"];
   config["external-controller"] = CANONICAL["external-controller"];
-  config["global-ua"] = CANONICAL["global-ua"];
+  config["global-ua"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
   config["geodata-mode"] = CANONICAL["geodata-mode"];
   config["geodata-loader"] = CANONICAL["geodata-loader"];
   config["geo-auto-update"] = CANONICAL["geo-auto-update"];
