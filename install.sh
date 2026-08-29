@@ -78,7 +78,7 @@ fi
 if [[ ! -f "${INSTALL_DIR}/template.yaml" ]]; then
   info "下载 template.yaml..."
   curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/template.yaml" \
-    "https://raw.githubusercontent.com/dukangalex/mihomo-full/71acfd95cbfdb5acad9eff129b5855a1073d278f/template.yaml" || \
+    "https://raw.githubusercontent.com/dukangalex/mihomo-full/aeba5f3e052ec22c8e92e91b9c6808b8d9099b94/template.yaml" || \
     warn "请手动把 template.yaml 放到 ${INSTALL_DIR}/"
 fi
 
