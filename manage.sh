@@ -5,6 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SETTINGS="${SCRIPT_DIR}/settings.conf"
 GENERATE="${SCRIPT_DIR}/generate.sh"
+RULES="${SCRIPT_DIR}/rulesets.local.conf"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 err(){ echo -e "${RED}[✗]${NC} $1"; exit 1; }
@@ -110,7 +111,7 @@ case "${1:-menu}" in
     if command -v whiptail >/dev/null 2>&1; then
       choice="$(whiptail --title "Mihomo-Full 管理" --menu "请选择操作：" 18 78 5         "1" "更换机场订阅（自动重新生成）"         "2" "更新 VPS 落地节点"         "3" "规则集管理（增加/替换/禁用/恢复）"         "4" "查看当前状态"         "5" "退出" 3>&1 1>&2 2>&3)" || exit 0
     elif command -v dialog >/dev/null 2>&1; then
-      choice="$(dialog --title "Mihomo-Full 管理" --menu "请选择操作：" 15 72 4         "1" "更换机场订阅（自动重新生成）"         "2" "更新 VPS 落地节点"         "3" "查看当前状态"         "4" "退出" 3>&1 1>&2 2>&3)" || exit 0
+      choice="$(dialog --title "Mihomo-Full 管理" --menu "请选择操作：" 18 78 5         "1" "更换机场订阅（自动重新生成）"         "2" "更新 VPS 落地节点"         "3" "规则集管理（增加/替换/禁用/恢复）"         "4" "查看当前状态"         "5" "退出" 3>&1 1>&2 2>&3)" || exit 0
     else
       echo "Mihomo-Full 管理"
       echo "1) 更换机场订阅（自动重新生成）"
