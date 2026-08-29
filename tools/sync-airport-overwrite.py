@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Synchronize airport_overwrite.js with template.yaml common behavior.
 
-The airport overwrite intentionally keeps its existing airport-specific proxy-group
-layout. Only common behavior is synchronized. Chain-only VPS/dialer behavior is not
-copied into the pure-airport profile.
+Design contract:
+- template.yaml is authoritative for COMMON behavior.
+- airport_overwrite.js keeps its established airport-specific proxy groups/UI.
+- No proxy-group renaming, filtering, or DIRECT removal is performed here.
+- No protocol-based node exclusion is performed here.
+- Chain-only VPS/dialer-proxy behavior is never copied to pure-airport mode.
 """
 from __future__ import annotations
 
@@ -14,6 +17,17 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "template.yaml"
 AIRPORT = ROOT / "airport_overwrite.js"
+
+COMMON_OBJECTS = (
+    "tun", "dns", "sniffer", "hosts", "rule-providers", "rules", "sub-rules",
+)
+COMMON_SCALARS = (
+    "mode", "allow-lan", "bind-address", "mixed-port", "log-level", "ipv6",
+    "unified-delay", "tcp-concurrent", "keep-alive-interval", "keep-alive-idle",
+    "disable-keep-alive", "find-process-mode", "etag-support", "external-controller",
+    "global-ua", "geodata-mode", "geodata-loader", "geo-auto-update", "geo-update-interval",
+    "profile", "ntp", "experimental", "external-controller-cors", "geox-url",
+)
 
 
 def js(value):
@@ -68,15 +82,14 @@ def replace_assignment(text: str, marker: str, value) -> str:
         j += 1
     else:
         raise RuntimeError(f"unterminated assignment: {marker}")
-    replacement = f'config["{marker}"] = {js(value)};'
-    return text[:start] + replacement + text[j:]
+    return text[:start] + f'config["{marker}"] = {js(value)};' + text[j:]
 
 
 def add_assignment(text: str, marker: str, value) -> str:
-    block = f'  config["{marker}"] = {js(value)};\n'
     needle = "\n  return config;"
     if needle not in text:
         raise RuntimeError("return config marker not found")
+    block = f'  config["{marker}"] = {js(value)};\n'
     return text.replace(needle, "\n" + block + needle, 1)
 
 
@@ -86,107 +99,34 @@ def upsert_assignment(text: str, marker: str, value) -> str:
     return add_assignment(text, marker, value)
 
 
-def insert_before_return(text: str, block: str) -> str:
-    needle = "\n  return config;"
-    if needle not in text:
-        raise RuntimeError("return config marker not found")
-    return text.replace(needle, "\n" + block.rstrip() + "\n" + needle, 1)
-
-
 def main() -> None:
     template = yaml.safe_load(TEMPLATE.read_text(encoding="utf-8"))
     airport = AIRPORT.read_text(encoding="utf-8")
 
-    # These are public/common behavior sections. Proxy-groups are deliberately
-    # excluded: airport_overwrite.js retains its established airport UX.
-    for key in ("tun", "dns", "sniffer", "hosts", "rule-providers", "rules", "sub-rules"):
+    for key in COMMON_OBJECTS:
         if key not in template:
             raise RuntimeError(f"template missing required section: {key}")
         airport = upsert_assignment(airport, key, template[key])
 
-    scalars = {
-        "mode": template.get("mode", "rule"),
-        "allow-lan": template.get("allow-lan", False),
-        "bind-address": template.get("bind-address", "127.0.0.1"),
-        "mixed-port": template.get("mixed-port", 17890),
-        "log-level": template.get("log-level", "info"),
-        "ipv6": template.get("ipv6", False),
-        "unified-delay": template.get("unified-delay", True),
-        "tcp-concurrent": template.get("tcp-concurrent", True),
-        "keep-alive-interval": template.get("keep-alive-interval", 15),
-        "keep-alive-idle": template.get("keep-alive-idle", 15),
-        "disable-keep-alive": template.get("disable-keep-alive", False),
-        "find-process-mode": template.get("find-process-mode", "strict"),
-        "etag-support": template.get("etag-support", True),
-        "external-controller": template.get("external-controller", "127.0.0.1:19090"),
-        "global-ua": template.get("global-ua"),
-        "geodata-mode": template.get("geodata-mode", True),
-        "geodata-loader": template.get("geodata-loader", "memconservative"),
-        "geo-auto-update": template.get("geo-auto-update", True),
-        "geo-update-interval": template.get("geo-update-interval", 168),
-        "profile": template.get("profile", {}),
-        "ntp": template.get("ntp", {}),
-        "experimental": template.get("experimental", {}),
-        "external-controller-cors": template.get("external-controller-cors", {}),
-        "geox-url": template.get("geox-url", {}),
-    }
+    for key in COMMON_SCALARS:
+        if key in template:
+            airport = upsert_assignment(airport, key, template[key])
 
-    final = ["  // BEGIN AUTO-SYNC: template.yaml common behavior", "  var CANONICAL = " + js(scalars) + ";"]
-    for k in scalars:
-        final.append(f'  config[{json.dumps(k, ensure_ascii=False)}] = CANONICAL[{json.dumps(k, ensure_ascii=False)}];')
+    # IMPORTANT: do not touch proxy-groups here. The airport profile intentionally
+    # keeps its existing groups and UX, including DIRECT exceptions for ads and
+    # remote-control tools. Do not add protocol exclusions either.
 
-    final += [
-        "  // Airport-specific proxy groups are preserved. Do not remove DIRECT from",
-        "  // local exception groups: advertising and remote-control tools intentionally",
-        "  // retain a user-selectable DIRECT option. No protocol-based node exclusion is",
-        "  // performed by this overwrite.",
-        "  if (config[\"proxy-groups\"] && config[\"proxy-groups\"].forEach) {",
-        "    config[\"proxy-groups\"].forEach(function (g) {",
-        "      if (!g || !g.name) return;",
-        "      var oldName = g.name;",
-        "      if (oldName === \"♻️ 自动选择\") g.name = \"机场优选\";",
-        "      else if (oldName === \"⚖️ 负载均衡\") g.name = \"机场负载均衡\";",
-        "      else if (oldName === \"🔰 节点选择\") g.name = \"机场手动选择\";",
-        "      else if (oldName === \"📺 Media\") g.name = \"流媒体\";",
-        "      else if (oldName === \"🐟 漏网之鱼\") g.name = \"漏网之鱼\";",
-        "      if (g.type === \"select\" && g.proxies && g.proxies.filter && g.name !== \"🛑 广告拦截\" && g.name !== \"🔧 远控工具\") {",
-        "        var mapped = [];",
-        "        for (var pi = 0; pi < g.proxies.length; pi++) {",
-        "          var p = g.proxies[pi];",
-        "          if (p === \"♻️ 自动选择\") p = \"机场优选\";",
-        "          else if (p === \"⚖️ 负载均衡\") p = \"机场负载均衡\";",
-        "          else if (p === \"🔰 节点选择\") p = \"机场手动选择\";",
-        "          else if (p === \"📺 Media\") p = \"流媒体\";",
-        "          else if (p === \"🐟 漏网之鱼\") p = \"漏网之鱼\";",
-        "          if (mapped.indexOf(p) < 0) mapped.push(p);",
-        "        }",
-        "        g.proxies = mapped;",
-        "      }",
-        "      if (g.name === \"🔧 远控工具\") {",
-        "        var remote = g.proxies || [];",
-        "        if (remote.indexOf(\"DIRECT\") < 0) remote.push(\"DIRECT\");",
-        "        g.proxies = remote;",
-        "      }",
-        "      if (g.name === \"🛑 广告拦截\") {",
-        "        var ads = g.proxies || [];",
-        "        if (ads.indexOf(\"REJECT-DROP\") < 0) ads.unshift(\"REJECT-DROP\");",
-        "        if (ads.indexOf(\"DIRECT\") < 0) ads.push(\"DIRECT\");",
-        "        g.proxies = ads;",
-        "      }",
-        "    });",
-        "  }",
-        "  // Private-network and domestic DIRECT behavior remains a bottom-layer routing",
-        "  // decision; there is no global DIRECT switch in the user-facing UI.",
-        "  // END AUTO-SYNC: template.yaml common behavior",
+    required_markers = [
+        'config["rule-providers"]', 'config["rules"]', 'config["sub-rules"]',
+        'config["tun"]', 'config["dns"]', 'config["sniffer"]',
+        'config["global-ua"]', 'config["geox-url"]',
     ]
-    airport = insert_before_return(airport, "\n".join(final))
-
-    for marker in ('config["rule-providers"]', 'config["rules"]', 'config["sub-rules"]', 'config["tun"]', 'config["dns"]', 'config["sniffer"]', 'config["global-ua"]', 'config["geox-url"]'):
+    for marker in required_markers:
         if marker not in airport:
             raise RuntimeError(f"post-sync sanity check failed: {marker}")
 
     AIRPORT.write_text(airport, encoding="utf-8")
-    print("airport_overwrite.js synchronized with template.yaml common behavior")
+    print("airport_overwrite.js synchronized: common behavior only; airport groups preserved")
 
 
 if __name__ == "__main__":
