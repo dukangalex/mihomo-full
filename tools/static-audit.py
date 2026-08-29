@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static regression audit for the public Mihomo-Full template."""
+"""Static regression audit for the public Mihomo-Full template.\n\nThis audit is intentionally stricter than a syntax check: it validates rule -> proxy-group references and the final UI DIRECT contract.\n"""
 from __future__ import annotations
 import re
 from pathlib import Path
