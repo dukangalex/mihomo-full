@@ -12,6 +12,7 @@ import tempfile
 from pathlib import Path
 import yaml
 
+# This file is deliberately strict: a passing audit is a release prerequisite.
 ROOT = Path(__file__).resolve().parents[1]
 template_path = ROOT / "template.yaml"
 airport_path = ROOT / "airport_overwrite.js"
