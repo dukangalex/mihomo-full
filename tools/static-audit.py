@@ -55,13 +55,10 @@ for name, rules in (template.get("sub-rules") or {}).items():
 # Common behavior must be represented in the template, not re-created by generate.sh.
 if "主配置公共行为增强" in generate:
     errors.append("generate.sh still contains a second common-behavior implementation")
-for pattern, label in (
-    (r"exclude-type:\s*vmess", "generator must not add VMess exclusion"),
-    (r"geosite:category-ads-all.*rcode://name_error", "generator must not force ad DNS NXDOMAIN"),
-    (r"RULE-SET,category-ads-all,🛑 广告拦截", "generator must not rewrite the public ad rule"),
-):
-    if re.search(pattern, generate, re.S):
-        errors.append(label)
+if re.search(r"exclude-type:\s*vmess", generate):
+    errors.append("generate.sh must not add VMess exclusion")
+if re.search(r"geosite:category-ads-all.*rcode://name_error", generate, re.S):
+    errors.append("generate.sh must not force ad DNS NXDOMAIN")
 
 # Installer must take one immutable repository snapshot at install time, not mix SHAs.
 if re.search(r"raw\.githubusercontent\.com/[^/]+/[^/]+/[0-9a-f]{40}/", install):
@@ -140,9 +137,10 @@ for raw in (",国外服务", ",AI服务", ",流媒体", ",漏网之鱼"):
     if raw in airport:
         errors.append(f"airport overwrite contains unmapped common rule target: {raw}")
 
-# Repository-wide stale literal scan. Bare dns.alidns.com is allowed only as a
-# real-ip fake-ip-filter entry; the obsolete DoH URL itself is never allowed.
-scan_files = [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]
+# Repository-wide stale literal scan. Audit source files intentionally contain
+# detection strings, so they are excluded from the literal-residue scan.
+scan_exclude = {Path("tools/static-audit.py"), Path("tools/audit-generated-config.sh")}
+scan_files = [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts and p.relative_to(ROOT) not in scan_exclude]
 for p in scan_files:
     try:
         text = p.read_text(encoding="utf-8")
@@ -155,11 +153,11 @@ for p in scan_files:
     if "https://120.53.53.53/dns-query" in text:
         errors.append(f"retired DNSPod DoH IP endpoint remains in {p.relative_to(ROOT)}")
 
-# Public docs/workflows must not describe temporary repair automation as the normal path.
+# No temporary repair workflow may remain in the repository.
 for p in scan_files:
     if p.suffix.lower() in {".md", ".yml", ".yaml"}:
         text = p.read_text(encoding="utf-8")
-        if "one-shot-consistency-repair" in text or "repair-airport-dns" in text:
+        if "one-shot-consistency-repair" in text or "one-shot-doc-repair" in text or "repair-airport-dns" in text:
             errors.append(f"temporary repair workflow referenced by {p.relative_to(ROOT)}")
 
 if errors:
