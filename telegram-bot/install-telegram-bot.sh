@@ -10,6 +10,12 @@ command -v python3 >/dev/null || err "需要 python3"; python3 -m pip --version 
 if [[ ! -f "$ENV_FILE" ]]; then
   cp "$BASE/telegram-bot.example.env" "$ENV_FILE"; chmod 600 "$ENV_FILE"; echo "已创建 $ENV_FILE"; echo "请填写 TG_BOT_TOKEN 与 TG_ADMIN_IDS 后重新运行本脚本。"; exit 0
 fi
+# Backfill newly introduced VPS-plan settings without overwriting existing user values.
+for line in 'VPS_MONTHLY_GB=0' 'VPS_EXPIRES_AT=' 'VPS_TRAFFIC_ALERT_PERCENT=80' 'VPS_TRAFFIC_INTERFACE='; do
+  key="${line%%=*}"
+  grep -q "^${key}=" "$ENV_FILE" || printf '%s\n' "$line" >> "$ENV_FILE"
+done
+chmod 600 "$ENV_FILE"
 set -a; source "$ENV_FILE"; set +a
 [[ -n "${TG_BOT_TOKEN:-}" && "$TG_BOT_TOKEN" != REPLACE_WITH_BOT_TOKEN ]] || err "请在 $ENV_FILE 设置 TG_BOT_TOKEN"
 [[ -n "${TG_ADMIN_IDS:-}" ]] || err "请在 $ENV_FILE 设置 TG_ADMIN_IDS"
@@ -23,5 +29,4 @@ systemctl daemon-reload
 systemctl enable --now mihomo-full-bot.service
 systemctl --no-pager --full status mihomo-full-bot.service || true
 info "Telegram 管理机器人已启动。"
-info "VPS 流量统计：$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); from vps_usage import report; print(report()["interface"] or "未识别")' "$BOT_DIR")"
 info "查看日志：journalctl -u mihomo-full-bot -f"
