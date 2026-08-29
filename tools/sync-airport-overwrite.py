@@ -73,15 +73,29 @@ def upsert_object(text: str, marker: str, value) -> str:
     return replace_assignment(text, marker, value) if (f'config["{marker}"] =' in text or f"config.{marker} =" in text) else add_assignment(text, marker, value)
 
 def restore_airport_exceptions(text: str) -> str:
-    text = text.replace('  "geosite:category-ads-all": "rcode://name_error",\n', "")
+    # DNS-level ad NXDOMAIN defeats the selectable DIRECT exception.
+    text = text.replace('  "geosite:category-ads-all": "rcode://name_error",\\n', "")
+    # Ads route to the existing airport ad group; remote-control retains DIRECT.
     text = text.replace('"RULE-SET,category-ads-all,REJECT-DROP",', '"RULE-SET,category-ads-all,🛑 广告拦截",')
-    text = text.replace(
-        'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "落地优选出口"]',
-        'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]'
-    )
-    text = text.replace('var privateGroup = { name: "🔒 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };\n', '')
-    text = text.replace('var domesticGroup = { name: "🇨🇳 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME].concat(regionNames), icon: "" };\n', '')
+    # Private/domestic DIRECT is bottom-layer behavior, not a user-facing group.
+    text = text.replace('var privateGroup = { name: "🔒 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };\\n', '')
+    text = text.replace('var domesticGroup = { name: "🇨🇳 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME].concat(regionNames), icon: "" };\\n', '')
     text = text.replace('adBlockGroup, privateGroup, domesticGroup,', 'adBlockGroup,')
+    return text
+
+
+def map_airport_targets(text: str) -> str:
+    # Chain-mode rule targets must resolve to the airport script's existing groups.
+    mappings = {
+        "AI服务": "🤖 AI服务",
+        "国外服务": "🌍 国外服务",
+        "流媒体": "📺 Media",
+        "漏网之鱼": "🐟 漏网之鱼",
+        "远控工具": "🔧 远控工具",
+    }
+    for src, dst in mappings.items():
+        text = text.replace("," + src + "\n", "," + dst + "\n")
+        text = text.replace("," + src + "\r\n", "," + dst + "\r\n")
     return text
 
 def main() -> None:
@@ -93,14 +107,21 @@ def main() -> None:
     for key in COMMON_SCALARS:
         if key in template: airport = replace_scalar(airport, key, template[key])
     airport = restore_airport_exceptions(airport)
+    airport = map_airport_targets(airport)
     required = ('config["rule-providers"]', 'config["rules"]', 'config["sub-rules"]', 'config["tun"]', 'config["dns"]', 'config["sniffer"]', 'config["global-ua"]', 'config["geox-url"]')
     for marker in required:
         if marker not in airport: raise RuntimeError(f"post-sync sanity check failed: {marker}")
     if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in airport: raise RuntimeError("airport ad rule is not connected to the ad group")
     if 'var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"]' not in airport: raise RuntimeError("airport ad DIRECT exception missing")
-    if 'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]' not in airport: raise RuntimeError("airport remote DIRECT exception missing")
+    if 'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"]' not in airport: raise RuntimeError("airport remote DIRECT exception missing")
     if 'var privateGroup =' in airport or 'var domesticGroup =' in airport: raise RuntimeError("private/domestic UI groups must remain hidden")
     if 'exclude-type: vmess' in airport: raise RuntimeError("protocol exclusion must not exist")
+    for group in ("🤖 AI服务", "🌍 国外服务", "📺 Media", "🐟 漏网之鱼", "🔧 远控工具", "🛑 广告拦截"):
+        if 'name: "' + group + '"' not in airport:
+            raise RuntimeError("required airport group missing: " + group)
+    for target in (",国外服务", ",AI服务", ",流媒体", ",漏网之鱼"):
+        if target in airport:
+            raise RuntimeError("unmapped chain-mode group target remains: " + target)
     if '"geosite:category-ads-all": "rcode://name_error"' in airport: raise RuntimeError("ad DNS NXDOMAIN would defeat DIRECT")
     AIRPORT.write_text(airport, encoding="utf-8")
     print("airport_overwrite.js synchronized: common behavior synced; airport UX exceptions preserved")
