@@ -127,16 +127,10 @@ apply_ruleset_overrides
 
 # ── 生成结果级安全审计 ─────────────────────────────────────────────
 grep -q '^  - name: "🛑 广告拦截"$' "$FULL_CONFIG" || err "生成配置缺少广告拦截策略组"
-grep -q 'proxies: \["REJECT-DROP", "DIRECT"\]' "$FULL_CONFIG" || err "广告拦截策略组缺少 DIRECT 例外"
+grep -q 'proxies: \["REJECT", "DIRECT"\]' "$FULL_CONFIG" || err "广告拦截策略组缺少 DIRECT 例外"
 grep -q 'RULE-SET,category-ads-all,🛑 广告拦截' "$FULL_CONFIG" || err "广告规则未指向广告拦截策略组"
 grep -q 'RULE-SET,sukka-phishing,REJECT-DROP' "$FULL_CONFIG" || err "钓鱼规则被意外修改"
-if grep -qE '^[[:space:]]*exclude-type:[[:space:]]*vmess[[:space:]]*
-echo
-echo "完整配置 : $FULL_CONFIG"
-echo "落地节点 : $EXIT_NODES ($NODE_COUNT)"
-echo "客户端导入: $FULL_URL"
-echo "更新落地 : $SCRIPT_DIR/generate.sh"
- "$FULL_CONFIG"; then
+if grep -qE '^[[:space:]]*exclude-type:[[:space:]]*vmess[[:space:]]*$' "$FULL_CONFIG"; then
   err "生成配置仍存在 VMess 协议排除"
 fi
 
