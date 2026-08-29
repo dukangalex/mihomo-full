@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Small persistent VPS traffic/expiry tracker for Mihomo-Full Telegram UI.
+"""Persistent VPS traffic/expiry tracker for Mihomo-Full Telegram UI.
 
 Traffic is measured on the primary default-route interface as RX+TX bytes.
 This is VPS interface accounting, not a provider billing API.
@@ -19,10 +19,6 @@ def _now():
     return datetime.now(timezone.utc)
 
 
-def _period():
-    return _now().strftime("%Y-%m")
-
-
 def _iface():
     explicit = os.environ.get("VPS_TRAFFIC_INTERFACE", "").strip()
     if explicit:
@@ -35,6 +31,10 @@ def _iface():
     except Exception:
         pass
     return None
+
+
+def _period(now=None):
+    return (now or _now()).strftime("%Y-%m")
 
 
 def _counters(iface):
@@ -64,21 +64,38 @@ def _save(data):
 
 def snapshot():
     now = _now()
-    period = now.strftime("%Y-%m")
+    period = _period(now)
     iface = _iface()
     current = _counters(iface)
     data = _load()
+
     if data.get("period") != period:
-        data = {"period": period, "total_bytes": 0, "last_counter": None, "interface": iface}
+        data = {
+            "period": period,
+            "total_bytes": 0,
+            "last_counter": None,
+            "interface": iface,
+            "updated_at": None,
+        }
+
     last = data.get("last_counter")
+    old_iface = data.get("interface")
+
     if current is not None:
-        if isinstance(last, int) and current >= last:
+        if not isinstance(last, int) or old_iface != iface:
+            # First sample or interface replacement: establish a new baseline.
+            # Never manufacture a delta across two different interfaces.
+            data["last_counter"] = current
+            data["interface"] = iface
+        elif current >= last:
             data["total_bytes"] = int(data.get("total_bytes", 0)) + current - last
-        elif isinstance(last, int) and current < last:
-            # Counter reset/reboot: retain accumulated usage and start a new baseline.
+            data["last_counter"] = current
+        else:
+            # Counter reset/reboot on the same interface. Preserve accumulated
+            # usage and use the post-reset counter as the new baseline.
             data["total_bytes"] = int(data.get("total_bytes", 0)) + current
-        data["last_counter"] = current
-        data["interface"] = iface
+            data["last_counter"] = current
+
     data["updated_at"] = now.isoformat()
     _save(data)
     return data
@@ -101,6 +118,13 @@ def report():
             days = (exp - _now()).total_seconds() / 86400
         except ValueError:
             days = None
-    return {"period": data.get("period"), "interface": data.get("interface"), "used_bytes": used,
-            "quota_gb": quota_gb, "percent": pct, "alert_percent": alert,
-            "expiry": expiry, "days_left": days}
+    return {
+        "period": data.get("period"),
+        "interface": data.get("interface"),
+        "used_bytes": used,
+        "quota_gb": quota_gb,
+        "percent": pct,
+        "alert_percent": alert,
+        "expiry": expiry,
+        "days_left": days,
+    }
