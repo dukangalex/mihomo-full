@@ -104,25 +104,27 @@ show_status() {
 case "${1:-menu}" in
   airport|change|1) change_airport ;;
   generate|update|2) bash "$GENERATE" ;;
-  status|3) rules_menu ;;
-      4) show_status ;;
+  rules|ruleset|3) rules_menu ;;
+  status|4) show_status ;;
   *)
     if command -v whiptail >/dev/null 2>&1; then
-      choice="$(whiptail --title "Mihomo-Full 管理" --menu "请选择操作：" 15 72 4         "1" "更换机场订阅（自动重新生成）"         "2" "更新 VPS 落地节点"         "3" "查看当前状态"         "4" "退出" 3>&1 1>&2 2>&3)" || exit 0
+      choice="$(whiptail --title "Mihomo-Full 管理" --menu "请选择操作：" 18 78 5         "1" "更换机场订阅（自动重新生成）"         "2" "更新 VPS 落地节点"         "3" "规则集管理（增加/替换/禁用/恢复）"         "4" "查看当前状态"         "5" "退出" 3>&1 1>&2 2>&3)" || exit 0
     elif command -v dialog >/dev/null 2>&1; then
       choice="$(dialog --title "Mihomo-Full 管理" --menu "请选择操作：" 15 72 4         "1" "更换机场订阅（自动重新生成）"         "2" "更新 VPS 落地节点"         "3" "查看当前状态"         "4" "退出" 3>&1 1>&2 2>&3)" || exit 0
     else
       echo "Mihomo-Full 管理"
       echo "1) 更换机场订阅（自动重新生成）"
       echo "2) 更新 VPS 落地节点"
-      echo "3) 查看当前状态"
-      echo "4) 退出"
+      echo "3) 规则集管理（增加/替换/禁用/恢复）"
+      echo "4) 查看当前状态"
+      echo "5) 退出"
       read -r -p "请选择 [1-4]: " choice
     fi
     case "$choice" in
       1) change_airport ;;
       2) bash "$GENERATE" ;;
-      3) show_status ;;
+      3) rules_menu ;;
+      4) show_status ;;
       *) exit 0 ;;
     esac
     ;;
