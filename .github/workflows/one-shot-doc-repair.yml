@@ -1,0 +1,39 @@
+name: One-shot documentation repair
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-doc-repair.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove stale fixed subscription paths from docs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          replacements = {
+              'https://你的域名/assets/static/a7f3c21e9b': 'https://你的域名/assets/static/<随机20位十六进制路径>',
+              'location = /assets/static/a7f3c21e9b': 'location = /assets/static/REPLACE_WITH_RANDOM_20_HEX_FULL',
+              'location = /assets/static/e9b2f1a7c3': 'location = /assets/static/REPLACE_WITH_RANDOM_20_HEX_EXIT',
+          }
+          for name in ('README.md', 'nginx-example.conf'):
+              p = Path(name)
+              s = p.read_text(encoding='utf-8')
+              for old, new in replacements.items():
+                  s = s.replace(old, new)
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add README.md nginx-example.conf
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'docs: remove stale fixed subscription paths'
+          git push
