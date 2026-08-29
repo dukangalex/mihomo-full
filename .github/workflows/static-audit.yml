@@ -25,8 +25,8 @@ jobs:
       - name: Static behavior audit
         run: python tools/static-audit.py
       - name: Shell syntax audit
-        run: bash -n generate.sh manage.sh install.sh
+        run: bash -n generate.sh manage.sh install.sh uninstall.sh telegram-bot/install-telegram-bot.sh
       - name: Python syntax audit
-        run: python -m py_compile tools/sync-airport-overwrite.py telegram-bot/bot.py tools/static-audit.py
+        run: python -m py_compile tools/sync-airport-overwrite.py tools/generate-endpoint.py telegram-bot/bot.py tools/static-audit.py
       - name: JavaScript syntax audit
         run: node --check airport_overwrite.js
