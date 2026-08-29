@@ -181,8 +181,6 @@ function main(config) {
   var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "" };
   var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames), icon: "" };
   var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
-  var privateGroup = { name: "🔒 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
-  var domesticGroup = { name: "🇨🇳 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME].concat(regionNames), icon: "" };
   var aiGroup = { name: "🤖 AI服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNamesNoHK), icon: "" };
   var mediaGroup = { name: "📺 Media", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
   var youtubeGroup = { name: "📺 YouTube", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
@@ -199,7 +197,7 @@ function main(config) {
   // 直接在客户端里把这个分组切成 DIRECT 即可，不需要再回来改脚本
   var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };
 
-  config["proxy-groups"] = [selectGroup, autoGroup, lbGroup, adBlockGroup, privateGroup, domesticGroup, aiGroup, mediaGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, steamGroup, tiktokGroup, twitterGroup, spotifyGroup, globalServiceGroup, fallbackGroup, remoteToolGroup].concat(regionGroups);
+  config["proxy-groups"] = [selectGroup, autoGroup, lbGroup, adBlockGroup, aiGroup, mediaGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, steamGroup, tiktokGroup, twitterGroup, spotifyGroup, globalServiceGroup, fallbackGroup, remoteToolGroup].concat(regionGroups);
 
   var ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
   var ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
@@ -792,7 +790,7 @@ function main(config) {
   "DOMAIN-SUFFIX,firebase.io,国外服务",
   "DOMAIN,browser-intake-us5-datadoghq.com,国外服务",
   "RULE-SET,sukka-phishing,REJECT-DROP",
-  "RULE-SET,category-ads-all,REJECT-DROP",
+  "RULE-SET,category-ads-all,🛑 广告拦截",
   "DOMAIN,galaxystore.ad-survey.com,REJECT",
   "DOMAIN,dls2.bigdata.samsung.com.cn,REJECT",
   "RULE-SET,private-ip,DIRECT,no-resolve",
