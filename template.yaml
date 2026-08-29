@@ -759,34 +759,17 @@ proxy-groups:
     proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]
 
 #
-# 全链路零泄露 DNS 架构：
+# 全链路 DNS 架构：
 #
-#  启动期：default-nameserver（纯 IP UDP，解析 DoH 服务器域名）
+#  1) default-nameserver：加密 DoT + 纯 IP，只负责解析 DNS 服务端域名。
+#  2) proxy-server-nameserver：专门解析代理节点域名，使用腾讯 DNSPod DoH
+#     域名入口 + 阿里公共 DNS IP DoH 双厂商冗余，避免“解析代理节点需要先走代理”。
+#  3) nameserver-policy：按国内/境外目标精细选择解析器；国内统一使用同一组
+#     CN_DNS，境外关键目标使用 #RULES 的境外 DoH。
+#  4) direct-nameserver-follow-policy：DIRECT 出口继续遵循 nameserver-policy。
+#  5) 不固定 doh.pub 的 hosts IP：DNSPod 已明确要求移除历史测试/固定 IP hosts，
+#     使用标准 DNS 解析 doh.pub，以避免把服务集群 IP 固定死。
 #
-#  运行期：
-#   proxy-server-nameserver ──→ 国内 DoH 直连
-#     专门解析代理节点域名，切断"解代理→需代理"死循环
-#
-#   nameserver-policy ──→ 精细分流（最高优先级）
-#     国内域名   → 国内 DoH 直连（223.5/doh.pub）
-#     境外域名   → 境外 DoH #RULES（经代理发出）
-#
-#   direct-nameserver ──→ 直连域名兜底（follow-policy: true）
-#   nameserver        ──→ 境外域名兜底（#RULES 经代理）
-#
-#  泄露封堵：
-#   · fake-ip-filter MATCH,fake-ip 兜底：境外域名全 fake-ip
-#   · prefer-h3: false：H3 可能绕过 respect-rules
-#   · disable-qtype-65：屏蔽 HTTPS 记录
-#   · respect-rules: true：DNS 查询遵循路由规则
-#   · 规则层 P5/P6/P7 多层封堵明文 DNS 和 QUIC
-#
-# DNS hosts 预解析：消除 fake-ip 冷启动循环依赖
-# 注：dns.alidns.com / doh.pub 的 hosts 预解析已删除——DNS 全链路早已
-# 转向纯 IP 访问（223.5.5.5/120.53.53.53），没有任何配置项还在以域名
-# 形式引用这两个地址，属于设计早期迭代留下的死配置。dns.google 仍保留，
-# 因为 nameserver 列表里的 "https://dns.google/dns-query#RULES" 依然是
-# 域名形式，需要这条预解析打破"解析DNS服务器域名需要先能解析DNS"的死循环。
 hosts:
   "dns.google": ["8.8.8.8", "8.8.4.4"]
 
@@ -1121,15 +1104,14 @@ dns:
   query-v6: false
 
   default-nameserver:
-    - 223.5.5.5
-    - 223.6.6.6
+    - tls://223.5.5.5
+    - tls://223.6.6.6
 
-  # 全部使用纯 IP，消除启动期 DNS 查询（doh.pub 域名解析改为直接 IP）
-  # 最优方案：120.53.53.53（腾讯纯IP）+ 223.5.5.5（阿里纯IP）
-  # 纯IP访问DoH：无需域名解析、无SNI特征、双厂商冗余，三优合一
+  # 代理节点 DNS：腾讯 DNSPod DoH 域名 + 阿里公共 DNS IP DoH
+  # 不再使用 DNSPod 已下线的固定 IP DoH；TLS/SNI 行为不做“无SNI”假设
   proxy-server-nameserver:
-    - https://doh.pub/dns-query  # 腾讯 DNSPod 纯IP，无SNI特征
-    - https://dns.alidns.com/dns-query     # 阿里 AliDNS 纯IP，双厂商冗余
+    - https://doh.pub/dns-query
+    - https://223.5.5.5/dns-query
 
   nameserver:
     - "https://dns.google/dns-query#RULES"
@@ -1137,15 +1119,15 @@ dns:
 
   direct-nameserver:
     - https://doh.pub/dns-query
-    - https://dns.alidns.com/dns-query
+    - https://223.5.5.5/dns-query
 
   direct-nameserver-follow-policy: true
 
   nameserver-policy:
 
     "rule-set:cn": &CN_DNS
-      - https://doh.pub/dns-query  # 腾讯纯IP
-      - https://dns.alidns.com/dns-query     # 阿里纯IP
+      - https://doh.pub/dns-query  # 腾讯 DNSPod DoH
+      - https://223.5.5.5/dns-query     # 阿里官方 IP DoH
     "rule-set:geolocation-cn": *CN_DNS
     "rule-set:bilibili": *CN_DNS
     "geosite:cn": *CN_DNS
