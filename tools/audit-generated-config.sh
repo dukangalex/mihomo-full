@@ -52,7 +52,7 @@ awk '
     if(n>=2){
       target=a[n]
       gsub(/^ +| +$/,"",target)
-      if(target!="DIRECT" && target!="REJECT" && target!="REJECT-DROP" && target!="PASS" && target!="fake-ip" && target!="real-ip" && target!="MATCH" && target!="") refs[target]=1
+      if(a[1]!="SUB-RULE" && target!="DIRECT" && target!="REJECT" && target!="REJECT-DROP" && target!="PASS" && target!="fake-ip" && target!="real-ip" && target!="MATCH" && target!="") refs[target]=1
     }
   }
   END {
