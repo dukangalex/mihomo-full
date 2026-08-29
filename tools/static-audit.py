@@ -64,22 +64,28 @@ for g in template.get("proxy-groups", []):
 # DNS consistency audit.
 dns = template.get("dns") or {}
 hosts = template.get("hosts") or {}
-if "proxy-server-nameserver" not in dns:
-    errors.append("template DNS missing proxy-server-nameserver")
+canonical_cn = ["https://doh.pub/dns-query", "https://223.5.5.5/dns-query"]
+if dns.get("default-nameserver") != ["tls://223.5.5.5", "tls://223.6.6.6"]:
+    errors.append("default-nameserver must use encrypted IP bootstrap: tls://223.5.5.5 + tls://223.6.6.6")
+if dns.get("proxy-server-nameserver") != canonical_cn:
+    errors.append("proxy-server-nameserver does not match canonical CN DNS pair")
+if dns.get("direct-nameserver") != canonical_cn:
+    errors.append("direct-nameserver does not match canonical CN DNS pair")
 if "nameserver-policy" not in dns:
     errors.append("template DNS missing nameserver-policy")
-if "doh.pub" not in hosts:
-    errors.append("template DNS hosts missing doh.pub bootstrap")
-if "dns.alidns.com" not in hosts:
-    errors.append("template DNS hosts missing dns.alidns.com bootstrap")
+if "doh.pub" in hosts or "dns.alidns.com" in hosts:
+    errors.append("DNSPod/Ali DoH endpoints must not be pinned in hosts")
 if re.search(r"https://120\.53\.53\.53/dns-query", template_text):
     errors.append("template uses DNSPod 120.53.53.53 DoH IP access, which DNSPod discontinued for free public DNS")
+if re.search(r"https://dns\.alidns\.com/dns-query", template_text):
+    errors.append("template still contains legacy dns.alidns.com DoH URL; use official IP endpoint 223.5.5.5")
 
-# Detect the exact inconsistency discussed in this audit: hostname URLs cannot be
-# described as IP-only DoH. The canonical fix is hostname DoH + hosts bootstrap.
-for value in dns.get("proxy-server-nameserver", []) or []:
-    if isinstance(value, str) and value.startswith("https://") and not re.match(r"https://(?:\[[0-9a-fA-F:]+\]|[0-9.]+)/", value):
-        errors.append(f"proxy-server-nameserver is hostname-based and must not be documented as IP-only: {value}")
+# Every policy that uses the domestic resolver family must resolve to the same
+# canonical pair. This catches drift hidden behind YAML anchors/aliases.
+for key, value in (dns.get("nameserver-policy") or {}).items():
+    if isinstance(value, list) and any(isinstance(x, str) and "doh.pub/dns-query" in x for x in value):
+        if value != canonical_cn:
+            errors.append(f"nameserver-policy {key!r} is not using canonical CN DNS pair: {value!r}")
 
 for raw in (",国外服务", ",AI服务", ",流媒体", ",漏网之鱼", ",远控工具"):
     if re.search(re.escape(raw) + r'(?=["\'])', airport):
