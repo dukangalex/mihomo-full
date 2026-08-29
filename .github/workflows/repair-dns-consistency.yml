@@ -45,10 +45,6 @@ jobs:
               if isinstance(value, list) and any(isinstance(x, str) and ('doh.pub/dns-query' in x or 'dns.alidns.com/dns-query' in x) for x in value):
                   policies[key] = list(canonical)
 
-          hosts = data.get('hosts') or {}
-          hosts.pop('doh.pub', None)
-          hosts.pop('dns.alidns.com', None)
-
           start = text.find('#\n# 全链路零泄露 DNS 架构：')
           marker = 'hosts:\n'
           end = text.find(marker, start)
@@ -56,11 +52,12 @@ jobs:
               block = '''#\n# 全链路 DNS 架构：\n#\n#  1) default-nameserver：加密 DoT + 纯 IP，只负责解析 DNS 服务端域名。\n#  2) proxy-server-nameserver：专门解析代理节点域名，使用腾讯 DNSPod DoH\n#     域名入口 + 阿里公共 DNS IP DoH 双厂商冗余，避免“解析代理节点需要先走代理”。\n#  3) nameserver-policy：按国内/境外目标精细选择解析器；国内统一使用同一组\n#     CN_DNS，境外关键目标使用 #RULES 的境外 DoH。\n#  4) direct-nameserver-follow-policy：DIRECT 出口继续遵循 nameserver-policy。\n#  5) 不固定 doh.pub 的 hosts IP：DNSPod 已明确要求移除历史测试/固定 IP hosts，\n#     使用标准 DNS 解析 doh.pub，以避免把服务集群 IP 固定死。\n#\n'''
               text = text[:start] + block + text[end:]
 
+          text = text.replace('https://dns.alidns.com/dns-query', 'https://223.5.5.5/dns-query')
           text = text.replace('# 全部使用纯 IP，消除启动期 DNS 查询（doh.pub 域名解析改为直接 IP）\n  # 最优方案：120.53.53.53（腾讯纯IP）+ 223.5.5.5（阿里纯IP）\n  # 纯IP访问DoH：无需域名解析、无SNI特征、双厂商冗余，三优合一',
                               '# 代理节点 DNS：腾讯 DNSPod DoH 域名 + 阿里公共 DNS IP DoH\n  # 不再使用 DNSPod 已下线的固定 IP DoH；TLS/SNI 行为不做“无SNI”假设')
-          text = text.replace('https://dns.alidns.com/dns-query     # 阿里 AliDNS 纯IP，双厂商冗余', 'https://223.5.5.5/dns-query     # 阿里公共 DNS 官方 IP DoH')
-          text = text.replace('https://dns.alidns.com/dns-query     # 阿里纯IP', 'https://223.5.5.5/dns-query     # 阿里官方 IP DoH')
           text = text.replace('https://doh.pub/dns-query  # 腾讯纯IP', 'https://doh.pub/dns-query  # 腾讯 DNSPod DoH')
+          text = re.sub(r'(?m)^  "doh\.pub":.*\n', '', text)
+          text = re.sub(r'(?m)^  "dns\.alidns\.com":.*\n', '', text)
 
           def replace_block(s, key, value_lines):
               pat = re.compile(r'(?m)^  ' + re.escape(key) + r':\n(?:    - .*\n)+')
@@ -69,8 +66,6 @@ jobs:
           text = replace_block(text, 'default-nameserver', dns['default-nameserver'])
           text = replace_block(text, 'proxy-server-nameserver', dns['proxy-server-nameserver'])
           text = replace_block(text, 'direct-nameserver', dns['direct-nameserver'])
-          text = re.sub(r'(?m)^  "doh\.pub":.*\n', '', text)
-          text = re.sub(r'(?m)^  "dns\.alidns\.com":.*\n', '', text)
           path.write_text(text, encoding='utf-8')
           print('DNS repair applied to template.yaml')
           PY
