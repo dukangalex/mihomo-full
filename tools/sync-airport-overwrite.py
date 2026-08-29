@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Synchronize airport_overwrite.js with template.yaml common behavior."""
+"""Synchronize airport_overwrite.js with template.yaml common behavior.
+
+The airport overwrite intentionally keeps its existing airport-specific proxy-group
+layout. Only common behavior is synchronized. Chain-only VPS/dialer behavior is not
+copied into the pure-airport profile.
+"""
 from __future__ import annotations
 
 import json
@@ -92,6 +97,8 @@ def main() -> None:
     template = yaml.safe_load(TEMPLATE.read_text(encoding="utf-8"))
     airport = AIRPORT.read_text(encoding="utf-8")
 
+    # These are public/common behavior sections. Proxy-groups are deliberately
+    # excluded: airport_overwrite.js retains its established airport UX.
     for key in ("tun", "dns", "sniffer", "hosts", "rule-providers", "rules", "sub-rules"):
         if key not in template:
             raise RuntimeError(f"template missing required section: {key}")
@@ -129,8 +136,10 @@ def main() -> None:
         final.append(f'  config[{json.dumps(k, ensure_ascii=False)}] = CANONICAL[{json.dumps(k, ensure_ascii=False)}];')
 
     final += [
-        "  // Pure-airport groups keep the same functional semantics as template.yaml.",
-        "  // Only chain-specific VPS/dialer groups are replaced by airport-local groups.",
+        "  // Airport-specific proxy groups are preserved. Do not remove DIRECT from",
+        "  // local exception groups: advertising and remote-control tools intentionally",
+        "  // retain a user-selectable DIRECT option. No protocol-based node exclusion is",
+        "  // performed by this overwrite.",
         "  if (config[\"proxy-groups\"] && config[\"proxy-groups\"].forEach) {",
         "    config[\"proxy-groups\"].forEach(function (g) {",
         "      if (!g || !g.name) return;",
@@ -140,7 +149,7 @@ def main() -> None:
         "      else if (oldName === \"🔰 节点选择\") g.name = \"机场手动选择\";",
         "      else if (oldName === \"📺 Media\") g.name = \"流媒体\";",
         "      else if (oldName === \"🐟 漏网之鱼\") g.name = \"漏网之鱼\";",
-        "      if (g.type === \"select\" && g.proxies && g.proxies.filter) {",
+        "      if (g.type === \"select\" && g.proxies && g.proxies.filter && g.name !== \"🛑 广告拦截\" && g.name !== \"🔧 远控工具\") {",
         "        var mapped = [];",
         "        for (var pi = 0; pi < g.proxies.length; pi++) {",
         "          var p = g.proxies[pi];",
@@ -149,16 +158,25 @@ def main() -> None:
         "          else if (p === \"🔰 节点选择\") p = \"机场手动选择\";",
         "          else if (p === \"📺 Media\") p = \"流媒体\";",
         "          else if (p === \"🐟 漏网之鱼\") p = \"漏网之鱼\";",
-        "          if (p === \"DIRECT\") continue;",
         "          if (mapped.indexOf(p) < 0) mapped.push(p);",
         "        }",
         "        g.proxies = mapped;",
         "      }",
-        "      if (g.name === \"🔧 远控工具\") g.proxies = [\"REJECT-DROP\", \"机场优选\"];",
-        "      if (g.name === \"🛑 广告拦截\") g.proxies = [\"REJECT\", \"REJECT-DROP\"];",
+        "      if (g.name === \"🔧 远控工具\") {",
+        "        var remote = g.proxies || [];",
+        "        if (remote.indexOf(\"DIRECT\") < 0) remote.push(\"DIRECT\");",
+        "        g.proxies = remote;",
+        "      }",
+        "      if (g.name === \"🛑 广告拦截\") {",
+        "        var ads = g.proxies || [];",
+        "        if (ads.indexOf(\"REJECT-DROP\") < 0) ads.unshift(\"REJECT-DROP\");",
+        "        if (ads.indexOf(\"DIRECT\") < 0) ads.push(\"DIRECT\");",
+        "        g.proxies = ads;",
+        "      }",
         "    });",
         "  }",
-        "  // DIRECT remains a bottom-layer rule target, not a user-selectable proxy-group option.",
+        "  // Private-network and domestic DIRECT behavior remains a bottom-layer routing",
+        "  // decision; there is no global DIRECT switch in the user-facing UI.",
         "  // END AUTO-SYNC: template.yaml common behavior",
     ]
     airport = insert_before_return(airport, "\n".join(final))
