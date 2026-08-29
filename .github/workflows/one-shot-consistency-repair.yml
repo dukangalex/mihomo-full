@@ -1,0 +1,61 @@
+name: One-shot consistency repair
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/one-shot-consistency-repair.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove legacy AliDNS DoH hostname
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for name in ('template.yaml', 'airport_overwrite.js'):
+              p = Path(name)
+              s = p.read_text(encoding='utf-8')
+              s2 = s.replace('https://dns.alidns.com/dns-query', 'https://223.5.5.5/dns-query')
+              if s2 != s:
+                  p.write_text(s2, encoding='utf-8')
+                  print('normalized', name)
+          PY
+      - name: Remove generator redefinition of common behavior
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('generate.sh')
+          s = p.read_text(encoding='utf-8')
+          start = s.find('# ── 主配置公共行为增强')
+          end = s.find('# 链式 URL 使用 Python 字面替换', start)
+          if start < 0 or end < 0 or end <= start:
+              raise SystemExit('common-behavior generator block not found')
+          replacement = '# 公共行为完全来自 template.yaml；此处只处理链式专属 URL/节点注入。\n'
+          s = s[:start] + replacement + s[end:]
+          p.write_text(s, encoding='utf-8')
+          print('removed generate.sh common-behavior redefinition block')
+          PY
+      - name: Verify syntax and run sync/audit
+        run: |
+          bash -n generate.sh install.sh manage.sh
+          python -m pip install --disable-pip-version-check --no-input pyyaml
+          python tools/sync-airport-overwrite.py
+          node --check airport_overwrite.js
+          python tools/static-audit.py
+      - name: Commit repair
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add template.yaml airport_overwrite.js generate.sh
+          if git diff --cached --quiet; then
+            echo 'No repair changes required.'
+            exit 0
+          fi
+          git commit -m 'fix: enforce common behavior source of truth'
+          git push
