@@ -3,7 +3,23 @@
 set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 info(){ echo -e "${GREEN}[+]${NC} $1"; }; warn(){ echo -e "${YELLOW}[!]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1"; exit 1; }; title(){ echo -e "\n${CYAN}==== $1 ====${NC}\n"; }
-INSTALL_DIR="/opt/mihomo-full"; OUTPUT_DIR="${INSTALL_DIR}/output"; FULL_PATH="/assets/static/a7f3c21e9b"; NODES_PATH="/assets/static/e9b2f1a7c3"
+INSTALL_DIR="/opt/mihomo-full"; OUTPUT_DIR="${INSTALL_DIR}/output"
+
+# 每次安装随机生成不可预测的静态订阅路径；路径保存到 settings.conf，后续 generate.sh 只读取该值。
+random_path_segment() {
+  local v
+  if command -v openssl >/dev/null 2>&1; then
+    v=$(openssl rand -hex 10)
+  elif [[ -r /dev/urandom ]]; then
+    v=$(od -An -N10 -tx1 /dev/urandom | tr -d ' \n')
+  else
+    err "无法安全生成随机订阅路径：需要 openssl 或 /dev/urandom"
+  fi
+  [[ "$v" =~ ^[0-9a-f]{20}$ ]] || err "随机路径生成失败"
+  printf '%s' "$v"
+}
+FULL_PATH="/assets/static/$(random_path_segment)"; NODES_PATH="/assets/static/$(random_path_segment)"
+
 clear; echo -e "${CYAN}"; echo "  Mihomo 完整配置 + v2ray-agent 一键部署"; echo "  --------------------------------------"; echo "  · 客户端只导入一个固定订阅"; echo "  · 订阅地址不带 .yaml"; echo "  · 一键更新仅刷新落地节点"; echo -e "${NC}"
 [[ $EUID -eq 0 ]] || err "请使用 root 运行：sudo bash install.sh"
 title "1. 填写必要信息"
@@ -14,7 +30,7 @@ DOMAIN="${DOMAIN#https://}"; DOMAIN="${DOMAIN#http://}"; DOMAIN="${DOMAIN%%/*}"
 [[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+(:[0-9]+)?$ ]] || err "域名格式不正确"
 read -rp "v2ray-agent clashMeta 目录 [默认 /etc/v2ray-agent/subscribe_local/clashMeta]: " V2RAY_DIR
 V2RAY_DIR="${V2RAY_DIR:-/etc/v2ray-agent/subscribe_local/clashMeta}"
-echo; info "机场订阅 : $AIRPORT_SUB_URL"; info "域名     : $DOMAIN"; info "节点目录 : $V2RAY_DIR"; echo
+echo; info "机场订阅 : $AIRPORT_SUB_URL"; info "域名     : $DOMAIN"; info "节点目录 : $V2RAY_DIR"; info "完整订阅路径 : $FULL_PATH"; info "落地节点路径 : $NODES_PATH"; echo
 read -rp "确认无误？(Y/n): " CONFIRM; [[ "${CONFIRM:-Y}" =~ ^[Yy]$ ]] || { echo "已取消"; exit 0; }
 title "2. 写入文件"
 mkdir -p "$INSTALL_DIR" "$OUTPUT_DIR"
