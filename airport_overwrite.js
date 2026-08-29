@@ -2154,8 +2154,10 @@ function main(config) {
       if (typeof rule !== "string") return rule;
       var parts = rule.split(",");
       if (parts.length < 2) return rule;
-      var target = parts[parts.length - 1];
-      if (TARGET_MAP[target]) parts[parts.length - 1] = TARGET_MAP[target];
+      var targetIndex = parts.length - 1;
+      if (parts[targetIndex] === "no-resolve" && parts.length >= 3) targetIndex--;
+      var target = parts[targetIndex];
+      if (TARGET_MAP[target]) parts[targetIndex] = TARGET_MAP[target];
       return parts.join(",");
     });
   }
