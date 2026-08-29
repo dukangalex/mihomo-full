@@ -1256,8 +1256,8 @@ function main(config) {
   "fast-queries": true,
   "query-v6": false,
   "default-nameserver": [
-    "223.5.5.5",
-    "223.6.6.6"
+    "tls://223.5.5.5",
+    "tls://223.6.6.6"
   ],
   "proxy-server-nameserver": [
     "https://doh.pub/dns-query",

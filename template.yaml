@@ -1166,7 +1166,7 @@ dns:
     "+.samsungknox.com":  *CN_DNS
     "+.samsungdm.com":    *CN_DNS
     # 腾讯（+.qq.com 覆盖所有子域含微信探测域名）
-    "+.qq.com":            &TENCENT [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
+    "+.qq.com":            &TENCENT [https://doh.pub/dns-query, https://223.5.5.5/dns-query]
     "+.wechat.com":        *TENCENT
     "+.weixin.com":        *TENCENT
     "+.wx.qq.com":         *TENCENT
@@ -1179,7 +1179,7 @@ dns:
     "+.myqcloud.com":      *TENCENT
     "+.wechatpay.cn":      *TENCENT
     # 阿里
-    "+.alipay.com":        &ALIBABA [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
+    "+.alipay.com":        &ALIBABA [https://doh.pub/dns-query, https://223.5.5.5/dns-query]
     "+.alipayobjects.com": *ALIBABA
     "+.taobao.com":        *ALIBABA
     "+.tmall.com":         *ALIBABA
@@ -1194,7 +1194,7 @@ dns:
     # 字节跳动：原用 180.184.2.2 裸 IP（明文 UDP:53，与全局纯 DoH 原则矛盾）。
     # 官方文档显示该 DNS 服务截至目前 DoH/DoT/DoQ 支持情况未经确认，无法安全启用；
     # 改用已验证可用的 DoH 端点，牺牲少量抖音/头条 CDN 调度精度换取零明文泄露。
-    "+.bytedance.com":  &BYTEDANCE [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
+    "+.bytedance.com":  &BYTEDANCE [https://doh.pub/dns-query, https://223.5.5.5/dns-query]
     "+.byteimg.com":    *BYTEDANCE
     "+.tosv.com":       *BYTEDANCE
     "+.douyin.com":     *BYTEDANCE
@@ -1208,7 +1208,7 @@ dns:
     "+.feishu.net":     *BYTEDANCE
     "+.volces.com":     *BYTEDANCE
     # 百度：同上，180.76.76.76 是明文 DNS，无已验证的 DoH 端点，改用已验证的 DoH 解析器
-    "+.baidu.com":    &BAIDU [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
+    "+.baidu.com":    &BAIDU [https://doh.pub/dns-query, https://223.5.5.5/dns-query]
     "+.bdstatic.com": *BAIDU
     "+.bdimg.com":    *BAIDU
     "+.bcebos.com":   *BAIDU
@@ -1217,7 +1217,7 @@ dns:
     "+.baidubce.com": *BAIDU
     # 金融
     "+.tenpay.com":          *TENCENT
-    "+.unionpay.com":        &FINANCE [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
+    "+.unionpay.com":        &FINANCE [https://doh.pub/dns-query, https://223.5.5.5/dns-query]
     "+.unionpaysecure.com":  *FINANCE
     "+.95516.com":           *FINANCE
     "+.icbc.com.cn":         *FINANCE
@@ -1245,7 +1245,7 @@ dns:
     "+.url.cn":            *TENCENT
     "+.aegis.qq.com":      *TENCENT
     # 国内 AI
-    "+.deepseek.com":    &DOMESTIC_AI [https://doh.pub/dns-query, https://dns.alidns.com/dns-query]
+    "+.deepseek.com":    &DOMESTIC_AI [https://doh.pub/dns-query, https://223.5.5.5/dns-query]
     "+.deepseek.ai":     *DOMESTIC_AI
     "+.moonshot.cn":     *DOMESTIC_AI
     "+.kimichat.com":    *DOMESTIC_AI

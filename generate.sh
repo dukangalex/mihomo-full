@@ -64,28 +64,7 @@ FULL_URL="https://${DOMAIN}${FIXED_FULL_CONFIG_PATH}"
 EXIT_URL="https://${DOMAIN}${FIXED_EXIT_NODES_PATH}"
 cp "$TEMPLATE" "$FULL_CONFIG"
 
-# ── 主配置公共行为增强 ─────────────────────────────────────────────
-# 机场覆盖脚本与链式主配置应共享安全底线；链式专属能力（VPS/dialer-proxy）除外。
-sed -i '/^[[:space:]]*exclude-type:[[:space:]]*vmess[[:space:]]*$/d' "$FULL_CONFIG"
-sed -i '/^[[:space:]]*"geosite:category-ads-all":[[:space:]]*"rcode:\/\/name_error"[[:space:]]*$/d' "$FULL_CONFIG"
-sed -i 's/^\([[:space:]]*proxies: \["REJECT-DROP", "落地优选出口"\]\)[[:space:]]*$/    proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]/' "$FULL_CONFIG"
-if ! grep -q '^  - name: "🛑 广告拦截"$' "$FULL_CONFIG"; then
-  TMP_CFG="$FULL_CONFIG.tmp"
-  awk '
-    /^  - name: "远控工具"$/ {
-      print "  - name: \"🛑 广告拦截\""
-      print "    type: select"
-      print "    # 默认 REJECT；仅当免费站点依赖广告收入且被误伤/无法正常使用时，"
-      print "    # 用户才主动切换 DIRECT。此 DIRECT 不是全局直连开关。"
-      print "    proxies: [\"REJECT\", \"DIRECT\"]"
-      print ""
-    }
-    {print}
-  ' "$FULL_CONFIG" > "$TMP_CFG" && mv "$TMP_CFG" "$FULL_CONFIG"
-fi
-sed -i 's/- RULE-SET,category-ads-all,REJECT-DROP  # 广告域名/- RULE-SET,category-ads-all,🛑 广告拦截  # 默认拦截；需要时可切换 DIRECT/' "$FULL_CONFIG"
-sed -i 's/- RULE-SET,category-ads-all,REJECT-DROP$/- RULE-SET,category-ads-all,🛑 广告拦截/' "$FULL_CONFIG"
-
+# 公共行为完全来自 template.yaml；此处只处理链式专属 URL/节点注入。
 # 链式 URL 使用 Python 字面替换，不把用户输入放进 sed replacement。
 replace_literal() {
   local file="$1" needle="$2" value="$3" tmp
