@@ -89,9 +89,9 @@ async def confirm(update, context):
         await q.edit_message_text("操作已过期，请重新选择。", reply_markup=menu()); return
     context.user_data.pop("pending", None)
     if action == "generate":
-        code, out = run_manage(["--check"])
-        if code == 0:
-            code, out = run_manage(["generate"])
+        # generate.sh performs the final generated-config audit itself.
+        # Do not block regeneration because an older output file is stale/broken.
+        code, out = run_manage(["--generate"])
         await q.edit_message_text(("✅ " if code == 0 else "❌ ") + out, reply_markup=menu())
     elif action == "airport":
         context.user_data["awaiting_airport"] = True
