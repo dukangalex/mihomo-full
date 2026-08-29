@@ -99,10 +99,16 @@ if not isinstance(proxy_dns, list) or not proxy_dns or not all(isinstance(x, str
 else:
     if direct_dns != proxy_dns:
         errors.append("direct-nameserver must match template proxy-server-nameserver")
+if not isinstance(dns.get("default-nameserver"), list) or not dns.get("default-nameserver") or not all(isinstance(x, str) and x.strip() for x in dns.get("default-nameserver")):
+    errors.append("template dns.default-nameserver must be a non-empty string list")
 if dns.get("direct-nameserver-follow-policy") is not True:
     errors.append("direct-nameserver-follow-policy must be true")
 if "nameserver-policy" not in dns:
     errors.append("DNS missing nameserver-policy")
+hosts = template.get("hosts") or {}
+if "https://dns.google/dns-query#RULES" in (dns.get("nameserver") or []):
+    if hosts.get("dns.google") != ["8.8.8.8", "8.8.4.4"]:
+        errors.append("dns.google DoH is configured but hosts pinning is missing or incorrect")
 for key, value in policy.items():
     if isinstance(value, list) and any(isinstance(x, str) and "doh.pub/dns-query" in x for x in value):
         if value != proxy_dns and "#RULES" not in " ".join(map(str, value)):
@@ -147,7 +153,6 @@ def extract_json_assignment(text: str, marker: str):
                     raise ValueError(f"airport assignment is not strict JSON: {marker}: {exc}")
     raise ValueError(f"unterminated airport assignment: {marker}")
 
-# These are the only permitted airport-side semantic transformations of template.rules.
 RULE_TARGET_REVERSE = {
     "🤖 AI服务": "AI服务",
     "🌍 国外服务": "国外服务",
@@ -170,9 +175,6 @@ def canonicalize_airport_rules(rules):
         out.append(rule)
     return out
 
-# Compare every common object/scalar independently against template.yaml.
-# proxy-providers/proxy-groups are intentionally excluded because they contain
-# the airport/chain-specific topology and UX.
 for key in ("tun", "dns", "sniffer", "hosts", "rule-providers", "sub-rules"):
     try:
         actual = extract_json_assignment(airport, key)
@@ -199,8 +201,7 @@ for key in ("mode", "allow-lan", "bind-address", "mixed-port", "log-level", "ipv
     try:
         actual = extract_json_assignment(airport, key)
     except ValueError:
-        # Scalar string/number/bool assignments are not all JSON-object assignments.
-        m = re.search(r'config\["' + re.escape(key) + r'"\]\s*=\s*(.+?);\s*$', airport, re.M)
+        m = re.search(r'config\["' + re.escape(key) + r'"\]\s*=\s*(.+?);\s*(?://.*)?$', airport, re.M)
         if not m:
             errors.append(f"airport scalar assignment not found: {key}")
             continue
@@ -213,7 +214,6 @@ for key in ("mode", "allow-lan", "bind-address", "mixed-port", "log-level", "ipv
     if actual != template[key]:
         errors.append(f"airport common scalar drift: {key}")
 
-# Synchronizer reproducibility remains a second, separate check.
 with tempfile.TemporaryDirectory() as td:
     t = Path(td)
     (t / "template.yaml").write_text(template_text, encoding="utf-8")
@@ -246,30 +246,40 @@ if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in airport:
     errors.append("airport overwrite lost the ad DIRECT exception routing")
 if 'var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"]' not in airport:
     errors.append("airport overwrite lost the ad DIRECT exception group")
-if 'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"]' not in airport:
+if 'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]' not in airport:
     errors.append("airport overwrite lost the remote-control DIRECT exception group")
 for raw in (",国外服务", ",AI服务", ",流媒体", ",漏网之鱼"):
     if raw in airport:
         errors.append(f"airport overwrite contains unmapped common rule target: {raw}")
 
-# Repository-wide stale literal scan. Audit source files intentionally contain
-# detection strings, so they are excluded from the literal-residue scan.
+# Runtime residue scan: documentation is allowed to mention retired values as history;
+# executable/configuration material is not. This prevents false positives in docs while
+# still covering all operational files added to the repository.
 scan_exclude = {Path("tools/static-audit.py"), Path("tools/audit-generated-config.sh")}
-scan_files = [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts and p.relative_to(ROOT) not in scan_exclude]
+scan_files = []
+for p in ROOT.rglob("*"):
+    if not p.is_file() or ".git" in p.parts:
+        continue
+    rel = p.relative_to(ROOT)
+    rel_posix = rel.as_posix()
+    if rel in scan_exclude or rel_posix == "README.md" or rel_posix.startswith("docs/") or rel_posix.startswith("CHANGELOG"):
+        continue
+    scan_files.append(p)
 for p in scan_files:
     try:
         text = p.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         continue
     if "https://dns.alidns.com/dns-query" in text:
-        errors.append(f"legacy AliDNS DoH URL remains in {p.relative_to(ROOT)}")
+        errors.append(f"legacy AliDNS DoH URL remains in runtime file {p.relative_to(ROOT)}")
     if "/assets/static/a7f3c21e9b" in text or "/assets/static/e9b2f1a7c3" in text:
-        errors.append(f"legacy fixed subscription path remains in {p.relative_to(ROOT)}")
+        errors.append(f"legacy fixed subscription path remains in runtime file {p.relative_to(ROOT)}")
     if "https://120.53.53.53/dns-query" in text:
-        errors.append(f"retired DNSPod DoH IP endpoint remains in {p.relative_to(ROOT)}")
+        errors.append(f"retired DNSPod DoH IP endpoint remains in runtime file {p.relative_to(ROOT)}")
 
+# Temporary repair workflows must not remain anywhere in operational repository material.
 for p in scan_files:
-    if p.suffix.lower() in {".md", ".yml", ".yaml"}:
+    if p.suffix.lower() in {".md", ".yml", ".yaml", ".py", ".sh", ".js"}:
         text = p.read_text(encoding="utf-8")
         if "one-shot-consistency-repair" in text or "one-shot-doc-repair" in text or "repair-airport-dns" in text:
             errors.append(f"temporary repair workflow referenced by {p.relative_to(ROOT)}")
@@ -285,5 +295,5 @@ print("[OK] public subscription paths contain no stale fixed literals")
 print("[OK] DNS common behavior is derived from template.yaml")
 print("[OK] airport common objects/scalars independently match template")
 print("[OK] airport overwrite is reproducibly synchronized")
-print("[OK] repository-wide stale literal scan passed")
+print("[OK] runtime stale literal scan passed")
 print("[OK] DIRECT UI exceptions remain limited to approved local cases")
