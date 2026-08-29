@@ -751,7 +751,7 @@ proxy-groups:
     type: select
     # 默认 REJECT-DROP；仅当免费站点依赖广告收入且被误伤/无法正常使用时，
     # 用户才主动切换 DIRECT。此 DIRECT 不是全局直连开关。
-    proxies: ["REJECT-DROP", "DIRECT"]
+    proxies: ["REJECT", "DIRECT"]
 
   - name: "远控工具"
     type: select
