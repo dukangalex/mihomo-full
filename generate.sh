@@ -113,7 +113,8 @@ apply_ruleset_overrides() {
       else
         [[ "$behavior" == domain ]] && anchor="DA" || anchor="IA"
         tmp="$FULL_CONFIG.tmp"
-        awk -v n="$name" -v u="$url" -v a="$anchor" '/^rule-providers:/{print;printf "\n  %s:\n    <<: *%s\n    url: \"%s\"\n    path: \"./ruleset/%s.mrs\"\n",n,a,u,n;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
+        YAML_URL=$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1], ensure_ascii=False))' "$url")
+        awk -v n="$name" -v u="$YAML_URL" -v a="$anchor" '/^rule-providers:/{print;printf "\n  %s:\n    <<: *%s\n    url: %s\n    path: \"./ruleset/%s.mrs\"\n",n,a,u,n;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
         tmp="$FULL_CONFIG.tmp"
         awk -v n="$name" -v t="$target" '/^rules:/{print;printf "\n  - RULE-SET,%s,%s\n",n,t;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
       fi
