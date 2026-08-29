@@ -491,7 +491,7 @@ function main(config) {
     "udp-timeout": 300
   };
 
-  var DOMESTIC_DNS = ["223.5.5.5", "119.29.29.29"];
+  var DOMESTIC_DNS = ["223.5.5.5", "223.6.6.6"];
 
   config.dns = {
     enable: true, ipv6: false,
