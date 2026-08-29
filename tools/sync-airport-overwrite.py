@@ -86,6 +86,7 @@ def restore_airport_exceptions(text: str) -> str:
 
 def map_airport_targets(text: str) -> str:
     # Chain-mode rule targets must resolve to the airport script's existing groups.
+    # Handle both normal rules and rules ending with the no-resolve modifier.
     mappings = {
         "AI服务": "🤖 AI服务",
         "国外服务": "🌍 国外服务",
@@ -94,8 +95,8 @@ def map_airport_targets(text: str) -> str:
         "远控工具": "🔧 远控工具",
     }
     for src, dst in mappings.items():
-        # Rule strings are emitted as JSON-style quoted strings.
-        text = re.sub(r"," + re.escape(src) + r'(?=["\'])', "," + dst, text)
+        text = text.replace("," + src + "\",", "," + dst + "\",")
+        text = text.replace("," + src + ",no-resolve", "," + dst + ",no-resolve")
     return text
 
 def main() -> None:
