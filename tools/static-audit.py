@@ -5,6 +5,7 @@ The public template is the single source of truth for common behavior.
 Only chain-specific provider/dialer/landing behavior may intentionally differ.
 """
 from __future__ import annotations
+import json
 import re
 import shutil
 import subprocess
@@ -12,7 +13,6 @@ import tempfile
 from pathlib import Path
 import yaml
 
-# Release gate: this audit must fail closed on public-behavior drift.
 ROOT = Path(__file__).resolve().parents[1]
 template_path = ROOT / "template.yaml"
 airport_path = ROOT / "airport_overwrite.js"
@@ -24,6 +24,7 @@ airport = airport_path.read_text(encoding="utf-8")
 generate = generate_path.read_text(encoding="utf-8")
 install = install_path.read_text(encoding="utf-8")
 settings = settings_path.read_text(encoding="utf-8")
+
 class UniqueKeyLoader(yaml.SafeLoader):
     """SafeLoader variant that fails closed on duplicate mapping keys."""
     pass
@@ -39,18 +40,13 @@ def _construct_unique_mapping(loader, node, deep=False):
         mapping[key] = loader.construct_object(value_node, deep=deep)
     return mapping
 
-UniqueKeyLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    _construct_unique_mapping,
-)
-
+UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_unique_mapping)
 try:
     template = yaml.load(template_text, Loader=UniqueKeyLoader)
 except (yaml.YAMLError, ValueError) as exc:
     raise SystemExit(f"[FAIL] template.yaml YAML integrity error: {exc}")
 
 errors: list[str] = []
-
 if not isinstance(template, dict):
     raise SystemExit("[FAIL] template.yaml did not parse as a mapping")
 
@@ -71,12 +67,10 @@ def check_rules(rules, label: str, known_groups: set[str]) -> None:
         if target not in known_groups:
             errors.append(f"{label}: missing proxy-group {target!r} in {rule!r}")
 
-
 check_rules(template.get("rules"), "template.rules", groups)
 for name, rules in (template.get("sub-rules") or {}).items():
     check_rules(rules, f"template.sub-rules.{name}", groups)
 
-# Common behavior must be represented in the template, not re-created by generate.sh.
 if "主配置公共行为增强" in generate:
     errors.append("generate.sh still contains a second common-behavior implementation")
 if re.search(r"exclude-type:\s*vmess", generate):
@@ -84,13 +78,11 @@ if re.search(r"exclude-type:\s*vmess", generate):
 if re.search(r"geosite:category-ads-all.*rcode://name_error", generate, re.S):
     errors.append("generate.sh must not force ad DNS NXDOMAIN")
 
-# Installer must take one immutable repository snapshot at install time, not mix SHAs.
 if re.search(r"raw\.githubusercontent\.com/[^/]+/[^/]+/[0-9a-f]{40}/", install):
     errors.append("install.sh contains hard-coded per-file commit URLs; it must resolve one main commit")
 if "REPO_COMMIT" not in install or "RAW_BASE" not in install:
     errors.append("install.sh lacks the single repository snapshot mechanism")
 
-# Public settings must not carry a reusable subscription path.
 for old in ("/assets/static/a7f3c21e9b", "/assets/static/e9b2f1a7c3"):
     if old in settings or old in install or old in generate:
         errors.append(f"stale fixed subscription path remains: {old}")
@@ -102,31 +94,126 @@ dns = template.get("dns") or {}
 proxy_dns = dns.get("proxy-server-nameserver")
 direct_dns = dns.get("direct-nameserver")
 policy = dns.get("nameserver-policy") or {}
-
 if not isinstance(proxy_dns, list) or not proxy_dns or not all(isinstance(x, str) and x.strip() for x in proxy_dns):
     errors.append("template dns.proxy-server-nameserver must be a non-empty string list")
 else:
-    # direct-nameserver is public common behavior and must follow the template's
-    # proxy-server DNS baseline; the audit deliberately does not hard-code providers.
     if direct_dns != proxy_dns:
         errors.append("direct-nameserver must match template proxy-server-nameserver")
-
 if dns.get("direct-nameserver-follow-policy") is not True:
     errors.append("direct-nameserver-follow-policy must be true")
 if "nameserver-policy" not in dns:
     errors.append("DNS missing nameserver-policy")
-
-# Policy entries that explicitly use the template's CN DoH baseline must not drift.
 for key, value in policy.items():
     if isinstance(value, list) and any(isinstance(x, str) and "doh.pub/dns-query" in x for x in value):
         if value != proxy_dns and "#RULES" not in " ".join(map(str, value)):
             errors.append(f"nameserver-policy {key!r} drifts from template proxy-server-nameserver")
 
-# DNS service hostnames/IPs are intentionally not hard-coded here. If the project
-# changes providers in template.yaml, this audit must follow the new template
-# rather than becoming a second, conflicting configuration source.
+# Independently parse JSON assignments emitted by the airport script. This check
+# does not invoke the synchronizer, so generator and synchronizer cannot certify
+# their own output. Only explicit chain-mode target renames are normalized.
+def extract_json_assignment(text: str, marker: str):
+    m = re.search(r'config\["' + re.escape(marker) + r'"\]\s*=\s*', text)
+    if not m:
+        raise ValueError(f"airport assignment not found: {marker}")
+    i = m.end()
+    if i >= len(text) or text[i] not in "[{":
+        raise ValueError(f"airport assignment is not JSON object/array: {marker}")
+    opening = text[i]
+    closing = "]" if opening == "[" else "}"
+    depth = 0
+    quote = None
+    escape = False
+    for j in range(i, len(text)):
+        c = text[j]
+        if quote:
+            if escape:
+                escape = False
+            elif c == "\\":
+                escape = True
+            elif c == quote:
+                quote = None
+            continue
+        if c in "\"'`":
+            quote = c
+        elif c == opening:
+            depth += 1
+        elif c == closing:
+            depth -= 1
+            if depth == 0:
+                raw = text[i:j + 1]
+                try:
+                    return json.loads(raw)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(f"airport assignment is not strict JSON: {marker}: {exc}")
+    raise ValueError(f"unterminated airport assignment: {marker}")
 
-# Airport override must be reproducibly synchronized from the current template.
+# These are the only permitted airport-side semantic transformations of template.rules.
+RULE_TARGET_REVERSE = {
+    "🤖 AI服务": "AI服务",
+    "🌍 国外服务": "国外服务",
+    "📺 Media": "流媒体",
+    "🐟 漏网之鱼": "漏网之鱼",
+    "🔧 远控工具": "远控工具",
+}
+
+def canonicalize_airport_rules(rules):
+    out = []
+    for rule in rules or []:
+        if not isinstance(rule, str):
+            out.append(rule)
+            continue
+        parts = rule.split(",")
+        if len(parts) >= 2:
+            idx = -2 if parts[-1] == "no-resolve" and len(parts) >= 3 else -1
+            parts[idx] = RULE_TARGET_REVERSE.get(parts[idx], parts[idx])
+            rule = ",".join(parts)
+        out.append(rule)
+    return out
+
+# Compare every common object/scalar independently against template.yaml.
+# proxy-providers/proxy-groups are intentionally excluded because they contain
+# the airport/chain-specific topology and UX.
+for key in ("tun", "dns", "sniffer", "hosts", "rule-providers", "sub-rules"):
+    try:
+        actual = extract_json_assignment(airport, key)
+        expected = template.get(key)
+        if actual != expected:
+            errors.append(f"airport common object drift: {key}")
+    except ValueError as exc:
+        errors.append(str(exc))
+
+try:
+    airport_rules = canonicalize_airport_rules(extract_json_assignment(airport, "rules"))
+    if airport_rules != template.get("rules"):
+        errors.append("airport common object drift: rules (outside approved target mappings)")
+except ValueError as exc:
+    errors.append(str(exc))
+
+for key in ("mode", "allow-lan", "bind-address", "mixed-port", "log-level", "ipv6",
+            "unified-delay", "tcp-concurrent", "keep-alive-interval", "keep-alive-idle",
+            "disable-keep-alive", "find-process-mode", "etag-support", "external-controller",
+            "global-ua", "geodata-mode", "geodata-loader", "geo-auto-update", "geo-update-interval",
+            "profile", "ntp", "experimental", "external-controller-cors", "geox-url"):
+    if key not in template:
+        continue
+    try:
+        actual = extract_json_assignment(airport, key)
+    except ValueError:
+        # Scalar string/number/bool assignments are not all JSON-object assignments.
+        m = re.search(r'config\["' + re.escape(key) + r'"\]\s*=\s*(.+?);\s*$', airport, re.M)
+        if not m:
+            errors.append(f"airport scalar assignment not found: {key}")
+            continue
+        raw = m.group(1).strip()
+        try:
+            actual = json.loads(raw)
+        except json.JSONDecodeError:
+            errors.append(f"airport scalar assignment is not strict JSON: {key}")
+            continue
+    if actual != template[key]:
+        errors.append(f"airport common scalar drift: {key}")
+
+# Synchronizer reproducibility remains a second, separate check.
 with tempfile.TemporaryDirectory() as td:
     t = Path(td)
     (t / "template.yaml").write_text(template_text, encoding="utf-8")
@@ -142,7 +229,6 @@ with tempfile.TemporaryDirectory() as td:
         if synced != airport:
             errors.append("airport_overwrite.js is not synchronized with template.yaml; run the synchronizer")
 
-# Airport-only exceptions are allowed, but public common behavior must remain present.
 required_airport_markers = (
     'config["dns"]', 'config["rules"]', 'config["rule-providers"]',
     'config["sub-rules"]', 'config["tun"]', 'config["sniffer"]',
@@ -182,7 +268,6 @@ for p in scan_files:
     if "https://120.53.53.53/dns-query" in text:
         errors.append(f"retired DNSPod DoH IP endpoint remains in {p.relative_to(ROOT)}")
 
-# No temporary repair workflow may remain in the repository.
 for p in scan_files:
     if p.suffix.lower() in {".md", ".yml", ".yaml"}:
         text = p.read_text(encoding="utf-8")
@@ -198,6 +283,7 @@ print("[OK] generator does not reimplement common behavior")
 print("[OK] installer uses one immutable repository snapshot")
 print("[OK] public subscription paths contain no stale fixed literals")
 print("[OK] DNS common behavior is derived from template.yaml")
+print("[OK] airport common objects/scalars independently match template")
 print("[OK] airport overwrite is reproducibly synchronized")
 print("[OK] repository-wide stale literal scan passed")
 print("[OK] DIRECT UI exceptions remain limited to approved local cases")
