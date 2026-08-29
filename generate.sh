@@ -18,6 +18,7 @@ err()  { echo -e "${RED}[✗]${NC} $1"; exit 1; }
 command -v sed >/dev/null || err "需要 sed"
 command -v grep >/dev/null || err "需要 grep"
 command -v find >/dev/null || err "需要 find"
+command -v awk >/dev/null || err "需要 awk"
 
 [[ -f "$TEMPLATE" ]] || err "找不到模板: $TEMPLATE"
 case "${AIRPORT_SUB_URL:-}" in ""|"REPLACE_WITH_YOUR_AIRPORT_SUBSCRIPTION_URL"|"这里填入你的机场订阅链接") err "请先设置机场订阅链接";; esac
