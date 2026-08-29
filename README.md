@@ -73,7 +73,7 @@
 客户端**只导入一个固定链接**，即可获得完整规则、DNS 与链式代理；订阅路径形如普通静态资源，不带 `.yaml`：
 
 ```text
-https://你的域名/assets/static/a7f3c21e9b
+https://你的域名/assets/static/<随机20位十六进制路径>
 ```
 
 机场订阅写在 VPS 本地 `settings.conf`，可随时更换；更新落地节点不会改变客户端主订阅地址。
