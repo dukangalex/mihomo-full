@@ -1272,7 +1272,6 @@ function main(config) {
   ],
   "direct-nameserver-follow-policy": true,
   "nameserver-policy": {
-    "geosite:category-ads-all": "rcode://name_error",
     "rule-set:cn": [
       "https://doh.pub/dns-query",
       "https://dns.alidns.com/dns-query"
