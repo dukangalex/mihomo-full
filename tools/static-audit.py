@@ -73,29 +73,34 @@ for old in ("/assets/static/a7f3c21e9b", "/assets/static/e9b2f1a7c3"):
 if not re.search(r"REPLACE_WITH_RANDOM_20_HEX", settings):
     errors.append("settings.conf lacks random-path placeholders")
 
-# Canonical DNS architecture.
+# DNS architecture: template.yaml is the only value source.
 dns = template.get("dns") or {}
-canonical_cn = ["https://doh.pub/dns-query", "https://223.5.5.5/dns-query"]
-if dns.get("default-nameserver") != ["tls://223.5.5.5", "tls://223.6.6.6"]:
-    errors.append("default-nameserver must be tls://223.5.5.5 + tls://223.6.6.6")
-if dns.get("proxy-server-nameserver") != canonical_cn:
-    errors.append("proxy-server-nameserver does not match canonical CN DNS pair")
-if dns.get("direct-nameserver") != canonical_cn:
-    errors.append("direct-nameserver does not match canonical CN DNS pair")
+proxy_dns = dns.get("proxy-server-nameserver")
+direct_dns = dns.get("direct-nameserver")
+policy = dns.get("nameserver-policy") or {}
+
+if not isinstance(proxy_dns, list) or not proxy_dns or not all(isinstance(x, str) and x.strip() for x in proxy_dns):
+    errors.append("template dns.proxy-server-nameserver must be a non-empty string list")
+else:
+    # direct-nameserver is public common behavior and must follow the template's
+    # proxy-server DNS baseline; the audit deliberately does not hard-code providers.
+    if direct_dns != proxy_dns:
+        errors.append("direct-nameserver must match template proxy-server-nameserver")
+
 if dns.get("direct-nameserver-follow-policy") is not True:
     errors.append("direct-nameserver-follow-policy must be true")
 if "nameserver-policy" not in dns:
     errors.append("DNS missing nameserver-policy")
-if re.search(r"https://dns\.alidns\.com/dns-query", template_text):
-    errors.append("template still contains legacy AliDNS hostname DoH endpoint")
-if re.search(r"https://120\.53\.53\.53/dns-query", template_text):
-    errors.append("template still contains retired DNSPod 120.53.53.53 DoH endpoint")
-if re.search(r"^\s*\"(doh\.pub|dns\.alidns\.com)\"\s*:", template_text, re.M):
-    errors.append("template pins a DoH service hostname through hosts")
-for key, value in (dns.get("nameserver-policy") or {}).items():
+
+# Policy entries that explicitly use the template's CN DoH baseline must not drift.
+for key, value in policy.items():
     if isinstance(value, list) and any(isinstance(x, str) and "doh.pub/dns-query" in x for x in value):
-        if value != canonical_cn and "#RULES" not in " ".join(map(str, value)):
-            errors.append(f"nameserver-policy {key!r} drifts from canonical CN DNS pair")
+        if value != proxy_dns and "#RULES" not in " ".join(map(str, value)):
+            errors.append(f"nameserver-policy {key!r} drifts from template proxy-server-nameserver")
+
+# DNS service hostnames/IPs are intentionally not hard-coded here. If the project
+# changes providers in template.yaml, this audit must follow the new template
+# rather than becoming a second, conflicting configuration source.
 
 # Airport override must be reproducibly synchronized from the current template.
 with tempfile.TemporaryDirectory() as td:
@@ -168,7 +173,7 @@ print("[OK] template is the common source of truth")
 print("[OK] generator does not reimplement common behavior")
 print("[OK] installer uses one immutable repository snapshot")
 print("[OK] public subscription paths contain no stale fixed literals")
-print("[OK] DNS bootstrap / node DNS / direct DNS / policy are canonical")
+print("[OK] DNS common behavior is derived from template.yaml")
 print("[OK] airport overwrite is reproducibly synchronized")
 print("[OK] repository-wide stale literal scan passed")
 print("[OK] DIRECT UI exceptions remain limited to approved local cases")
