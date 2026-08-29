@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Telegram UI for Mihomo-Full.
 
-Important: this is not a second configuration engine. All supported
-configuration mutations go through manage.sh, which is also used by CLI.
-Chain testing/selection is intentionally not duplicated here.
+This is a thin remote UI over manage.sh. It does not maintain an independent
+configuration engine and never exposes arbitrary shell execution.
 """
 import os
 import re
@@ -46,9 +45,9 @@ def confirm_menu(action):
     return InlineKeyboardMarkup([[InlineKeyboardButton("✅ 确认", callback_data=f"confirm:{action}"), InlineKeyboardButton("❌ 取消", callback_data="cancel")]])
 
 
-def run_manage(args, input_text=None, timeout=120):
-    """Fixed action dispatch; user text is never interpolated into a shell."""
-    p = subprocess.run(["bash", str(MANAGE), *args], cwd=BASE, input=input_text, text=True,
+def run_manage(args, timeout=180):
+    """Fixed action dispatch; user text is passed as an argv item, never shell code."""
+    p = subprocess.run(["bash", str(MANAGE), *args], cwd=BASE, text=True,
                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=timeout, check=False)
     out = re.sub(r'https://[^\s\"\']+', '[已隐藏 URL]', p.stdout or "")
     return p.returncode, out[-3500:]
@@ -90,25 +89,13 @@ async def confirm(update, context):
         await q.edit_message_text("操作已过期，请重新选择。", reply_markup=menu()); return
     context.user_data.pop("pending", None)
     if action == "generate":
-        code, out = run_manage(["generate"])
+        code, out = run_manage(["--check"])
+        if code == 0:
+            code, out = run_manage(["generate"])
         await q.edit_message_text(("✅ " if code == 0 else "❌ ") + out, reply_markup=menu())
     elif action == "airport":
         context.user_data["awaiting_airport"] = True
         await q.edit_message_text("请输入新的 HTTPS 机场订阅地址。\n\n收到后不会回显 URL，并会再次要求确认。", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❌ 取消", callback_data="cancel")]]))
-
-
-async def confirm_mutation(update, context):
-    q = update.callback_query
-    if not allowed(update): await q.answer("无权限", show_alert=True); return
-    await q.answer()
-    action = context.user_data.pop("pending_rule", None)
-    if not action:
-        await q.edit_message_text("操作已过期，请重新选择。", reply_markup=menu()); return
-    args = context.user_data.pop("pending_rule_args", None)
-    if not args:
-        await q.edit_message_text("操作参数已过期，请重新选择。", reply_markup=menu()); return
-    code, out = run_manage(args)
-    await q.edit_message_text(("✅ " if code == 0 else "❌ ") + out, reply_markup=menu())
 
 
 async def text(update, context):
@@ -147,6 +134,18 @@ async def confirm_airport(update, context):
         await q.edit_message_text("订阅地址已过期，请重新操作。", reply_markup=menu()); return
     code, out = run_manage(["--set-airport", url])
     await q.edit_message_text(("✅ 机场更换完成\n" if code == 0 else "❌ 更换失败\n") + out, reply_markup=menu())
+
+
+async def confirm_mutation(update, context):
+    q = update.callback_query
+    if not allowed(update): await q.answer("无权限", show_alert=True); return
+    await q.answer()
+    action = context.user_data.pop("pending_rule", None)
+    args = context.user_data.pop("pending_rule_args", None)
+    if not action or not args:
+        await q.edit_message_text("操作已过期，请重新选择。", reply_markup=menu()); return
+    code, out = run_manage(args)
+    await q.edit_message_text(("✅ " if code == 0 else "❌ ") + out, reply_markup=menu())
 
 
 async def rule_flow(update, context):
