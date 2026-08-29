@@ -1,20 +1,9 @@
 #!/usr/bin/env python3
-"""Synchronize airport_overwrite.js with the public template's common behavior.
-
-The airport script intentionally remains client-side JavaScript. This tool only
-rewrites the static/common sections from template.yaml and preserves the existing
-airport-specific node normalization/region grouping logic.
-
-Run from the repository root:
-    python3 tools/sync-airport-overwrite.py
-Requires PyYAML (used only by the maintainer/CI, never by the client).
-"""
+"""Synchronize airport_overwrite.js with template.yaml common behavior."""
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
-
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,7 +16,6 @@ def js(value):
 
 
 def replace_assignment(text: str, marker: str, value) -> str:
-    """Replace one complete `config.<marker> = <object/array>;` assignment."""
     patterns = [f'config["{marker}"] =', f"config.{marker} ="]
     start = -1
     prefix = None
@@ -37,14 +25,12 @@ def replace_assignment(text: str, marker: str, value) -> str:
             start, prefix = i, p
     if start < 0:
         raise RuntimeError(f"assignment not found: {marker}")
-
     eq = text.find("=", start, start + len(prefix) + 3)
     i = eq + 1
     while i < len(text) and text[i].isspace():
         i += 1
     if i >= len(text) or text[i] not in "[{":
         raise RuntimeError(f"assignment is not object/array: {marker}")
-
     opening = text[i]
     closing = "]" if opening == "[" else "}"
     depth = 0
@@ -77,9 +63,22 @@ def replace_assignment(text: str, marker: str, value) -> str:
         j += 1
     else:
         raise RuntimeError(f"unterminated assignment: {marker}")
-
     replacement = f'config["{marker}"] = {js(value)};'
     return text[:start] + replacement + text[j:]
+
+
+def add_assignment(text: str, marker: str, value) -> str:
+    block = f'  config["{marker}"] = {js(value)};\n'
+    needle = "\n  return config;"
+    if needle not in text:
+        raise RuntimeError("return config marker not found")
+    return text.replace(needle, "\n" + block + needle, 1)
+
+
+def upsert_assignment(text: str, marker: str, value) -> str:
+    if f'config["{marker}"] =' in text or f"config.{marker} =" in text:
+        return replace_assignment(text, marker, value)
+    return add_assignment(text, marker, value)
 
 
 def insert_before_return(text: str, block: str) -> str:
@@ -93,13 +92,11 @@ def main() -> None:
     template = yaml.safe_load(TEMPLATE.read_text(encoding="utf-8"))
     airport = AIRPORT.read_text(encoding="utf-8")
 
-    # Exact common sections. Chain-only proxy providers are deliberately excluded.
     for key in ("tun", "dns", "sniffer", "hosts", "rule-providers", "rules", "sub-rules"):
         if key not in template:
             raise RuntimeError(f"template missing required section: {key}")
-        airport = replace_assignment(airport, key, template[key])
+        airport = upsert_assignment(airport, key, template[key])
 
-    # Canonical scalar/common values are applied last so old assignments cannot win.
     scalars = {
         "mode": template.get("mode", "rule"),
         "allow-lan": template.get("allow-lan", False),
@@ -127,18 +124,13 @@ def main() -> None:
         "geox-url": template.get("geox-url", {}),
     }
 
-    # Object/scalar assignments that may already exist are normalized through a
-    # generated final block. This avoids brittle regex editing of old comments.
     final = ["  // BEGIN AUTO-SYNC: template.yaml common behavior", "  var CANONICAL = " + js(scalars) + ";"]
-    for k in ("mode", "allow-lan", "bind-address", "mixed-port", "log-level", "ipv6", "unified-delay", "tcp-concurrent", "keep-alive-interval", "keep-alive-idle", "disable-keep-alive", "find-process-mode", "etag-support", "external-controller", "global-ua", "geodata-mode", "geodata-loader", "geo-auto-update", "geo-update-interval"):
-        final.append(f'  config[{json.dumps(k, ensure_ascii=False)}] = CANONICAL[{json.dumps(k, ensure_ascii=False)}];')
-    for k in ("profile", "ntp", "experimental", "external-controller-cors", "geox-url"):
+    for k in scalars:
         final.append(f'  config[{json.dumps(k, ensure_ascii=False)}] = CANONICAL[{json.dumps(k, ensure_ascii=False)}];')
 
-    # Canonical group names and UI safety. Preserve the airport script's dynamic
-    # regional groups, but make common functional groups match template semantics.
     final += [
-        "  // Canonical functional-group naming for the pure-airport mode.",
+        "  // Pure-airport groups keep the same functional semantics as template.yaml.",
+        "  // Only chain-specific VPS/dialer groups are replaced by airport-local groups.",
         "  if (config[\"proxy-groups\"] && config[\"proxy-groups\"].forEach) {",
         "    config[\"proxy-groups\"].forEach(function (g) {",
         "      if (!g || !g.name) return;",
@@ -166,20 +158,12 @@ def main() -> None:
         "      if (g.name === \"🛑 广告拦截\") g.proxies = [\"REJECT\", \"REJECT-DROP\"];",
         "    });",
         "  }",
-        "  // BEGIN AUTO-SYNC: no DIRECT option in user-visible select groups.",
-        "  // DIRECT remains available only to bottom-layer rules, matching template.yaml.",
-        "  // END AUTO-SYNC",
+        "  // DIRECT remains a bottom-layer rule target, not a user-selectable proxy-group option.",
         "  // END AUTO-SYNC: template.yaml common behavior",
     ]
     airport = insert_before_return(airport, "\n".join(final))
 
-    # Sanity checks before writing.
-    required = [
-        'config["rule-providers"]', 'config["rules"]', 'config["sub-rules"]',
-        'config["tun"]', 'config["dns"]', 'config["sniffer"]',
-        'config["global-ua"]', 'config["geox-url"]'
-    ]
-    for marker in required:
+    for marker in ('config["rule-providers"]', 'config["rules"]', 'config["sub-rules"]', 'config["tun"]', 'config["dns"]', 'config["sniffer"]', 'config["global-ua"]', 'config["geox-url"]'):
         if marker not in airport:
             raise RuntimeError(f"post-sync sanity check failed: {marker}")
 
