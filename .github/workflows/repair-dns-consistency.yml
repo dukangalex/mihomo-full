@@ -1,7 +1,7 @@
 name: Repair DNS consistency
 
 # One-shot migration helper. It is intentionally path-scoped so the repair commit
-a# does not recursively invoke this workflow. Remove this file after the repair lands.
+does not recursively invoke this workflow. Remove this file after the repair lands.
 
 on:
   push:
