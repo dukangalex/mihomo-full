@@ -15,8 +15,8 @@ fi
 ok "落地节点未按协议类型排除"
 
 grep -q '^  - name: "🛑 广告拦截"$' "$CONFIG" || fail "缺少广告拦截策略组"
-grep -q 'proxies: \["REJECT-DROP", "DIRECT"\]' "$CONFIG" || fail "广告拦截缺少 DIRECT 例外"
-grep -q 'RULE-SET,category-ads-all,"🛑 广告拦截"' "$CONFIG" || fail "广告规则未进入广告策略组"
+grep -q 'proxies: ["REJECT", "DIRECT"]' "$CONFIG" || fail "广告拦截缺少 DIRECT 例外"
+grep -q 'RULE-SET,category-ads-all,🛑 广告拦截' "$CONFIG" || fail "广告规则未进入广告策略组"
 if grep -q 'geosite:category-ads-all.*rcode://name_error' "$CONFIG"; then
   fail "广告规则仍在 DNS 层强制 NXDOMAIN，DIRECT 例外无法生效"
 fi
