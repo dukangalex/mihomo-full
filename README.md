@@ -167,6 +167,8 @@ https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.
 ├── settings.conf          # 占位示例，勿填真实订阅后推送
 ├── template.yaml          # 链式配置模板（含 __占位符__）
 ├── generate.sh            # 生成脚本
+├── manage.sh              # 小白管理入口：更换机场 / 规则集管理
+├── rulesets.local.conf    # 本地规则覆盖模板（勿填真实环境后提交）
 ├── install.sh             # 一键安装（写入 VPS 本地）
 ├── nginx-example.conf
 ├── airport_overwrite.js
@@ -177,6 +179,8 @@ VPS 运行时（勿提交公开仓）
 ├── settings.conf          # 含真实机场 URL
 ├── template.yaml
 ├── generate.sh
+├── manage.sh
+├── rulesets.local.conf    # VPS 本地规则集覆盖
 └── output/
     ├── full-config.yaml   # 会嵌入机场 URL
     └── exit-nodes.yaml
@@ -197,7 +201,9 @@ VPS 运行时（勿提交公开仓）
 | 操作 | 命令 / 做法 |
 |------|-------------|
 | 只更新落地节点 | `/opt/mihomo-full/generate.sh` |
-| 更换机场订阅 | 编辑 VPS 上 `settings.conf` 中 `AIRPORT_SUB_URL`，再执行 `generate.sh` |
+| 更换机场订阅 | 执行 `mihomo-full`，选择「更换机场订阅」；会自动重新生成，固定订阅地址不变 |
+| 规则源失效/增加备用规则 | 执行 `mihomo-full` →「规则集管理」→ 增加/替换/禁用/恢复 |
+| 本地规则覆盖 | `/opt/mihomo-full/rulesets.local.conf`；不要提交真实环境文件 |
 | 主订阅地址 | **不必改**；客户端继续用原固定链接 |
 
 ---
