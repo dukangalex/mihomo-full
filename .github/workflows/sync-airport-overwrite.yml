@@ -1,4 +1,5 @@
 name: Sync airport overwrite
+# Final behavior baseline: preserve airport UX, map common rule targets, validate syntax.
 
 on:
   push:
