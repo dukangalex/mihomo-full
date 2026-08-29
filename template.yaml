@@ -1143,7 +1143,6 @@ dns:
   direct-nameserver-follow-policy: true
 
   nameserver-policy:
-    "geosite:category-ads-all": "rcode://name_error"
 
     "rule-set:cn": &CN_DNS
       - https://doh.pub/dns-query  # 腾讯纯IP
