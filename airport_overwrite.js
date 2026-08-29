@@ -2137,36 +2137,36 @@ function main(config) {
   config["experimental"] = CANONICAL["experimental"];
   config["external-controller-cors"] = CANONICAL["external-controller-cors"];
   config["geox-url"] = CANONICAL["geox-url"];
-  // Pure-airport groups keep the same functional semantics as template.yaml.
-  // Only chain-specific VPS/dialer groups are replaced by airport-local groups.
-  if (config["proxy-groups"] && config["proxy-groups"].forEach) {
-    config["proxy-groups"].forEach(function (g) {
-      if (!g || !g.name) return;
-      var oldName = g.name;
-      if (oldName === "♻️ 自动选择") g.name = "机场优选";
-      else if (oldName === "⚖️ 负载均衡") g.name = "机场负载均衡";
-      else if (oldName === "🔰 节点选择") g.name = "机场手动选择";
-      else if (oldName === "📺 Media") g.name = "流媒体";
-      else if (oldName === "🐟 漏网之鱼") g.name = "漏网之鱼";
-      if (g.type === "select" && g.proxies && g.proxies.filter) {
-        var mapped = [];
-        for (var pi = 0; pi < g.proxies.length; pi++) {
-          var p = g.proxies[pi];
-          if (p === "♻️ 自动选择") p = "机场优选";
-          else if (p === "⚖️ 负载均衡") p = "机场负载均衡";
-          else if (p === "🔰 节点选择") p = "机场手动选择";
-          else if (p === "📺 Media") p = "流媒体";
-          else if (p === "🐟 漏网之鱼") p = "漏网之鱼";
-          if (p === "DIRECT") continue;
-          if (mapped.indexOf(p) < 0) mapped.push(p);
-        }
-        g.proxies = mapped;
-      }
-      if (g.name === "🔧 远控工具") g.proxies = ["REJECT-DROP", "机场优选"];
-      if (g.name === "🛑 广告拦截") g.proxies = ["REJECT", "REJECT-DROP"];
+  // 公共同步只覆盖安全底层配置；机场原有策略组及其名称/节点选择逻辑不再被改写。
+  // 机场模式明确保留：广告拦截 DIRECT、远控工具 DIRECT。
+  // 私有网络/国内服务 DIRECT 只存在于底层规则，不提供用户策略组。
+  // 链式模式的功能组名称与机场模式不同，因此仅将公共规则目标映射到现有机场组名。
+  var TARGET_MAP = {
+    "AI服务": "🤖 AI服务",
+    "国外服务": "🌍 国外服务",
+    "流媒体": "📺 Media",
+    "漏网之鱼": "🐟 漏网之鱼",
+    "远控工具": "🔧 远控工具"
+  };
+  function mapRuleTargets(list) {
+    if (!list || !list.map) return list;
+    return list.map(function (rule) {
+      if (typeof rule !== "string") return rule;
+      var parts = rule.split(",");
+      if (parts.length < 2) return rule;
+      var target = parts[parts.length - 1];
+      if (TARGET_MAP[target]) parts[parts.length - 1] = TARGET_MAP[target];
+      return parts.join(",");
     });
   }
-  // DIRECT remains a bottom-layer rule target, not a user-selectable proxy-group option.
+  if (config["rules"]) config["rules"] = mapRuleTargets(config["rules"]);
+  if (config["sub-rules"]) {
+    for (var sr in config["sub-rules"]) {
+      if (Object.prototype.hasOwnProperty.call(config["sub-rules"], sr)) {
+        config["sub-rules"][sr] = mapRuleTargets(config["sub-rules"][sr]);
+      }
+    }
+  }
   // END AUTO-SYNC: template.yaml common behavior
 
   return config;
