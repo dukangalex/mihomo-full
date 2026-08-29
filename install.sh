@@ -22,10 +22,10 @@ mkdir -p "$INSTALL_DIR" "$OUTPUT_DIR"
 chmod 600 "${INSTALL_DIR}/settings.conf"
 
 # 核心文件均固定到已审核版本，避免安装时随 main 漂移
-curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/generate.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/0a02423e201964666e3ec66b36820950f457b757/generate.sh" || err "无法下载已审核 generate.sh"
-curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/template.yaml" "https://raw.githubusercontent.com/dukangalex/mihomo-full/be9a73d8e2872adf7f120dc3073b89554931a214/template.yaml" || err "无法下载 template.yaml"
+curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/generate.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/7094f833d50454268fad9f640c6c5e8015a00ee5/generate.sh" || err "无法下载已审核 generate.sh"
+curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/template.yaml" "https://raw.githubusercontent.com/dukangalex/mihomo-full/cac1205ce0e8955ac2ac8c476c21dc1fd86540c9/template.yaml" || err "无法下载 template.yaml"
 curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/manage.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/bda453c024fc854a0188a2da708600a5ea556b/manage.sh" || err "无法下载 manage.sh"
-curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/tools-audit-generated-config.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/ba274dde9c193f26ea63de63e9b6caa14f7200f7/tools/audit-generated-config.sh" || err "无法下载最终配置审计脚本"
+curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/tools-audit-generated-config.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/72d6ed0ae43e885940fd92a3e6e1219e3d7c6f87/tools/audit-generated-config.sh" || err "无法下载最终配置审计脚本"
 mkdir -p "${INSTALL_DIR}/tools"
 mv "${INSTALL_DIR}/tools-audit-generated-config.sh" "${INSTALL_DIR}/tools/audit-generated-config.sh"
 chmod 700 "${INSTALL_DIR}/manage.sh"; chmod 700 "${INSTALL_DIR}/generate.sh"; chmod 700 "${INSTALL_DIR}/tools/audit-generated-config.sh"
