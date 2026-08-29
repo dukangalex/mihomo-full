@@ -756,13 +756,11 @@ proxy-groups:
 
   - name: "远控工具"
     type: select
-    # 默认第一项 REJECT-DROP，跟之前硬编码拦截的安全默认保持一致。
-    # 以前想放行这些工具必须回来改 YAML、把 REJECT-DROP 改成 DIRECT，
-    # 现在直接在 FlClash/Bettbox 的分组切换界面里，找到"远控工具"这个
-    # 分组，手动点选 DIRECT 就行，实时生效，不用再碰配置文件。
-    # 用完记得点回 REJECT-DROP——恶意软件可以伪造这些工具的进程名来
-    # 蹭这条"信任白名单"绕开代理，放行状态不该常态化保持开启。
-    proxies: ["REJECT-DROP", "DIRECT"]
+    # 默认第一项 REJECT-DROP，安全默认不变。
+    # 管理界面不提供 DIRECT 选项：如确需使用远控工具，只允许通过
+    # "落地优选出口" 建立代理连接，避免把 DIRECT 暴露给用户误选。
+    # 这与本模板"境外流量不得旁路直连"的安全原则一致。
+    proxies: ["REJECT-DROP", "落地优选出口"]
 
 #
 # 全链路零泄露 DNS 架构：
