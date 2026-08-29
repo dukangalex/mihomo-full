@@ -55,6 +55,45 @@ log "生成完整配置..."
 FULL_URL="https://${DOMAIN}${FIXED_FULL_CONFIG_PATH}"
 EXIT_URL="https://${DOMAIN}${FIXED_EXIT_NODES_PATH}"
 cp "$TEMPLATE" "$FULL_CONFIG"
+
+# ── 主配置公共行为增强 ─────────────────────────────────────────────
+# 机场覆盖脚本与链式主配置应共享安全底线；链式专属能力（VPS/dialer-proxy）除外。
+# 1. 落地节点不按协议类型排除：公开模板必须保留 v2ray-agent 提供的全部协议。
+#    删除历史遗留 exclude-type: vmess，避免模板注释/配置与“全部协议保留”原则冲突。
+sed -i '/^[[:space:]]*exclude-type:[[:space:]]*vmess[[:space:]]*$/d' "$FULL_CONFIG"
+
+# 2. 广告拦截改为可选策略组：默认 REJECT-DROP，同时允许用户主动切换 DIRECT。
+#    DNS 层不能先把广告域名直接 rcode://name_error，否则 DIRECT 无法恢复网站。
+sed -i '/^[[:space:]]*"geosite:category-ads-all":[[:space:]]*"rcode:\/\/name_error"[[:space:]]*$/d' "$FULL_CONFIG"
+
+# 3. 远控工具与机场覆盖脚本保持同一交互原则：默认拒绝；需要时可选择代理或 DIRECT。
+#    DIRECT 是用户主动启用的例外，不是全局直连旁路。
+sed -i 's/^\([[:space:]]*proxies: \["REJECT-DROP", "落地优选出口"\]\)[[:space:]]*$/    proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]/' "$FULL_CONFIG"
+
+# 4. 广告策略组只允许一个实例；放在远控工具之前，避免重复注入。
+if ! grep -q '^  - name: "🛑 广告拦截"$' "$FULL_CONFIG"; then
+  TMP_CFG="$FULL_CONFIG.tmp"
+  awk '
+    /^  - name: "远控工具"$/ {
+      print "  - name: \"🛑 广告拦截\""
+      print "    type: select"
+      print "    # 默认 REJECT-DROP；仅当免费站点依赖广告收入且被误伤/无法正常使用时，"
+      print "    # 用户才主动切换 DIRECT。此 DIRECT 不是全局直连开关。"
+      print "    proxies: [\"REJECT-DROP\", \"DIRECT\"]"
+      print ""
+    }
+    {print}
+  ' "$FULL_CONFIG" > "$TMP_CFG" && mv "$TMP_CFG" "$FULL_CONFIG"
+fi
+
+# 5. 将广告规则指向策略组；钓鱼规则仍然保持强制 REJECT-DROP。
+sed -i 's/^\([[:space:]]*- RULE-SET,sukka-phishing,REJECT-DROP.*\)$/\1/' "$FULL_CONFIG"
+sed -i 's/- RULE-SET,category-ads-all,REJECT-DROP  # 广告域名/- RULE-SET,category-ads-all,"🛑 广告拦截"  # 默认拦截；需要时可切换 DIRECT/' "$FULL_CONFIG"
+
+# 6. 私有网络与国内服务不暴露 DIRECT 选择器：
+#    私有网络是局域网/本机拓扑必需的 DIRECT；国内服务则由 CN 规则集/IP 规则负责 DIRECT。
+#    这两类属于底层路由，不应被用户误当成“全局直连”开关。
+
 escape_sed() { printf '%s' "$1" | sed 's/[&|\\]/\\&/g'; }
 AIRPORT_ESCAPED=$(escape_sed "$AIRPORT_SUB_URL"); EXIT_ESCAPED=$(escape_sed "$EXIT_URL")
 sed -i "s|__AIRPORT_SUB_URL__|$AIRPORT_ESCAPED|g" "$FULL_CONFIG"
