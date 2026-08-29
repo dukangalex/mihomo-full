@@ -6,7 +6,7 @@ set -euo pipefail
 INSTALL_DIR="/opt/mihomo-full"
 BIN_LINK="/usr/local/bin/mihomo-full"
 BOT_SERVICE="mihomo-full-bot.service"
-BOT_ENV="${INSTALL_DIR}/telegram-bot/.env"
+BOT_ENV="${INSTALL_DIR}/telegram-bot.env"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 info(){ echo -e "${GREEN}[+]${NC} $1"; }
@@ -27,6 +27,7 @@ echo "将删除："
 echo "  - $INSTALL_DIR"
 echo "  - $BIN_LINK（若指向 Mihomo Full）"
 echo "  - $BOT_SERVICE（若存在）"
+echo "  - Mihomo-Full 自己安装的 systemd 单元"
 echo ""
 echo "明确不会操作："
 echo "  - /etc/v2ray-agent"
@@ -37,7 +38,7 @@ echo ""
 read -r -p "确认卸载 Mihomo Full？输入 UNINSTALL 确认： " confirm
 [[ "$confirm" == "UNINSTALL" ]] || { info "已取消。"; exit 0; }
 
-# 先停止/禁用本项目自己的 Bot 服务；绝不按模糊匹配停止其他服务。
+# 只停止/删除本项目自己的 Bot 服务；绝不按模糊匹配停止其他服务。
 if systemctl list-unit-files --type=service 2>/dev/null | grep -q "^${BOT_SERVICE}[[:space:]]"; then
   systemctl disable --now "$BOT_SERVICE" 2>/dev/null || true
   rm -f "/etc/systemd/system/${BOT_SERVICE}"
