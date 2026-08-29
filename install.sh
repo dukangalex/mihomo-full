@@ -22,10 +22,13 @@ mkdir -p "$INSTALL_DIR" "$OUTPUT_DIR"
 chmod 600 "${INSTALL_DIR}/settings.conf"
 
 # 核心文件均固定到已审核版本，避免安装时随 main 漂移
-curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/generate.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/a98f214145628453d07a99d2eb953eb542901bd6/generate.sh" || err "无法下载已审核 generate.sh"
-curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/template.yaml" "https://raw.githubusercontent.com/dukangalex/mihomo-full/aeba5f3e052ec22c8e92e91b9c6808b8d9099b94/template.yaml" || err "无法下载 template.yaml"
-curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/manage.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/afb483fb2723354c293f27bc7147e0743f51cdcf/manage.sh" || err "无法下载 manage.sh"
-chmod 700 "${INSTALL_DIR}/manage.sh"; chmod 700 "${INSTALL_DIR}/generate.sh"
+curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/generate.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/0a02423e201964666e3ec66b36820950f457b757/generate.sh" || err "无法下载已审核 generate.sh"
+curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/template.yaml" "https://raw.githubusercontent.com/dukangalex/mihomo-full/be9a73d8e2872adf7f120dc3073b89554931a214/template.yaml" || err "无法下载 template.yaml"
+curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/manage.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/bda453c024fc854a0188a2da708600a5ea556b/manage.sh" || err "无法下载 manage.sh"
+curl --fail --silent --show-error --location --proto "=https" --tlsv1.2 -o "${INSTALL_DIR}/tools-audit-generated-config.sh" "https://raw.githubusercontent.com/dukangalex/mihomo-full/ba274dde9c193f26ea63de63e9b6caa14f7200f7/tools/audit-generated-config.sh" || err "无法下载最终配置审计脚本"
+mkdir -p "${INSTALL_DIR}/tools"
+mv "${INSTALL_DIR}/tools-audit-generated-config.sh" "${INSTALL_DIR}/tools/audit-generated-config.sh"
+chmod 700 "${INSTALL_DIR}/manage.sh"; chmod 700 "${INSTALL_DIR}/generate.sh"; chmod 700 "${INSTALL_DIR}/tools/audit-generated-config.sh"
 ln -sf "${INSTALL_DIR}/manage.sh" /usr/local/bin/mihomo-full
 if [[ ! -f "${INSTALL_DIR}/rulesets.local.conf" ]]; then printf '%s\n' '# provider|https_mrs_url|behavior|target|enabled' > "${INSTALL_DIR}/rulesets.local.conf"; fi
 chmod 600 "${INSTALL_DIR}/rulesets.local.conf"
