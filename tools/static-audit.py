@@ -24,7 +24,31 @@ airport = airport_path.read_text(encoding="utf-8")
 generate = generate_path.read_text(encoding="utf-8")
 install = install_path.read_text(encoding="utf-8")
 settings = settings_path.read_text(encoding="utf-8")
-template = yaml.safe_load(template_text)
+class UniqueKeyLoader(yaml.SafeLoader):
+    """SafeLoader variant that fails closed on duplicate mapping keys."""
+    pass
+
+def _construct_unique_mapping(loader, node, deep=False):
+    mapping = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in mapping:
+            mark = getattr(key_node, "start_mark", None)
+            line = (mark.line + 1) if mark else "?"
+            raise ValueError(f"duplicate YAML mapping key {key!r} at line {line}")
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+    return mapping
+
+UniqueKeyLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    _construct_unique_mapping,
+)
+
+try:
+    template = yaml.load(template_text, Loader=UniqueKeyLoader)
+except (yaml.YAMLError, ValueError) as exc:
+    raise SystemExit(f"[FAIL] template.yaml YAML integrity error: {exc}")
+
 errors: list[str] = []
 
 if not isinstance(template, dict):
