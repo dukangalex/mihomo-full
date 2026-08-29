@@ -27,14 +27,10 @@
 # 6. log-level 设为 info（而非更省日志的 warning/error）——用户主动选择
 #    "日志量最大，换取以后排查问题的能力"这个权衡，如果观感上日志太吵，
 #    可以自行调回 warning。
-# 7. 【重要】mihomo 的"排除节点"必须用 exclude-filter 字段，不能用
-#    filter 硬凑负向先行断言 (?!...)——Go 标准库正则引擎(RE2)根本不
-#    支持这种断言语法，写了也是静默失效。落地两个分组（url-test/
-#    load-balance）排除 vmess 节点，之前用 filter 写法，实测确认
-#    Vmess 节点照样出现，已改用 exclude-type: vmess 修复。
-#    前置入口（机场）原本也用同样错误写法排除 CN2/GIA 线路，同样
-#    从未真正生效过；用户明确要求前置不做任何排除，已直接删除，
-#    不是"改成 exclude-filter"，是彻底移除这个限制。
+# 7. 节点协议不再做自动排除。
+#    VMess、Shadowsocks、Trojan、VLESS、Hysteria/Hysteria2、TUIC 等
+#    均保留；是否可用由实际链式测试、服务端配置和节点来源决定。
+#    前置机场同样不按协议/线路名称过滤。
 # 8. inet4-route-only 改为 false（原为 true）。原设置下 TUN 只接管
 #    IPv4 路由，操作系统若有能用的原生 IPv6 出口，IPv6 流量会完全
 #    绕过 TUN、绕过 rules 里 P1 的 IPv6 封堵规则，是个从未被真正
@@ -689,7 +685,6 @@ proxy-groups:
     # 根本不支持 (?!...) 这种断言语法，这条规则要么编译失败要么被
     # 静默忽略，从头到尾没生效过。exclude-filter 本身就是排除语义，
     # 不需要再套断言语法，直接写要排除的关键词即可。
-    exclude-type: vmess
     url: https://www.gstatic.com/generate_204
     expected-status: 204
     interval: 180
@@ -711,7 +706,6 @@ proxy-groups:
     # 已加入 AI服务/国外服务/流媒体/漏网之鱼 四个功能分组的可选项。
     # 每个功能分组现支持：落地优选出口（默认）、落地负载均衡、落地手动选择。
     use: [provider_exit]
-    exclude-type: vmess
     url: https://www.gstatic.com/generate_204
     expected-status: 204
     interval: 180
@@ -723,7 +717,6 @@ proxy-groups:
     # 仅暴露落地 VPS 节点，供功能分组手动挑选具体协议/端口。
     # 严格止于落地节点，不包含前置入口、DIRECT、REJECT。
     use: [provider_exit]
-    exclude-type: vmess
 
   - name: "AI服务"
     type: select
@@ -754,13 +747,17 @@ proxy-groups:
       - 落地负载均衡
       - 落地手动选择
 
+  - name: "🛑 广告拦截"
+    type: select
+    # 默认 REJECT-DROP；仅当免费站点依赖广告收入且被误伤/无法正常使用时，
+    # 用户才主动切换 DIRECT。此 DIRECT 不是全局直连开关。
+    proxies: ["REJECT-DROP", "DIRECT"]
+
   - name: "远控工具"
     type: select
-    # 默认第一项 REJECT-DROP，安全默认不变。
-    # 管理界面不提供 DIRECT 选项：如确需使用远控工具，只允许通过
-    # "落地优选出口" 建立代理连接，避免把 DIRECT 暴露给用户误选。
-    # 这与本模板"境外流量不得旁路直连"的安全原则一致。
-    proxies: ["REJECT-DROP", "落地优选出口"]
+    # 默认 REJECT-DROP；需要使用远控/P2P/内网穿透工具且确认代理冲突时，
+    # 用户可主动切换 DIRECT。该 DIRECT 仅属于远控工具局部例外。
+    proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]
 
 #
 # 全链路零泄露 DNS 架构：
@@ -1512,7 +1509,7 @@ rules:
 
   # P2. 广告 / 安全威胁拦截
   - RULE-SET,sukka-phishing,REJECT-DROP    # 钓鱼域名（13万条）
-  - RULE-SET,category-ads-all,REJECT-DROP  # 广告域名
+  - RULE-SET,category-ads-all,🛑 广告拦截  # 默认拦截；需要时可切换 DIRECT
   - DOMAIN,galaxystore.ad-survey.com,REJECT
   - DOMAIN,dls2.bigdata.samsung.com.cn,REJECT
 
