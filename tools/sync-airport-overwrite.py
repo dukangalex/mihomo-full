@@ -2,6 +2,7 @@
 """Sync common Mihomo-Full behavior without destroying airport-specific UX."""
 from __future__ import annotations
 import json
+import re
 from pathlib import Path
 import yaml
 
@@ -54,25 +55,30 @@ def replace_assignment(text: str, marker: str, value) -> str:
     else: raise RuntimeError(f"unterminated assignment: {marker}")
     return text[:start] + f'config["{marker}"] = {js(value)};' + text[j:]
 
+def replace_scalar(text: str, marker: str, value) -> str:
+    value_js = js(value)
+    pattern = re.compile(rf'(config\["{re.escape(marker)}"\]|config\.{re.escape(marker)})\s*=\s*[^;]+;', re.M)
+    replacement = f'config["{marker}"] = {value_js};'
+    if pattern.search(text): return pattern.sub(replacement, text, count=1)
+    needle = "\n  return config;"
+    if needle not in text: raise RuntimeError("return config marker not found")
+    return text.replace(needle, f'\n  {replacement}\n' + needle, 1)
+
 def add_assignment(text: str, marker: str, value) -> str:
     needle = "\n  return config;"
     if needle not in text: raise RuntimeError("return config marker not found")
     return text.replace(needle, f'\n  config["{marker}"] = {js(value)};\n' + needle, 1)
 
-def upsert_assignment(text: str, marker: str, value) -> str:
+def upsert_object(text: str, marker: str, value) -> str:
     return replace_assignment(text, marker, value) if (f'config["{marker}"] =' in text or f"config.{marker} =" in text) else add_assignment(text, marker, value)
 
 def restore_airport_exceptions(text: str) -> str:
-    # DNS-level ad NXDOMAIN defeats the selectable DIRECT exception.
     text = text.replace('  "geosite:category-ads-all": "rcode://name_error",\n', "")
-    # Ads: default block, user may choose DIRECT.
     text = text.replace('"RULE-SET,category-ads-all,REJECT-DROP",', '"RULE-SET,category-ads-all,🛑 广告拦截",')
-    # Remote control: default block, proxy fallback, explicit DIRECT exception.
     text = text.replace(
         'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "落地优选出口"]',
         'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]'
     )
-    # Private network and domestic service are routing-layer behavior, not UI choices.
     text = text.replace('var privateGroup = { name: "🔒 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };\n', '')
     text = text.replace('var domesticGroup = { name: "🇨🇳 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME].concat(regionNames), icon: "" };\n', '')
     text = text.replace('adBlockGroup, privateGroup, domesticGroup,', 'adBlockGroup,')
@@ -83,9 +89,9 @@ def main() -> None:
     airport = AIRPORT.read_text(encoding="utf-8")
     for key in COMMON_OBJECTS:
         if key not in template: raise RuntimeError(f"template missing required section: {key}")
-        airport = upsert_assignment(airport, key, template[key])
+        airport = upsert_object(airport, key, template[key])
     for key in COMMON_SCALARS:
-        if key in template: airport = upsert_assignment(airport, key, template[key])
+        if key in template: airport = replace_scalar(airport, key, template[key])
     airport = restore_airport_exceptions(airport)
     required = ('config["rule-providers"]', 'config["rules"]', 'config["sub-rules"]', 'config["tun"]', 'config["dns"]', 'config["sniffer"]', 'config["global-ua"]', 'config["geox-url"]')
     for marker in required:
