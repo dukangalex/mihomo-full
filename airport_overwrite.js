@@ -1261,7 +1261,7 @@ function main(config) {
   ],
   "proxy-server-nameserver": [
     "https://doh.pub/dns-query",
-    "https://dns.alidns.com/dns-query"
+    "https://223.5.5.5/dns-query"
   ],
   "nameserver": [
     "https://dns.google/dns-query#RULES",
@@ -1269,469 +1269,469 @@ function main(config) {
   ],
   "direct-nameserver": [
     "https://doh.pub/dns-query",
-    "https://dns.alidns.com/dns-query"
+    "https://223.5.5.5/dns-query"
   ],
   "direct-nameserver-follow-policy": true,
   "nameserver-policy": {
     "rule-set:cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "rule-set:geolocation-cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "rule-set:bilibili": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "geosite:cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.com.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.net.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.org.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.edu.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.gov.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.mi.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.xiaomi.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.miui.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.micloud.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.mi-img.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.miwifi.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.xiaomiev.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.huawei.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.huaweicloud.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.hicloud.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.vmall.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.honor.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.vivo.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.vivoglobal.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.oppo.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.oppomobile.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.meizu.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.samsung.com.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.samsungapps.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.samsungcloud.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.samsungknox.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.samsungdm.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.qq.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.wechat.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.weixin.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.wx.qq.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.tencent.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.tencent-cloud.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.qpic.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.qlogo.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.gtimg.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.gdtimg.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.myqcloud.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.wechatpay.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.alipay.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.alipayobjects.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.taobao.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.tmall.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.tbcdn.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.alicdn.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.aliyun.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.amap.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.autonavi.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.ele.me": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.dingtalk.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.1688.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.bytedance.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.byteimg.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.tosv.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.douyin.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.iesdouyin.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.pstatp.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.snssdk.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.volccdn.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.toutiao.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.ixigua.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.feishu.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.feishu.net": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.volces.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.baidu.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.bdstatic.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.bdimg.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.bcebos.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.iqiyi.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.iqiyipic.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.baidubce.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.tenpay.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.unionpay.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.unionpaysecure.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.95516.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.icbc.com.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.ccb.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.boc.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.cmbchina.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.abchina.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.bankcomm.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.psbc.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.spdb.com.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.cmbc.com.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.cib.com.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.tongdun.net": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.ishumei.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.geetest.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.trustdevice.net": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.rongcloud.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.rongcloud.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.umeng.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.umengcloud.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.servicewechat.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.weixinbridge.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.url.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.aegis.qq.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.deepseek.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.deepseek.ai": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.moonshot.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.kimichat.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.zhipuai.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.chatglm.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.baichuan-ai.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.sensetime.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.minimax.chat": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.stepfun.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.iflytek.com": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.12306.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "+.railway12306.cn": [
       "https://doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query"
+      "https://223.5.5.5/dns-query"
     ],
     "geosite:google": [
       "https://8.8.8.8/dns-query#RULES",
