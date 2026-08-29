@@ -34,7 +34,7 @@ esac
 
 [[ "$AIRPORT_SUB_URL" != *$'\n'* && "$AIRPORT_SUB_URL" != *$'\r'* ]] || err "机场订阅 URL 不能包含换行"
 [[ "$DOMAIN" != *$'\n'* && "$DOMAIN" != *$'\r'* ]] || err "域名不能包含换行"
-[[ "$AIRPORT_SUB_URL" =~ ^https?://[^[:space:]\"]+$ ]] || err "机场订阅 URL 必须是 http:// 或 https:// URL，且不能包含空格或双引号"
+[[ "$AIRPORT_SUB_URL" =~ ^https://[^[:space:]\"]+$ ]] || err "机场订阅 URL 必须是 HTTPS URL，且不能包含空格或双引号"
 [[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+(:[0-9]+)?$ ]] || err "DOMAIN 格式不正确"
 
 mkdir -p "$OUTPUT_DIR"
