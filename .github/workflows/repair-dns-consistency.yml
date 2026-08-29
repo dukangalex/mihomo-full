@@ -1,0 +1,108 @@
+name: Repair DNS consistency
+
+on:
+  push:
+    paths:
+      - '.github/workflows/repair-dns-consistency.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install YAML parser
+        run: python -m pip install --disable-pip-version-check --no-input pyyaml
+      - name: Repair canonical DNS architecture
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          root = Path('.')
+          path = root / 'template.yaml'
+          text = path.read_text(encoding='utf-8')
+          data = yaml.safe_load(text)
+          dns = data['dns']
+
+          # Canonical bootstrap: encrypted IP-based DoT for resolving DNS-server
+          # hostnames. This avoids plaintext bootstrap DNS while remaining independent
+          # of the proxy tunnel.
+          dns['default-nameserver'] = ['tls://223.5.5.5', 'tls://223.6.6.6']
+
+          # Canonical proxy-node DNS: Tencent remains domain-based (DNSPod explicitly
+          # retired the public fixed-IP DoH access); Ali is used through its documented
+          # IP DoH endpoint. This is dual-vendor and avoids a DNS -> proxy dependency loop.
+          canonical = ['https://doh.pub/dns-query', 'https://223.5.5.5/dns-query']
+          dns['proxy-server-nameserver'] = canonical
+          dns['direct-nameserver'] = canonical
+
+          # Every domestic DNS policy must use the same canonical resolver pair.
+          policies = dns.get('nameserver-policy', {})
+          for key, value in list(policies.items()):
+              if isinstance(value, list) and any(isinstance(x, str) and ('doh.pub/dns-query' in x or 'dns.alidns.com/dns-query' in x) for x in value):
+                  policies[key] = list(canonical)
+
+          # DNSPod explicitly recommends NOT pinning doh.pub to a fixed hosts IP.
+          # Keep only the stable Google bootstrap mapping already used by the config.
+          hosts = data.get('hosts') or {}
+          hosts.pop('doh.pub', None)
+          hosts.pop('dns.alidns.com', None)
+          data['hosts'] = hosts
+
+          # Remove stale/contradictory DNS comments and replace with an explicit design note.
+          start = text.find('#\n# 全链路零泄露 DNS 架构：')
+          marker = 'hosts:\n'
+          end = text.find(marker, start)
+          if start >= 0 and end > start:
+              block = '''#\n# 全链路 DNS 架构：\n#\n#  1) default-nameserver：加密 DoT + 纯 IP，只负责解析 DNS 服务端域名。\n#  2) proxy-server-nameserver：专门解析代理节点域名，使用腾讯 DNSPod DoH\n#     域名入口 + 阿里公共 DNS IP DoH 双厂商冗余，避免“解析代理节点需要先走代理”。\n#  3) nameserver-policy：按国内/境外目标精细选择解析器；国内统一使用同一组\n#     CN_DNS，境外关键目标使用 #RULES 的境外 DoH。\n#  4) direct-nameserver-follow-policy：DIRECT 出口继续遵循 nameserver-policy。\n#  5) 不固定 doh.pub 的 hosts IP：DNSPod 已明确要求移除历史测试/固定 IP hosts，\n#     使用标准 DNS 解析 doh.pub，以避免把服务集群 IP 固定死。\n#\n'''
+              text = text[:start] + block + text[end:]
+
+          # The old text contains misleading “pure IP/no SNI” comments. Replace only
+          # the specific claims; the URLs are canonicalized above.
+          text = text.replace('# 全部使用纯 IP，消除启动期 DNS 查询（doh.pub 域名解析改为直接 IP）\n  # 最优方案：120.53.53.53（腾讯纯IP）+ 223.5.5.5（阿里纯IP）\n  # 纯IP访问DoH：无需域名解析、无SNI特征、双厂商冗余，三优合一',
+                              '# 代理节点 DNS：腾讯 DNSPod DoH 域名 + 阿里公共 DNS IP DoH\n  # 不再使用 DNSPod 已下线的固定 IP DoH；TLS/SNI 行为不做“无SNI”假设')
+          text = text.replace('https://dns.alidns.com/dns-query     # 阿里 AliDNS 纯IP，双厂商冗余',
+                              'https://223.5.5.5/dns-query     # 阿里公共 DNS 官方 IP DoH')
+          text = text.replace('https://dns.alidns.com/dns-query     # 阿里纯IP',
+                              'https://223.5.5.5/dns-query     # 阿里官方 IP DoH')
+          text = text.replace('https://doh.pub/dns-query  # 腾讯纯IP',
+                              'https://doh.pub/dns-query  # 腾讯 DNSPod DoH')
+
+          # Serialize only the DNS/hosts portions without rewriting the whole YAML,
+          # preserving the public template's comments and ordering.
+          # We use a focused line-level replacement for the DNS scalars, then retain
+          # the existing policy text (the values were canonicalized above).
+          import re
+          def replace_block(s, key, value_lines):
+              pat = re.compile(r'(?m)^  ' + re.escape(key) + r':\n(?:    - .*\n)+')
+              return pat.sub('  ' + key + ':\n' + ''.join('    - ' + x + '\n' for x in value_lines), s, count=1)
+          text = replace_block(text, 'default-nameserver', dns['default-nameserver'])
+          text = replace_block(text, 'proxy-server-nameserver', dns['proxy-server-nameserver'])
+          text = replace_block(text, 'direct-nameserver', dns['direct-nameserver'])
+
+          # Remove old fixed hosts entries for DNSPod/AliDNS if present.
+          text = re.sub(r'(?m)^  "doh\.pub":.*\n', '', text)
+          text = re.sub(r'(?m)^  "dns\.alidns\.com":.*\n', '', text)
+
+          path.write_text(text, encoding='utf-8')
+          print('DNS repair applied to template.yaml')
+          PY
+      - name: Commit repaired template
+        run: |
+          if git diff --quiet -- template.yaml; then
+            echo 'No template DNS changes required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add template.yaml
+          git commit -m 'fix: normalize DNS bootstrap and DoH policy'
+          git push
