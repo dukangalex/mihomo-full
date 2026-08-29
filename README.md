@@ -186,7 +186,7 @@ VPS 运行时（勿提交公开仓）
 
 ## 安全与可复现性
 
-- `install.sh` 下载的仓库文件固定到已审计 commit，而不是跟随 `main` 漂移；升级前应重新审核并更新 pin。管理命令同样固定版本。
+- `install.sh` 下载的仓库文件固定到已审计 commit，而不是跟随 `main` 漂移；升级前应重新审核并更新 pin。
 - 公开模板不包含任何真实订阅、UUID、域名密码或控制器密钥。
 - `airport_overwrite.js` 不使用 `empty-fallback`，并保持 ES5 语法子集，避免旧版脚本引擎加载失败。
 - VMess 按节点实际 `type` 使用 `exclude-type` 排除，不依赖节点名称。
@@ -197,7 +197,7 @@ VPS 运行时（勿提交公开仓）
 | 操作 | 命令 / 做法 |
 |------|-------------|
 | 只更新落地节点 | `/opt/mihomo-full/generate.sh` |
-| 更换机场订阅 | 执行 `mihomo-full`，选择 **1. 更换机场订阅**；也可执行 `mihomo-full airport` |
+| 更换机场订阅 | 编辑 VPS 上 `settings.conf` 中 `AIRPORT_SUB_URL`，再执行 `generate.sh` |
 | 主订阅地址 | **不必改**；客户端继续用原固定链接 |
 
 ---
