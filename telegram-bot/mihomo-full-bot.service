@@ -1,0 +1,22 @@
+[Unit]
+Description=Mihomo-Full Telegram Management Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/mihomo-full
+EnvironmentFile=/opt/mihomo-full/telegram-bot.env
+ExecStart=/usr/bin/python3 /opt/mihomo-full/telegram-bot/bot.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/mihomo-full
+
+[Install]
+WantedBy=multi-user.target
