@@ -56,13 +56,55 @@ def replace_assignment(text: str, marker: str, value) -> str:
     return text[:start] + f'config["{marker}"] = {js(value)};' + text[j:]
 
 def replace_scalar(text: str, marker: str, value) -> str:
+    # Parse the existing JavaScript value safely. A simple [^;]+ regex is
+    # incorrect for quoted strings such as the Chrome UA, which contains ';'.
+    patterns = [f'config["{marker}"] =', f"config.{marker} ="]
+    start = -1
+    prefix = None
+    for p in patterns:
+        i = text.find(p)
+        if i >= 0 and (start < 0 or i < start):
+            start, prefix = i, p
     value_js = js(value)
-    pattern = re.compile(rf'(config\["{re.escape(marker)}"\]|config\.{re.escape(marker)})\s*=\s*[^;]+;', re.M)
-    replacement = f'config["{marker}"] = {value_js};'
-    if pattern.search(text): return pattern.sub(replacement, text, count=1)
-    needle = "\n  return config;"
-    if needle not in text: raise RuntimeError("return config marker not found")
-    return text.replace(needle, f'\n  {replacement}\n' + needle, 1)
+    if start < 0:
+        needle = "\n  return config;"
+        if needle not in text:
+            raise RuntimeError("return config marker not found")
+        return text.replace(needle, f'\n  config["{marker}"] = {value_js};\n' + needle, 1)
+    eq = text.find("=", start, start + len(prefix) + 3)
+    i = eq + 1
+    while i < len(text) and text[i].isspace():
+        i += 1
+    if i >= len(text):
+        raise RuntimeError(f"invalid assignment: {marker}")
+    if text[i] in "[{":
+        return replace_assignment(text, marker, value)
+    if text[i] in "'\"`":
+        quote = text[i]
+        j = i + 1
+        escape = False
+        while j < len(text):
+            ch = text[j]
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == quote:
+                j += 1
+                while j < len(text) and text[j].isspace():
+                    j += 1
+                if j < len(text) and text[j] == ";":
+                    j += 1
+                break
+            j += 1
+        else:
+            raise RuntimeError(f"unterminated string assignment: {marker}")
+    else:
+        j = text.find(";", i)
+        if j < 0:
+            raise RuntimeError(f"unterminated scalar assignment: {marker}")
+        j += 1
+    return text[:start] + f'config["{marker}"] = {value_js};' + text[j:]
 
 def add_assignment(text: str, marker: str, value) -> str:
     needle = "\n  return config;"
