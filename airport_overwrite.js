@@ -2151,7 +2151,7 @@ function main(config) {
   config["experimental"] = CANONICAL["experimental"];
   config["external-controller-cors"] = CANONICAL["external-controller-cors"];
   config["geox-url"] = CANONICAL["geox-url"];
-  // 公共同步只覆盖安全底层配置；机场原有策略组及其名称/节点选择逻辑不再被改写。
+  // 机场模式必须保留与主配置一致的远控工具例外：规则层允许该组使用 DIRECT，\n  // 但 UI 不额外暴露 DIRECT 作为通用节点选择项。\n  // 公共同步只覆盖安全底层配置；机场原有策略组及其名称/节点选择逻辑不再被改写。
   // 机场模式明确保留：广告拦截 DIRECT、远控工具 DIRECT。
   // 私有网络/国内服务 DIRECT 只存在于底层规则，不提供用户策略组。
   // 链式模式的功能组名称与机场模式不同，因此仅将公共规则目标映射到现有机场组名。
