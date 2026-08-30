@@ -5,6 +5,7 @@ set -euo pipefail
 
 INSTALL_DIR="/opt/mihomo-full"
 BIN_LINK="/usr/local/bin/mihomo-full"
+GO_LINK="/usr/local/bin/go"
 BOT_SERVICE="mihomo-full-bot.service"
 BOT_ENV="${INSTALL_DIR}/telegram-bot.env"
 MARKER="${INSTALL_DIR}/.mihomo-full-managed"
@@ -29,8 +30,6 @@ elif [[ ! -L "$BIN_LINK" ]]; then
   exit 0
 fi
 
-# If the Bot unit exists, prove that the unit itself belongs to Mihomo Full
-# before stopping/removing it. Never delete a same-named foreign service.
 if [[ -e "$SERVICE_FILE" || -L "$SERVICE_FILE" ]]; then
   [[ -f "$SERVICE_FILE" && ! -L "$SERVICE_FILE" ]] || err "拒绝卸载：Bot systemd unit 不是普通文件，无法证明其归属。"
   grep -Fqx "# ${SERVICE_MARKER}" "$SERVICE_FILE" || err "拒绝卸载：$SERVICE_FILE 缺少 Mihomo Full 所有权标记，为防止误停/误删服务而中止。"
@@ -39,15 +38,26 @@ if [[ -e "$SERVICE_FILE" || -L "$SERVICE_FILE" ]]; then
   grep -Fqx "ExecStart=/usr/bin/python3 ${INSTALL_DIR}/telegram-bot/bot.py" "$SERVICE_FILE" || err "拒绝卸载：Bot service ExecStart 不属于 Mihomo Full。"
 fi
 
-# If the command symlink exists, prove its target before removing it.
 if [[ -L "$BIN_LINK" ]]; then
   target="$(readlink -f "$BIN_LINK" 2>/dev/null || true)"
   [[ "$target" == "$INSTALL_DIR/manage.sh" ]] || err "拒绝卸载：$BIN_LINK 不是指向 Mihomo Full，保留并中止卸载。"
 fi
-
-# Refuse a non-symlink command path; never replace/delete an unrelated executable.
 if [[ -e "$BIN_LINK" && ! -L "$BIN_LINK" ]]; then
   err "拒绝卸载：$BIN_LINK 不是符号链接，为防止误删未知文件而中止。"
+fi
+
+# The short `go` entry is removed only when it is a symlink to this installation.
+# A pre-existing Go toolchain or unrelated command is never touched.
+GO_OWNED=0
+if [[ -L "$GO_LINK" ]]; then
+  go_target="$(readlink -f "$GO_LINK" 2>/dev/null || true)"
+  if [[ "$go_target" == "$INSTALL_DIR/manage.sh" ]]; then
+    GO_OWNED=1
+  else
+    err "拒绝卸载：$GO_LINK 不是指向 Mihomo Full，保留并中止卸载。"
+  fi
+elif [[ -e "$GO_LINK" ]]; then
+  err "拒绝卸载：$GO_LINK 不是符号链接，为防止误删现有 go 命令而中止。"
 fi
 
 echo ""
@@ -56,6 +66,7 @@ echo "-----------------------------"
 echo "将删除："
 echo "  - $INSTALL_DIR（仅因所有权标记有效）"
 echo "  - $BIN_LINK（仅因已验证指向 Mihomo Full）"
+(( GO_OWNED )) && echo "  - $GO_LINK（仅因已验证指向 Mihomo Full）"
 if [[ -e "$SERVICE_FILE" ]]; then echo "  - $BOT_SERVICE（仅因已验证属于本项目）"; fi
 echo ""
 echo "明确不会操作："
@@ -73,13 +84,9 @@ if [[ -e "$SERVICE_FILE" ]]; then
   systemctl daemon-reload || true
 fi
 
-if [[ -L "$BIN_LINK" ]]; then
-  rm -f -- "$BIN_LINK"
-fi
-
-if [[ -d "$INSTALL_DIR" ]]; then
-  rm -rf -- "$INSTALL_DIR"
-fi
+if [[ -L "$BIN_LINK" ]]; then rm -f -- "$BIN_LINK"; fi
+if (( GO_OWNED )); then rm -f -- "$GO_LINK"; fi
+if [[ -d "$INSTALL_DIR" ]]; then rm -rf -- "$INSTALL_DIR"; fi
 
 if [[ -d /etc/v2ray-agent ]]; then
   info "已检测到 /etc/v2ray-agent：保留，未执行任何删除或停止操作。"
