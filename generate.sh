@@ -3,7 +3,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/settings.conf"
+SETTINGS_LOADER="${SCRIPT_DIR}/tools/load-settings.sh"
+[[ -f "$SETTINGS_LOADER" ]] || { echo '[✗] 缺少安全配置加载器' >&2; exit 1; }
+# shellcheck source=/dev/null
+source "$SETTINGS_LOADER" "${SCRIPT_DIR}/settings.conf"
 
 TEMPLATE="${SCRIPT_DIR}/template.yaml"
 FULL_CONFIG="${OUTPUT_DIR}/full-config.yaml"
@@ -28,6 +31,8 @@ case "${DOMAIN:-}" in ""|"example.com"|"你的域名.com") err "请先设置真�
 [[ "$DOMAIN" != *$'\n'* && "$DOMAIN" != *$'\r'* ]] || err "域名不能包含换行"
 [[ "$AIRPORT_SUB_URL" =~ ^https://[^[:space:]\"]+$ ]] || err "机场订阅 URL 必须是 HTTPS URL，且不能包含空格或双引号"
 [[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+(:[0-9]+)?$ ]] || err "DOMAIN 格式不正确"
+[[ "$FIXED_FULL_CONFIG_PATH" =~ ^/assets/[a-z]+(-[a-z]+){7,15}$ ]] || err "完整订阅路径格式非法"
+[[ "$FIXED_EXIT_NODES_PATH" =~ ^/assets/[a-z]+(-[a-z]+){7,15}$ ]] || err "落地节点路径格式非法"
 
 mkdir -p "$OUTPUT_DIR"
 TMP_NODES=$(mktemp); trap 'rm -f "$TMP_NODES"' EXIT
@@ -64,8 +69,6 @@ FULL_URL="https://${DOMAIN}${FIXED_FULL_CONFIG_PATH}"
 EXIT_URL="https://${DOMAIN}${FIXED_EXIT_NODES_PATH}"
 cp "$TEMPLATE" "$FULL_CONFIG"
 
-# 公共行为完全来自 template.yaml；此处只处理链式专属 URL/节点注入。
-# 链式 URL 使用 Python 字面替换，不把用户输入放进 sed replacement。
 replace_literal() {
   local file="$1" needle="$2" value="$3" tmp
   [[ -f "$file" ]] || err "文件不存在: $file"
@@ -92,16 +95,10 @@ apply_ruleset_overrides() {
   while IFS='|' read -r name url behavior target enabled; do
     [[ -z "$name" || "$name" == \#* ]] && continue
     [[ "$name" =~ ^[A-Za-z0-9_-]+$ ]] || { warn "忽略非法规则集名称: $name"; continue; }
-
-    # 与 template.yaml 的安全基线建立硬边界：核心规则集既不能改 URL，
-    # 也不能禁用。rulesets.local.conf 只能扩展/替换非核心业务规则集。
     case "$name" in
       cn|cn-ip|private-ip|geolocation-cn|geolocation-!cn|category-ads-all|sukka-phishing)
-        warn "拒绝修改核心安全规则集: $name"
-        continue
-        ;;
+        warn "拒绝修改核心安全规则集: $name"; continue;;
     esac
-
     [[ "$enabled" == 0 || "$enabled" == 1 ]] || { warn "忽略 $name：enabled 必须 0/1"; continue; }
     if [[ "$enabled" == 1 ]]; then
       [[ "$url" =~ ^https://[^[:space:]\"|]+$ ]] || { warn "忽略 $name：URL 必须 HTTPS"; continue; }
@@ -125,7 +122,6 @@ apply_ruleset_overrides() {
 }
 apply_ruleset_overrides
 
-# ── 生成结果级安全审计 ─────────────────────────────────────────────
 grep -q '^  - name: "🛑 广告拦截"$' "$FULL_CONFIG" || err "生成配置缺少广告拦截策略组"
 grep -q 'proxies: \["REJECT", "DIRECT"\]' "$FULL_CONFIG" || err "广告拦截策略组缺少 DIRECT 例外"
 grep -q 'RULE-SET,category-ads-all,🛑 广告拦截' "$FULL_CONFIG" || err "广告规则未指向广告拦截策略组"
@@ -135,7 +131,6 @@ if grep -qE '^[[:space:]]*exclude-type:[[:space:]]*vmess[[:space:]]*$' "$FULL_CO
 if [[ -f "$SCRIPT_DIR/tools/audit-generated-config.sh" ]]; then
   bash "$SCRIPT_DIR/tools/audit-generated-config.sh" "$FULL_CONFIG" || err "最终配置审计失败，拒绝发布配置"
 fi
-
 chmod 644 "$FULL_CONFIG" "$EXIT_NODES" 2>/dev/null || true
 echo
 echo "完整配置 : $FULL_CONFIG"
