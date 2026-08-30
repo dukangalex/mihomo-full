@@ -2,23 +2,60 @@
 # 安装 Mihomo-Full Telegram 管理机器人
 set -euo pipefail
 BASE="/opt/mihomo-full"; BOT_DIR="$BASE/telegram-bot"; ENV_FILE="$BASE/telegram-bot.env"; SERVICE_SRC="$BOT_DIR/mihomo-full-bot.service"
-RED='\033[0;31m'; GREEN='\033[0;32m'; NC='\033[0m'
-info(){ echo -e "${GREEN}[+]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1" >&2; exit 1; }
-[[ $EUID -eq 0 ]] || err "请使用 root 运行"; [[ -f "$BOT_DIR/bot.py" ]] || err "找不到 $BOT_DIR/bot.py，请先安装 mihomo-full"
-[[ -f "$BOT_DIR/vps_usage.py" ]] || err "缺少 VPS 流量统计模块，请重新安装/更新 mihomo-full"
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+info(){ echo -e "${GREEN}[+]${NC} $1"; }; warn(){ echo -e "${YELLOW}[!]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1" >&2; exit 1; }
+[[ $EUID -eq 0 ]] || err "请使用 root 运行"; [[ -f "$BOT_DIR/bot.py" ]] || err "找不到 $BOT_DIR/bot.py，请先安装 Mihomo Full"
+[[ -f "$BOT_DIR/vps_usage.py" ]] || err "缺少 VPS 流量统计模块，请重新安装/更新 Mihomo Full"
 command -v python3 >/dev/null || err "需要 python3"; python3 -m pip --version >/dev/null 2>&1 || err "需要 python3-pip"
-if [[ ! -f "$ENV_FILE" ]]; then
-  cp "$BASE/telegram-bot.example.env" "$ENV_FILE"; chmod 600 "$ENV_FILE"; echo "已创建 $ENV_FILE"; echo "请填写 TG_BOT_TOKEN 与 TG_ADMIN_IDS 后重新运行本脚本。"; exit 0
-fi
-# Backfill newly introduced VPS-plan settings without overwriting existing user values.
-for line in 'VPS_MONTHLY_GB=0' 'VPS_EXPIRES_AT=' 'VPS_TRAFFIC_ALERT_PERCENT=80' 'VPS_TRAFFIC_INTERFACE='; do
-  key="${line%%=*}"
-  grep -q "^${key}=" "$ENV_FILE" || printf '%s\n' "$line" >> "$ENV_FILE"
-done
-chmod 600 "$ENV_FILE"
 
-# Parse the small, fixed configuration format as data. Do not `source` the file:
-# a Telegram bot token/config file must never be able to execute shell syntax.
+write_env(){
+  local token="$1" ids="$2" monthly="$3" expires="$4" alert="$5" iface="$6"
+  umask 077
+  cat > "$ENV_FILE" <<EOF_ENV
+# Mihomo Full Telegram Bot private settings
+TG_BOT_TOKEN=$token
+TG_ADMIN_IDS=$ids
+MIHOMO_FULL_DIR=$BASE
+VPS_MONTHLY_GB=$monthly
+VPS_EXPIRES_AT=$expires
+VPS_TRAFFIC_ALERT_PERCENT=$alert
+VPS_TRAFFIC_INTERFACE=$iface
+EOF_ENV
+  chmod 600 "$ENV_FILE"
+}
+
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo
+  echo "Telegram Bot 首次设置"
+  echo "-------------------------"
+  echo "请先在 Telegram 中通过 @BotFather 创建机器人。"
+  echo "接下来只需按提示填写必要信息，不需要编辑配置文件。"
+  echo
+  read -r -s -p "Bot Token: " TG_BOT_TOKEN; echo
+  [[ "$TG_BOT_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]{20,}$ ]] || err "Bot Token 格式不合法，请重新运行后检查后再输入"
+  read -r -p "Telegram 管理员 User ID（多个 ID 用逗号分隔）: " TG_ADMIN_IDS
+  [[ "$TG_ADMIN_IDS" =~ ^[0-9]+(,[0-9]+)*$ ]] || err "User ID 必须是数字；多个 ID 用逗号分隔"
+  read -r -p "VPS 每月总流量 GB（不知道可填 0，之后可在 Bot 中设置）[0]: " VPS_MONTHLY_GB
+  VPS_MONTHLY_GB="${VPS_MONTHLY_GB:-0}"
+  [[ "$VPS_MONTHLY_GB" =~ ^([0-9]+([.][0-9]+)?)$ ]] || err "月流量必须是非负数字"
+  read -r -p "VPS 到期时间（不知道可留空，之后可在 Bot 中设置）: " VPS_EXPIRES_AT
+  read -r -p "流量提醒阈值 % [80]: " VPS_TRAFFIC_ALERT_PERCENT
+  VPS_TRAFFIC_ALERT_PERCENT="${VPS_TRAFFIC_ALERT_PERCENT:-80}"
+  [[ "$VPS_TRAFFIC_ALERT_PERCENT" =~ ^([0-9]+([.][0-9]+)?)$ ]] || err "提醒阈值必须是数字"
+  VPS_TRAFFIC_INTERFACE="$(ip route show default 2>/dev/null | awk 'NR==1 {print $5}')"
+  [[ "$VPS_TRAFFIC_INTERFACE" =~ ^[A-Za-z0-9_.:-]+$ ]] || VPS_TRAFFIC_INTERFACE=""
+  write_env "$TG_BOT_TOKEN" "$TG_ADMIN_IDS" "$VPS_MONTHLY_GB" "$VPS_EXPIRES_AT" "$VPS_TRAFFIC_ALERT_PERCENT" "$VPS_TRAFFIC_INTERFACE"
+  info "已保存 Telegram Bot 私有配置"
+else
+  # Backfill newly introduced VPS-plan settings without overwriting existing values.
+  for line in 'VPS_MONTHLY_GB=0' 'VPS_EXPIRES_AT=' 'VPS_TRAFFIC_ALERT_PERCENT=80' 'VPS_TRAFFIC_INTERFACE='; do
+    key="${line%%=*}"
+    grep -q "^${key}=" "$ENV_FILE" || printf '%s\n' "$line" >> "$ENV_FILE"
+  done
+  chmod 600 "$ENV_FILE"
+fi
+
+# Parse the fixed configuration format as data. Never source the Telegram config.
 declare -A CFG=()
 while IFS= read -r line || [[ -n "$line" ]]; do
   [[ -z "$line" || "$line" == \#* ]] && continue
@@ -28,15 +65,8 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   CFG["$key"]="$value"
 done < "$ENV_FILE"
 
-# Export only the keys consumed by this installer/service. Unknown keys are ignored
-# so future non-shell metadata cannot become executable input.
-TG_BOT_TOKEN="${CFG[TG_BOT_TOKEN]:-}"
-TG_ADMIN_IDS="${CFG[TG_ADMIN_IDS]:-}"
-MIHOMO_FULL_DIR="${CFG[MIHOMO_FULL_DIR]:-$BASE}"
-VPS_MONTHLY_GB="${CFG[VPS_MONTHLY_GB]:-0}"
-VPS_EXPIRES_AT="${CFG[VPS_EXPIRES_AT]:-}"
-VPS_TRAFFIC_ALERT_PERCENT="${CFG[VPS_TRAFFIC_ALERT_PERCENT]:-80}"
-VPS_TRAFFIC_INTERFACE="${CFG[VPS_TRAFFIC_INTERFACE]:-}"
+TG_BOT_TOKEN="${CFG[TG_BOT_TOKEN]:-}"; TG_ADMIN_IDS="${CFG[TG_ADMIN_IDS]:-}"; MIHOMO_FULL_DIR="${CFG[MIHOMO_FULL_DIR]:-$BASE}"
+VPS_MONTHLY_GB="${CFG[VPS_MONTHLY_GB]:-0}"; VPS_EXPIRES_AT="${CFG[VPS_EXPIRES_AT]:-}"; VPS_TRAFFIC_ALERT_PERCENT="${CFG[VPS_TRAFFIC_ALERT_PERCENT]:-80}"; VPS_TRAFFIC_INTERFACE="${CFG[VPS_TRAFFIC_INTERFACE]:-}"
 
 [[ "$MIHOMO_FULL_DIR" == "$BASE" ]] || err "MIHOMO_FULL_DIR 必须保持为 $BASE"
 [[ "$TG_BOT_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]{20,}$ ]] || err "TG_BOT_TOKEN 格式不合法"
@@ -60,4 +90,4 @@ systemctl daemon-reload
 systemctl enable --now mihomo-full-bot.service
 systemctl --no-pager --full status mihomo-full-bot.service || true
 info "Telegram 管理机器人已启动。"
-info "查看日志：journalctl -u mihomo-full-bot -f"
+info "在 Telegram 中打开机器人并发送 /start 进行验证。"
