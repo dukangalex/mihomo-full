@@ -32,6 +32,7 @@ def menu():
         [InlineKeyboardButton("📈 VPS流量/到期", callback_data="vps")],
         [InlineKeyboardButton("📦 规则集管理", callback_data="rules")],
         [InlineKeyboardButton("🧪 配置完整性检查", callback_data="check")],
+        [InlineKeyboardButton("🤖 卸载 Telegram Bot", callback_data="bot_uninstall")],
         [InlineKeyboardButton("🗑 卸载 Mihomo Full", callback_data="uninstall")],
     ])
 
@@ -173,6 +174,14 @@ async def button(update, context):
         context.user_data["awaiting_vps"] = "alert"
         current = vps_report().get("alert_percent", 80)
         await q.edit_message_text(f"请输入流量提醒阈值（0-100）。\n\n当前：{current:g}%\n\n例如：80", reply_markup=cancel_menu())
+    elif action == "bot_uninstall":
+        await q.edit_message_text(
+            "⚠️ 卸载 Telegram Bot\n\n"
+            "只会移除 Mihomo Full 的 Telegram Bot 服务、私有配置和 Bot 文件。\n"
+            "Mihomo Full 主配置、Mihomo 服务以及 v2ray-agent 不会被删除或停止。\n\n"
+            "此操作不可逆，请确认。",
+            reply_markup=confirm_menu("bot_uninstall"),
+        )
     elif action == "uninstall":
         await q.edit_message_text("⚠️ 卸载 Mihomo Full\n\n只会删除 Mihomo Full 自身资源。\n明确不会删除、停止或修改 v2ray-agent。\n\n此操作不可逆，请确认。", reply_markup=confirm_menu("uninstall"))
 
@@ -192,8 +201,36 @@ async def confirm(update, context):
     elif action == "airport":
         context.user_data["awaiting_airport"] = True
         await q.edit_message_text("请输入新的 HTTPS 机场订阅地址。\n\n收到后不会回显 URL，并会再次要求确认。", reply_markup=cancel_menu())
+    elif action == "bot_uninstall":
+        await q.edit_message_text(
+            "⚠️ 最后确认\n\n"
+            "仅卸载 Telegram Bot，不卸载 Mihomo Full。\n"
+            "Mihomo 主服务、主配置和 v2ray-agent 均保持不变。\n\n"
+            "确认继续？",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🤖 确认卸载 Bot", callback_data="confirm:bot_uninstall_final"),
+                 InlineKeyboardButton("❌ 取消", callback_data="cancel")]
+            ]),
+        )
     elif action == "uninstall":
         await q.edit_message_text("⚠️ 最后确认\n\n请确认执行安全卸载。\n\n卸载完成后 Telegram Bot 也会停止。\n\nv2ray-agent 不会被此操作删除。", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🗑 确认卸载", callback_data="confirm:uninstall_final"), InlineKeyboardButton("❌ 取消", callback_data="cancel")]]))
+
+
+async def bot_uninstall_final(update, context):
+    q = update.callback_query
+    if not allowed(update):
+        await q.answer("无权限", show_alert=True)
+        return
+    await q.answer()
+    uninstall_script = BASE / "telegram-bot" / "uninstall-bot.sh"
+    command = f"sleep 2; printf '%s\\n' UNINSTALL_BOT | bash {uninstall_script}"
+    subprocess.Popen(["bash", "-lc", command], cwd=BASE, stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL, start_new_session=True)
+    context.user_data.clear()
+    await q.edit_message_text(
+        "🤖 已开始卸载 Telegram Bot。\n\n"
+        "Mihomo Full 主配置、Mihomo 服务和 v2ray-agent 不会被删除或停止。"
+    )
 
 
 async def uninstall_final(update, context):
@@ -345,8 +382,9 @@ async def home(update, context):
 app = Application.builder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(confirm_airport, pattern="^confirm:airport_url$"))
-app.add_handler(CallbackQueryHandler(confirm, pattern="^confirm:(airport|generate|uninstall)$"))
+app.add_handler(CallbackQueryHandler(confirm, pattern="^confirm:(airport|generate|uninstall|bot_uninstall)$"))
 app.add_handler(CallbackQueryHandler(uninstall_final, pattern="^confirm:uninstall_final$"))
+app.add_handler(CallbackQueryHandler(bot_uninstall_final, pattern="^confirm:bot_uninstall_final$"))
 app.add_handler(CallbackQueryHandler(confirm_mutation, pattern="^confirm_rule$"))
 app.add_handler(CallbackQueryHandler(rule_behavior, pattern="^rule_behavior:(domain|ipcidr)$"))
 app.add_handler(CallbackQueryHandler(cancel, pattern="^cancel$"))
