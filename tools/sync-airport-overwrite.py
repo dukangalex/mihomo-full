@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
-"""Sync common Mihomo-Full behavior without destroying airport-specific UX."""
+"""Synchronize template public behavior into the non-chain Airport overwrite.
+
+The template is authoritative for common Mihomo behavior. Airport-specific node
+handling and UX remain local to airport_overwrite.js. The synchronizer is
+idempotent: applying the transformation repeatedly must produce identical text.
+"""
 from __future__ import annotations
+
 import json
 import re
 from pathlib import Path
+
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,8 +25,7 @@ COMMON_SCALARS = (
     "profile", "ntp", "experimental", "external-controller-cors", "geox-url",
 )
 
-# These are chain-mode-only concepts. They must never survive in the Airport
-# non-chain overwrite, even if they appear in the template in the future.
+# Chain-mode-only concepts. These must never survive in the Airport overwrite.
 FORBIDDEN_CHAIN_MARKERS = (
     "EXIT_NODES",
     "EXIT_URL",
@@ -30,26 +36,32 @@ FORBIDDEN_CHAIN_MARKERS = (
 )
 
 
-def js(value):
+def js(value) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2, separators=(",", ": "))
 
 
-def replace_assignment(text: str, marker: str, value) -> str:
+def _find_assignment(text: str, marker: str):
     patterns = [f'config["{marker}"] =', f"config.{marker} ="]
-    start = -1
-    prefix = None
-    for p in patterns:
-        i = text.find(p)
-        if i >= 0 and (start < 0 or i < start):
-            start, prefix = i, p
+    found = []
+    for pattern in patterns:
+        i = text.find(pattern)
+        if i >= 0:
+            found.append((i, pattern))
+    return min(found, key=lambda x: x[0]) if found else (-1, None)
+
+
+def replace_assignment(text: str, marker: str, value) -> str:
+    start, prefix = _find_assignment(text, marker)
     if start < 0:
         raise RuntimeError(f"assignment not found: {marker}")
+
     eq = text.find("=", start, start + len(prefix) + 3)
     i = eq + 1
     while i < len(text) and text[i].isspace():
         i += 1
     if i >= len(text) or text[i] not in "[{":
         raise RuntimeError(f"assignment is not object/array: {marker}")
+
     opening = text[i]
     closing = "]" if opening == "[" else "}"
     depth = 0
@@ -82,31 +94,29 @@ def replace_assignment(text: str, marker: str, value) -> str:
         j += 1
     else:
         raise RuntimeError(f"unterminated assignment: {marker}")
+
     return text[:start] + f'config["{marker}"] = {js(value)};' + text[j:]
 
 
 def replace_scalar(text: str, marker: str, value) -> str:
-    patterns = [f'config["{marker}"] =', f"config.{marker} ="]
-    start = -1
-    prefix = None
-    for p in patterns:
-        i = text.find(p)
-        if i >= 0 and (start < 0 or i < start):
-            start, prefix = i, p
+    start, prefix = _find_assignment(text, marker)
     value_js = js(value)
     if start < 0:
         needle = "\n  return config;"
         if needle not in text:
             raise RuntimeError("return config marker not found")
         return text.replace(needle, f'\n  config["{marker}"] = {value_js};\n' + needle, 1)
+
     eq = text.find("=", start, start + len(prefix) + 3)
     i = eq + 1
     while i < len(text) and text[i].isspace():
         i += 1
     if i >= len(text):
         raise RuntimeError(f"invalid assignment: {marker}")
+
     if text[i] in "[{":
         return replace_assignment(text, marker, value)
+
     if text[i] in "'\"`":
         quote = text[i]
         j = i + 1
@@ -132,6 +142,7 @@ def replace_scalar(text: str, marker: str, value) -> str:
         if j < 0:
             raise RuntimeError(f"unterminated scalar assignment: {marker}")
         j += 1
+
     return text[:start] + f'config["{marker}"] = {value_js};' + text[j:]
 
 
@@ -143,14 +154,35 @@ def add_assignment(text: str, marker: str, value) -> str:
 
 
 def upsert_object(text: str, marker: str, value) -> str:
-    return replace_assignment(text, marker, value) if (f'config["{marker}"] =' in text or f"config.{marker} =" in text) else add_assignment(text, marker, value)
+    start, _ = _find_assignment(text, marker)
+    return replace_assignment(text, marker, value) if start >= 0 else add_assignment(text, marker, value)
 
 
 def restore_airport_exceptions(text: str) -> str:
-    text = text.replace('  "geosite:category-ads-all": "rcode://name_error",\\n', "")
-    text = text.replace('"RULE-SET,category-ads-all,REJECT-DROP",', '"RULE-SET,category-ads-all,🛑 广告拦截",')
-    text = text.replace('var privateGroup = { name: "🔒 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };\\n', '')
-    text = text.replace('var domesticGroup = { name: "🇨🇳 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME].concat(regionNames), icon: "" };\\n', '')
+    # These patterns intentionally target the generated JS syntax, not literal
+    # backslash-n sequences, so the operation remains stable across formatting.
+    text = re.sub(
+        r'^\s*"geosite:category-ads-all":\s*"rcode://name_error",\s*\n',
+        "",
+        text,
+        flags=re.MULTILINE,
+    )
+    text = text.replace(
+        '"RULE-SET,category-ads-all,REJECT-DROP",',
+        '"RULE-SET,category-ads-all,🛑 广告拦截",',
+    )
+    text = re.sub(
+        r'^\s*var privateGroup = .*?;\s*\n',
+        "",
+        text,
+        flags=re.MULTILINE,
+    )
+    text = re.sub(
+        r'^\s*var domesticGroup = .*?;\s*\n',
+        "",
+        text,
+        flags=re.MULTILINE,
+    )
     text = text.replace('adBlockGroup, privateGroup, domesticGroup,', 'adBlockGroup,')
     return text
 
@@ -170,62 +202,80 @@ def map_airport_targets(text: str) -> str:
 
 
 def assert_no_chain_features(text: str) -> None:
-    """Hard gate: an Airport overwrite must remain strictly non-chain."""
     for marker in FORBIDDEN_CHAIN_MARKERS:
         if re.search(marker, text, flags=re.IGNORECASE):
-            raise RuntimeError("forbidden chain-mode feature remains in Airport overwrite: " + marker)
+            raise RuntimeError(
+                "forbidden chain-mode feature remains in Airport overwrite: " + marker
+            )
     for group in ("落地优选出口", "前置机场", "VPS落地", "EXIT_NODES"):
         if group in text:
             raise RuntimeError("forbidden chain-mode group remains in Airport overwrite: " + group)
 
 
-def main() -> None:
-    template = yaml.safe_load(TEMPLATE.read_text(encoding="utf-8"))
-    airport = AIRPORT.read_text(encoding="utf-8")
-    for key in COMMON_OBJECTS:
-        if key not in template:
-            raise RuntimeError(f"template missing required section: {key}")
-        airport = upsert_object(airport, key, template[key])
-    for key in COMMON_SCALARS:
-        if key in template:
-            airport = replace_scalar(airport, key, template[key])
-
-    airport = restore_airport_exceptions(airport)
-    airport = map_airport_targets(airport)
-
+def validate_airport(text: str) -> None:
     required = (
         'config["rule-providers"]', 'config["rules"]', 'config["sub-rules"]',
         'config["tun"]', 'config["dns"]', 'config["sniffer"]',
         'config["global-ua"]', 'config["geox-url"]',
     )
     for marker in required:
-        if marker not in airport:
+        if marker not in text:
             raise RuntimeError(f"post-sync sanity check failed: {marker}")
 
-    if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in airport:
+    if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text:
         raise RuntimeError("airport ad rule is not connected to the ad group")
-    if 'var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"]' not in airport:
+    if 'var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"]' not in text:
         raise RuntimeError("airport ad DIRECT exception missing")
-    if 'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"]' not in airport:
+    if 'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"]' not in text:
         raise RuntimeError("airport remote DIRECT exception missing")
-    if 'var privateGroup =' in airport or 'var domesticGroup =' in airport:
+    if 'var privateGroup =' in text or 'var domesticGroup =' in text:
         raise RuntimeError("private/domestic UI groups must remain hidden")
-    if 'exclude-type: vmess' in airport:
+    if 'exclude-type: vmess' in text:
         raise RuntimeError("protocol exclusion must not exist")
 
     for group in ("🤖 AI服务", "🌍 国外服务", "📺 Media", "🐟 漏网之鱼", "🔧 远控工具", "🛑 广告拦截"):
-        if 'name: "' + group + '"' not in airport:
+        if 'name: "' + group + '"' not in text:
             raise RuntimeError("required airport group missing: " + group)
     for target in (",国外服务", ",AI服务", ",流媒体", ",漏网之鱼"):
-        if target in airport:
+        if target in text:
             raise RuntimeError("unmapped chain-mode group target remains: " + target)
-    if '"geosite:category-ads-all": "rcode://name_error"' in airport:
+    if '"geosite:category-ads-all": "rcode://name_error"' in text:
         raise RuntimeError("ad DNS NXDOMAIN would defeat DIRECT")
 
-    # Final non-chain hard gate runs after every transformation and before write.
-    assert_no_chain_features(airport)
-    AIRPORT.write_text(airport, encoding="utf-8")
-    print("airport_overwrite.js synchronized: common behavior synced; airport UX exceptions preserved; chain-mode exclusion verified")
+    assert_no_chain_features(text)
+
+
+def transform(template: dict, airport: str) -> str:
+    """Pure transformation stage; deliberately contains no file writes."""
+    result = airport
+    for key in COMMON_OBJECTS:
+        if key not in template:
+            raise RuntimeError(f"template missing required section: {key}")
+        result = upsert_object(result, key, template[key])
+    for key in COMMON_SCALARS:
+        if key in template:
+            result = replace_scalar(result, key, template[key])
+    result = restore_airport_exceptions(result)
+    result = map_airport_targets(result)
+    validate_airport(result)
+    return result
+
+
+def main() -> None:
+    template = yaml.safe_load(TEMPLATE.read_text(encoding="utf-8"))
+    original = AIRPORT.read_text(encoding="utf-8")
+
+    first = transform(template, original)
+    second = transform(template, first)
+    if first != second:
+        raise RuntimeError("Airport synchronization is not idempotent: second pass changes the output")
+
+    if first != original:
+        AIRPORT.write_text(first, encoding="utf-8")
+        print("airport_overwrite.js synchronized")
+    else:
+        print("airport_overwrite.js already synchronized")
+    print("idempotence check: PASS; non-chain hard gate: PASS")
 
 
 if __name__ == "__main__":
