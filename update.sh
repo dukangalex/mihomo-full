@@ -31,8 +31,16 @@ STAGE="$(mktemp -d /opt/.mihomo-full-update.XXXXXX)"
 COMMITTED=0
 PREVIOUS="${INSTALL_DIR}.previous"
 cleanup(){
-  if (( COMMITTED == 0 )); then rm -rf -- "$STAGE" 2>/dev/null || true; fi
-  rm -rf -- "$PREVIOUS" 2>/dev/null || true
+  if (( COMMITTED == 0 )); then
+    rm -rf -- "$STAGE" 2>/dev/null || true
+    # 提交窗口中收到 SIGINT/SIGTERM 或发生异常时，优先恢复旧版本。
+    if [[ -e "$PREVIOUS" ]]; then
+      rm -rf -- "$INSTALL_DIR" 2>/dev/null || true
+      mv -- "$PREVIOUS" "$INSTALL_DIR" 2>/dev/null || true
+    fi
+  else
+    rm -rf -- "$PREVIOUS" 2>/dev/null || true
+  fi
 }
 trap cleanup EXIT INT TERM
 
@@ -68,7 +76,6 @@ chmod 600 "$STAGE/settings.conf" "$STAGE/rulesets.local.conf" "$STAGE/telegram-b
 [[ -f "$STAGE/settings.conf" ]] || err "当前安装缺少 settings.conf，拒绝自动更新；请先修复安装"
 [[ -f "$STAGE/rulesets.local.conf" ]] || printf '%s\n' '# provider|https_mrs_url|behavior|target|enabled' > "$STAGE/rulesets.local.conf"
 
-# 生成器必须只使用 staging 内部路径。
 python3 - "$STAGE/settings.conf" <<'PY'
 from pathlib import Path
 import re, sys
@@ -80,7 +87,6 @@ PY
 bash -n "$STAGE/generate.sh" "$STAGE/manage.sh" "$STAGE/uninstall.sh" "$STAGE/update.sh" "$STAGE/tools/load-settings.sh"
 source "$STAGE/tools/load-settings.sh" "$STAGE/settings.conf"
 
-# 使用 staging 的 generate.sh，确保正式目录在验证阶段完全不变。
 bash "$STAGE/generate.sh"
 [[ -s "$STAGE/output/full-config.yaml" ]] || err "未生成完整配置"
 [[ -s "$STAGE/output/exit-nodes.yaml" ]] || err "未生成落地节点配置"
@@ -89,8 +95,6 @@ bash "$STAGE/tools/audit-generated-config.sh" "$STAGE/output/full-config.yaml" |
 
 printf '%s\n' "$MARKER_VALUE" > "$STAGE/.mihomo-full-managed"
 chmod 600 "$STAGE/.mihomo-full-managed"
-
-# 提交前确认没有意外的 .previous 残留。
 [[ ! -e "$PREVIOUS" ]] || err "检测到残留的旧版本目录，拒绝更新"
 
 info "验证完成，开始提交更新"
@@ -98,27 +102,21 @@ if ! mv -- "$INSTALL_DIR" "$PREVIOUS"; then
   err "无法切换旧版本，原安装保持不变"
 fi
 if ! mv -- "$STAGE" "$INSTALL_DIR"; then
-  mv -- "$PREVIOUS" "$INSTALL_DIR" || true
-  err "无法部署新版本，已尝试恢复原安装"
+  err "无法部署新版本，更新退出并由清理程序恢复原安装"
 fi
 COMMITTED=1
 
-# 正式目录改变后，修正仅用于 staging 生成的 OUTPUT_DIR。
 if [[ -f "$INSTALL_DIR/settings.conf" ]]; then
   sed -i "s|^OUTPUT_DIR=.*$|OUTPUT_DIR=$(printf '%q' "${INSTALL_DIR}/output")|" "$INSTALL_DIR/settings.conf"
   chmod 600 "$INSTALL_DIR/settings.conf"
 fi
 
-# 提交后重新做最小完整性检查；失败则立即回滚。
-if ! [[ -s "$INSTALL_DIR/output/full-config.yaml" && -s "$INSTALL_DIR/output/exit-nodes.yaml" && -x "$INSTALL_DIR/manage.sh" && -x "$INSTALL_DIR/generate.sh" && -x "$INSTALL_DIR/update.sh" ]]; then
+if ! [[ -s "$INSTALL_DIR/output/full-config.yaml" && -s "$INSTALL_DIR/output/exit-nodes.yaml" && -x "$INSTALL_DIR/manage.sh" && -x "$INSTALL_DIR/generate.sh" && -x "$INSTALL_DIR/update.sh" && -f "$INSTALL_DIR/.mihomo-full-managed" ]]; then
   warn "更新后完整性检查失败，开始回滚"
+  COMMITTED=0
   rm -rf -- "$INSTALL_DIR"
-  if mv -- "$PREVIOUS" "$INSTALL_DIR"; then
-    COMMITTED=0
-    err "更新失败，已恢复原安装"
-  else
-    err "严重错误：新旧版本均无法恢复，请立即检查 $PREVIOUS"
-  fi
+  mv -- "$PREVIOUS" "$INSTALL_DIR" || err "严重错误：新版本已移除，但旧版本恢复失败，请立即检查 ${PREVIOUS}"
+  err "更新失败，已恢复原安装"
 fi
 
 rm -rf -- "$PREVIOUS"
