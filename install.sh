@@ -3,22 +3,24 @@
 set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 info(){ echo -e "${GREEN}[+]${NC} $1"; }; warn(){ echo -e "${YELLOW}[!]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1" >&2; exit 1; }; title(){ echo -e "\n${CYAN}==== $1 ====${NC}\n"; }
-INSTALL_DIR="/opt/mihomo-full"; OUTPUT_DIR="${INSTALL_DIR}/output"; REPO="dukangalex/mihomo-full"; MARKER="${INSTALL_DIR}/.mihomo-full-managed"; MARKER_VALUE="mihomo-full-managed-v1"
+INSTALL_DIR="/opt/mihomo-full"; REPO="dukangalex/mihomo-full"; MARKER_VALUE="mihomo-full-managed-v1"
 
 # ---------- 安装前只读预检 ----------
 title "0. 安装前安全预检"
 [[ $EUID -eq 0 ]] || err "请使用 root 运行：sudo bash install.sh"
 for cmd in curl python3 systemctl; do command -v "$cmd" >/dev/null 2>&1 || err "需要 $cmd"; done
 
-# 目标目录必须先证明属于 Mihomo Full；未知目录绝不覆盖。
+EXISTING=0
 if [[ -e "$INSTALL_DIR" ]]; then
   [[ -d "$INSTALL_DIR" ]] || err "$INSTALL_DIR 已存在但不是目录，拒绝继续"
+  MARKER="$INSTALL_DIR/.mihomo-full-managed"
   [[ -f "$MARKER" && ! -L "$MARKER" ]] || err "$INSTALL_DIR 已存在但没有有效的 Mihomo Full 所有权标记，拒绝覆盖"
   [[ "$(cat "$MARKER" 2>/dev/null)" == "$MARKER_VALUE" ]] || err "$INSTALL_DIR 所有权标记无效，拒绝覆盖"
   [[ -O "$MARKER" ]] || err "$INSTALL_DIR 所有权标记不属于当前 root，拒绝继续"
+  EXISTING=1
   info "检测到受 Mihomo Full 管理的现有安装，允许安全更新"
 else
-  info "未发现现有 Mihomo Full 安装目录，可执行首次安装"
+  info "未发现现有 Mihomo Full 安装，将使用临时目录完成事务式首次安装"
 fi
 
 # v2ray-agent 只读检测；绝不停止、修改或删除它。
@@ -28,7 +30,6 @@ else
   warn "未检测到 /etc/v2ray-agent，请确认 v2ray-agent 已正确安装；后续生成阶段可能没有落地节点"
 fi
 
-# systemd 可用性检查；不启动/停止任何第三方服务。
 systemctl is-system-running >/dev/null 2>&1 || {
   state="$(systemctl is-system-running 2>/dev/null || true)"
   case "$state" in
@@ -52,47 +53,57 @@ read -rp "v2ray-agent clashMeta 目录 [默认 /etc/v2ray-agent/subscribe_local/
 V2RAY_DIR="${V2RAY_DIR:-/etc/v2ray-agent/subscribe_local/clashMeta}"
 [[ "$V2RAY_DIR" == /* && "$V2RAY_DIR" != *$'\n'* && "$V2RAY_DIR" != *$'\r'* ]] || err "v2ray-agent 目录必须是绝对路径且不能包含换行"
 
-title "2. 下载并生成安装状态"
-mkdir -p "$INSTALL_DIR" "$OUTPUT_DIR" "$INSTALL_DIR/tools" "$INSTALL_DIR/telegram-bot"
-printf '%s\n' "$MARKER_VALUE" > "$MARKER"
-chmod 600 "$MARKER"
-download(){ curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 -o "$1" "$2" || err "下载失败：$2"; }
-download "${INSTALL_DIR}/generate.sh" "${RAW_BASE}/generate.sh"
-download "${INSTALL_DIR}/template.yaml" "${RAW_BASE}/template.yaml"
-download "${INSTALL_DIR}/manage.sh" "${RAW_BASE}/manage.sh"
-download "${INSTALL_DIR}/uninstall.sh" "${RAW_BASE}/uninstall.sh"
-download "${INSTALL_DIR}/tools/generate-endpoint.py" "${RAW_BASE}/tools/generate-endpoint.py"
-download "${INSTALL_DIR}/tools/load-settings.sh" "${RAW_BASE}/tools/load-settings.sh"
-download "${INSTALL_DIR}/tools/audit-generated-config.sh" "${RAW_BASE}/tools/audit-generated-config.sh"
-download "${INSTALL_DIR}/telegram-bot/bot.py" "${RAW_BASE}/telegram-bot/bot.py"
-download "${INSTALL_DIR}/telegram-bot/install-telegram-bot.sh" "${RAW_BASE}/telegram-bot/install-telegram-bot.sh"
-download "${INSTALL_DIR}/telegram-bot/mihomo-full-bot.service" "${RAW_BASE}/telegram-bot/mihomo-full-bot.service"
-download "${INSTALL_DIR}/telegram-bot/requirements.txt" "${RAW_BASE}/telegram-bot/requirements.txt"
-download "${INSTALL_DIR}/telegram-bot.example.env" "${RAW_BASE}/telegram-bot.example.env"
-chmod 700 "${INSTALL_DIR}/manage.sh" "${INSTALL_DIR}/generate.sh" "${INSTALL_DIR}/uninstall.sh" "${INSTALL_DIR}/tools/audit-generated-config.sh" "${INSTALL_DIR}/tools/generate-endpoint.py" "${INSTALL_DIR}/tools/load-settings.sh" "${INSTALL_DIR}/telegram-bot/install-telegram-bot.sh"
-chmod 600 "${INSTALL_DIR}/telegram-bot/bot.py" "${INSTALL_DIR}/telegram-bot/requirements.txt"
+if (( EXISTING )); then
+  WORK_DIR="$INSTALL_DIR"
+  CLEANUP_STAGE=0
+else
+  WORK_DIR="$(mktemp -d /opt/.mihomo-full-install.XXXXXX)"
+  CLEANUP_STAGE=1
+  cleanup(){ rm -rf -- "$WORK_DIR"; }
+  trap cleanup EXIT INT TERM
+fi
+OUTPUT_DIR="${WORK_DIR}/output"
+MARKER="${WORK_DIR}/.mihomo-full-managed"
+mkdir -p "$OUTPUT_DIR" "$WORK_DIR/tools" "$WORK_DIR/telegram-bot"
 
-if [[ -f "${INSTALL_DIR}/settings.conf" ]]; then
-  # 使用安全加载器验证旧状态，不执行配置文件。
-  # shellcheck source=/dev/null
-  source "${INSTALL_DIR}/tools/load-settings.sh" "${INSTALL_DIR}/settings.conf"
+download(){ curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 -o "$1" "$2" || err "下载失败：$2"; }
+
+title "2. 下载固定代码快照"
+download "${WORK_DIR}/generate.sh" "${RAW_BASE}/generate.sh"
+download "${WORK_DIR}/template.yaml" "${RAW_BASE}/template.yaml"
+download "${WORK_DIR}/manage.sh" "${RAW_BASE}/manage.sh"
+download "${WORK_DIR}/uninstall.sh" "${RAW_BASE}/uninstall.sh"
+download "${WORK_DIR}/tools/generate-endpoint.py" "${RAW_BASE}/tools/generate-endpoint.py"
+download "${WORK_DIR}/tools/load-settings.sh" "${RAW_BASE}/tools/load-settings.sh"
+download "${WORK_DIR}/tools/audit-generated-config.sh" "${RAW_BASE}/tools/audit-generated-config.sh"
+download "${WORK_DIR}/telegram-bot/bot.py" "${RAW_BASE}/telegram-bot/bot.py"
+download "${WORK_DIR}/telegram-bot/install-telegram-bot.sh" "${RAW_BASE}/telegram-bot/install-telegram-bot.sh"
+download "${WORK_DIR}/telegram-bot/mihomo-full-bot.service" "${RAW_BASE}/telegram-bot/mihomo-full-bot.service"
+download "${WORK_DIR}/telegram-bot/requirements.txt" "${RAW_BASE}/telegram-bot/requirements.txt"
+download "${WORK_DIR}/telegram-bot.example.env" "${RAW_BASE}/telegram-bot.example.env"
+chmod 700 "${WORK_DIR}/manage.sh" "${WORK_DIR}/generate.sh" "${WORK_DIR}/uninstall.sh" "${WORK_DIR}/tools/audit-generated-config.sh" "${WORK_DIR}/tools/generate-endpoint.py" "${WORK_DIR}/tools/load-settings.sh" "${WORK_DIR}/telegram-bot/install-telegram-bot.sh"
+chmod 600 "${WORK_DIR}/telegram-bot/bot.py" "${WORK_DIR}/telegram-bot/requirements.txt"
+
+# 固定 Endpoint：首次安装生成一次；更新严格保留旧值。
+if [[ -f "${WORK_DIR}/settings.conf" ]]; then
+  source "${WORK_DIR}/tools/load-settings.sh" "${WORK_DIR}/settings.conf"
   [[ "$FIXED_FULL_CONFIG_PATH" =~ ^/assets/[a-z]+(-[a-z]+){7,15}$ ]] || err "已有订阅路径格式不符合当前 Endpoint 策略，拒绝覆盖"
   [[ "$FIXED_EXIT_NODES_PATH" =~ ^/assets/[a-z]+(-[a-z]+){7,15}$ ]] || err "已有落地路径格式不符合当前 Endpoint 策略，拒绝覆盖"
   FULL_PATH="$FIXED_FULL_CONFIG_PATH"; NODES_PATH="$FIXED_EXIT_NODES_PATH"
   info "检测到已有安装状态，保留固定公网路径"
 else
-  FULL_WORDS="$(python3 "${INSTALL_DIR}/tools/generate-endpoint.py")" || err "无法生成完整配置公网路径"
-  NODES_WORDS="$(python3 "${INSTALL_DIR}/tools/generate-endpoint.py")" || err "无法生成落地节点公网路径"
+  FULL_WORDS="$(python3 "${WORK_DIR}/tools/generate-endpoint.py")" || err "无法生成完整配置公网路径"
+  NODES_WORDS="$(python3 "${WORK_DIR}/tools/generate-endpoint.py")" || err "无法生成落地节点公网路径"
   FULL_PATH="/assets/${FULL_WORDS}"; NODES_PATH="/assets/${NODES_WORDS}"
 fi
 
-info "代码快照 : $REPO_COMMIT"; info "机场订阅 : $AIRPORT_SUB_URL"; info "域名     : $DOMAIN"; info "节点目录 : $V2RAY_DIR"; info "完整订阅路径 : $FULL_PATH"; info "落地节点路径 : $NODES_PATH"
+info "代码快照       : $REPO_COMMIT"; info "机场订阅       : $AIRPORT_SUB_URL"; info "域名           : $DOMAIN"; info "节点目录       : $V2RAY_DIR"; info "完整订阅路径   : $FULL_PATH"; info "落地节点路径   : $NODES_PATH"
 read -rp "确认无误？(Y/n): " CONFIRM; [[ "${CONFIRM:-Y}" =~ ^[Yy]$ ]] || { echo "已取消"; exit 0; }
 
-if [[ ! -f "${INSTALL_DIR}/settings.conf" ]]; then
-  { printf '%s\n' '# auto-generated by install.sh'; printf 'AIRPORT_SUB_URL=%q\n' "$AIRPORT_SUB_URL"; printf 'FIXED_FULL_CONFIG_PATH=%q\n' "$FULL_PATH"; printf 'FIXED_EXIT_NODES_PATH=%q\n' "$NODES_PATH"; printf 'DOMAIN=%q\n' "$DOMAIN"; printf 'V2RAY_AGENT_CLASHMETA_DIR=%q\n' "$V2RAY_DIR"; printf 'OUTPUT_DIR=%q\n' "$OUTPUT_DIR"; } > "${INSTALL_DIR}/settings.conf"
+if [[ ! -f "${WORK_DIR}/settings.conf" ]]; then
+  { printf '%s\n' '# auto-generated by install.sh'; printf 'AIRPORT_SUB_URL=%q\n' "$AIRPORT_SUB_URL"; printf 'FIXED_FULL_CONFIG_PATH=%q\n' "$FULL_PATH"; printf 'FIXED_EXIT_NODES_PATH=%q\n' "$NODES_PATH"; printf 'DOMAIN=%q\n' "$DOMAIN"; printf 'V2RAY_AGENT_CLASHMETA_DIR=%q\n' "$V2RAY_DIR"; printf 'OUTPUT_DIR=%q\n' "$OUTPUT_DIR"; } > "${WORK_DIR}/settings.conf"
 else
-  NEW_URL="$AIRPORT_SUB_URL" NEW_DOMAIN="$DOMAIN" NEW_V2RAY_DIR="$V2RAY_DIR" SETTINGS_FILE="${INSTALL_DIR}/settings.conf" python3 - <<'PY'
+  NEW_URL="$AIRPORT_SUB_URL" NEW_DOMAIN="$DOMAIN" NEW_V2RAY_DIR="$V2RAY_DIR" SETTINGS_FILE="${WORK_DIR}/settings.conf" python3 - <<'PY'
 import os, re, shlex
 from pathlib import Path
 p=Path(os.environ['SETTINGS_FILE']); vals={'AIRPORT_SUB_URL':os.environ['NEW_URL'],'DOMAIN':os.environ['NEW_DOMAIN'],'V2RAY_AGENT_CLASHMETA_DIR':os.environ['NEW_V2RAY_DIR']}
@@ -107,25 +118,49 @@ for k,v in vals.items():
 t=p.with_suffix('.conf.tmp'); t.write_text('\n'.join(out)+'\n',encoding='utf-8'); os.chmod(t,0o600); t.replace(p)
 PY
 fi
-chmod 600 "${INSTALL_DIR}/settings.conf"
-ln -sf "${INSTALL_DIR}/manage.sh" /usr/local/bin/mihomo-full
-[[ -f "${INSTALL_DIR}/rulesets.local.conf" ]] || printf '%s\n' '# provider|https_mrs_url|behavior|target|enabled' > "${INSTALL_DIR}/rulesets.local.conf"
-chmod 600 "${INSTALL_DIR}/rulesets.local.conf"
+chmod 600 "${WORK_DIR}/settings.conf"
+[[ -f "${WORK_DIR}/rulesets.local.conf" ]] || printf '%s\n' '# provider|https_mrs_url|behavior|target|enabled' > "${WORK_DIR}/rulesets.local.conf"
+chmod 600 "${WORK_DIR}/rulesets.local.conf"
 
-title "3. 生成配置"
-bash "${INSTALL_DIR}/generate.sh"
+# ---------- 事务式首次生成 ----------
+title "3. 生成并审计配置"
+bash "${WORK_DIR}/generate.sh"
+
+# 首次安装只有在下载、生成、审计全部成功后才写入 ownership marker 并原子落地。
+if (( ! EXISTING )); then
+  printf '%s\n' "$MARKER_VALUE" > "$MARKER"
+  chmod 600 "$MARKER"
+  chmod 700 "$WORK_DIR" "$WORK_DIR/tools" "$WORK_DIR/telegram-bot"
+  mv -- "$WORK_DIR" "$INSTALL_DIR"
+  CLEANUP_STAGE=0
+  trap - EXIT INT TERM
+  info "首次安装事务提交成功：正式目录已原子落地"
+else
+  printf '%s\n' "$MARKER_VALUE" > "$MARKER"
+  chmod 600 "$MARKER"
+fi
+
+# 只在正式目录提交成功后创建管理命令链接。
+ln -sfn "${INSTALL_DIR}/manage.sh" /usr/local/bin/mihomo-full
+
+# settings.conf 中 OUTPUT_DIR 在首次安装时使用临时目录，需要在正式落地后修正为固定路径。
+if (( ! EXISTING )); then
+  sed -i "s|^OUTPUT_DIR=.*$|OUTPUT_DIR=$(printf '%q' "${INSTALL_DIR}/output")|" "${INSTALL_DIR}/settings.conf"
+  chmod 600 "${INSTALL_DIR}/settings.conf"
+fi
+
 title "4. Nginx 配置（必须）"
 cat <<EOF
 请把以下内容加入你的 Nginx server 块，然后执行 nginx -t && systemctl reload nginx：
 
 location = ${FULL_PATH} {
-    alias ${OUTPUT_DIR}/full-config.yaml;
+    alias ${INSTALL_DIR}/output/full-config.yaml;
     default_type application/octet-stream;
     add_header Cache-Control "no-cache";
 }
 
 location = ${NODES_PATH} {
-    alias ${OUTPUT_DIR}/exit-nodes.yaml;
+    alias ${INSTALL_DIR}/output/exit-nodes.yaml;
     default_type application/octet-stream;
     add_header Cache-Control "no-cache";
 }
@@ -133,5 +168,11 @@ location = ${NODES_PATH} {
 location /assets/ { return 404; }
 EOF
 if command -v nginx >/dev/null 2>&1; then info "检测到 Nginx 已安装"; else warn "未检测到 Nginx，请自行配置 Web 服务器"; fi
+
 title "完成"
-echo -e "客户端导入：${GREEN}https://${DOMAIN}${FULL_PATH}${NC}"; echo "更新落地：${INSTALL_DIR}/generate.sh"; echo "管理入口：mihomo-full"; echo "安全卸载：${INSTALL_DIR}/uninstall.sh"; echo "TG Bot：已部署代码但默认不启用，填写 telegram-bot.env 后运行 telegram-bot/install-telegram-bot.sh"; info "全部完成"
+echo -e "客户端导入：${GREEN}https://${DOMAIN}${FULL_PATH}${NC}"
+echo "更新落地：${INSTALL_DIR}/generate.sh"
+echo "管理入口：mihomo-full"
+echo "安全卸载：${INSTALL_DIR}/uninstall.sh"
+echo "TG Bot：已部署代码但默认不启用，填写 telegram-bot.env 后运行 telegram-bot/install-telegram-bot.sh"
+info "全部完成"
