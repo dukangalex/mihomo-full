@@ -53,11 +53,10 @@ V2RAY_DIR="${V2RAY_DIR:-/etc/v2ray-agent/subscribe_local/clashMeta}"
 
 if (( EXISTING )); then
   WORK_DIR="$(mktemp -d /opt/.mihomo-full-update.XXXXXX)"
-  CLEANUP_STAGE=1
 else
   WORK_DIR="$(mktemp -d /opt/.mihomo-full-install.XXXXXX)"
-  CLEANUP_STAGE=1
 fi
+CLEANUP_STAGE=1
 OUTPUT_DIR="${WORK_DIR}/output"
 MARKER="${WORK_DIR}/.mihomo-full-managed"
 mkdir -p "$OUTPUT_DIR" "$WORK_DIR/tools" "$WORK_DIR/telegram-bot"
@@ -79,6 +78,7 @@ download "${WORK_DIR}/generate.sh" "${RAW_BASE}/generate.sh"
 download "${WORK_DIR}/template.yaml" "${RAW_BASE}/template.yaml"
 download "${WORK_DIR}/manage.sh" "${RAW_BASE}/manage.sh"
 download "${WORK_DIR}/uninstall.sh" "${RAW_BASE}/uninstall.sh"
+download "${WORK_DIR}/update.sh" "${RAW_BASE}/update.sh"
 download "${WORK_DIR}/tools/generate-endpoint.py" "${RAW_BASE}/tools/generate-endpoint.py"
 download "${WORK_DIR}/tools/load-settings.sh" "${RAW_BASE}/tools/load-settings.sh"
 download "${WORK_DIR}/tools/audit-generated-config.sh" "${RAW_BASE}/tools/audit-generated-config.sh"
@@ -88,7 +88,7 @@ download "${WORK_DIR}/telegram-bot/install-telegram-bot.sh" "${RAW_BASE}/telegra
 download "${WORK_DIR}/telegram-bot/mihomo-full-bot.service" "${RAW_BASE}/telegram-bot/mihomo-full-bot.service"
 download "${WORK_DIR}/telegram-bot/requirements.txt" "${RAW_BASE}/telegram-bot/requirements.txt"
 download "${WORK_DIR}/telegram-bot.example.env" "${RAW_BASE}/telegram-bot.example.env"
-chmod 700 "${WORK_DIR}/manage.sh" "${WORK_DIR}/generate.sh" "${WORK_DIR}/uninstall.sh" "${WORK_DIR}/tools/audit-generated-config.sh" "${WORK_DIR}/tools/generate-endpoint.py" "${WORK_DIR}/tools/load-settings.sh" "${WORK_DIR}/telegram-bot/install-telegram-bot.sh"
+chmod 700 "${WORK_DIR}/manage.sh" "${WORK_DIR}/generate.sh" "${WORK_DIR}/uninstall.sh" "${WORK_DIR}/update.sh" "${WORK_DIR}/tools/audit-generated-config.sh" "${WORK_DIR}/tools/generate-endpoint.py" "${WORK_DIR}/tools/load-settings.sh" "${WORK_DIR}/telegram-bot/install-telegram-bot.sh"
 chmod 600 "${WORK_DIR}/telegram-bot/bot.py" "${WORK_DIR}/telegram-bot/vps_usage.py" "${WORK_DIR}/telegram-bot/requirements.txt"
 
 if [[ -f "${WORK_DIR}/settings.conf" ]]; then
@@ -140,7 +140,6 @@ if (( ! EXISTING )); then
   trap - EXIT INT TERM
   info "首次安装事务提交成功：正式目录已原子落地"
 else
-  # 当前更新仍在 staging 中完成生成/审计；提交阶段保持正式路径不变。
   printf '%s\n' "$MARKER_VALUE" > "$MARKER"
   chmod 600 "$MARKER"
   chmod 700 "$WORK_DIR" "$WORK_DIR/tools" "$WORK_DIR/telegram-bot"
@@ -188,7 +187,7 @@ if command -v nginx >/dev/null 2>&1; then info "检测到 Nginx 已安装"; else
 
 title "完成"
 echo -e "客户端导入：${GREEN}https://${DOMAIN}${FULL_PATH}${NC}"
-echo "更新落地：${INSTALL_DIR}/generate.sh"
+echo "更新入口：mihomo-full update"
 echo "管理入口：mihomo-full"
 echo "安全卸载：${INSTALL_DIR}/uninstall.sh"
 echo "TG Bot：已部署代码但默认不启用，填写 telegram-bot.env 后运行 telegram-bot/install-telegram-bot.sh"
