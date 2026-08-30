@@ -193,7 +193,27 @@ async def confirm(update, context):
         context.user_data["awaiting_airport"] = True
         await q.edit_message_text("请输入新的 HTTPS 机场订阅地址。\n\n收到后不会回显 URL，并会再次要求确认。", reply_markup=cancel_menu())
     elif action == "uninstall":
-        await q.edit_message_text("⚠️ 最后确认\n\n当前版本的安全卸载仍需在服务器本地执行确认。\n\nv2ray-agent 不会被此操作删除。", reply_markup=menu())
+        await q.edit_message_text("⚠️ 最后确认\n\n请确认执行安全卸载。\n\n卸载完成后 Telegram Bot 也会停止。\n\nv2ray-agent 不会被此操作删除。", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🗑 确认卸载", callback_data="confirm:uninstall_final"), InlineKeyboardButton("❌ 取消", callback_data="cancel")]]))
+
+
+async def uninstall_final(update, context):
+    q = update.callback_query
+    if not allowed(update):
+        await q.answer("无权限", show_alert=True)
+        return
+    await q.answer()
+    # The uninstall script performs its own ownership checks and expects the literal
+    # UNINSTALL confirmation. Run it detached so the Bot can acknowledge the request
+    # before systemd stops the Bot service itself.
+    command = f"sleep 2; printf '%s\\n' UNINSTALL | bash {MANAGE.parent / "uninstall.sh"}"
+    subprocess.Popen(["bash", "-lc", command], cwd=BASE, stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL, start_new_session=True)
+    context.user_data.clear()
+    await q.edit_message_text(
+        "🗑 已开始执行 Mihomo Full 安全卸载。\n\n"
+        "Telegram Bot 将随服务一起停止。\n"
+        "v2ray-agent 不会被删除、停止或修改。"
+    )
 
 
 async def text(update, context):
@@ -325,6 +345,7 @@ app = Application.builder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(confirm_airport, pattern="^confirm:airport_url$"))
 app.add_handler(CallbackQueryHandler(confirm, pattern="^confirm:(airport|generate|uninstall)$"))
+app.add_handler(CallbackQueryHandler(uninstall_final, pattern="^confirm:uninstall_final$"))
 app.add_handler(CallbackQueryHandler(confirm_mutation, pattern="^confirm_rule$"))
 app.add_handler(CallbackQueryHandler(rule_behavior, pattern="^rule_behavior:(domain|ipcidr)$"))
 app.add_handler(CallbackQueryHandler(cancel, pattern="^cancel$"))
