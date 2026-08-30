@@ -205,7 +205,8 @@ async def uninstall_final(update, context):
     # The uninstall script performs its own ownership checks and expects the literal
     # UNINSTALL confirmation. Run it detached so the Bot can acknowledge the request
     # before systemd stops the Bot service itself.
-    command = f"sleep 2; printf '%s\\n' UNINSTALL | bash {MANAGE.parent / "uninstall.sh"}"
+    uninstall_script = BASE / "uninstall.sh"
+    command = f"sleep 2; printf '%s\\n' UNINSTALL | bash {uninstall_script}"
     subprocess.Popen(["bash", "-lc", command], cwd=BASE, stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, start_new_session=True)
     context.user_data.clear()
