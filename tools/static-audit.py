@@ -35,13 +35,25 @@ class UniqueKeyLoader(yaml.SafeLoader):
     pass
 
 def _construct_unique_mapping(loader, node, deep=False):
-    mapping = {}
-    for key_node, value_node in node.value:
+    # Support YAML merge keys (<<: *anchor) while still rejecting duplicate
+    # keys explicitly written in the same mapping. SafeLoader's normal merge
+    # semantics are preserved: merged mappings are flattened first, and an
+    # explicit key overrides a merged value.
+    explicit_keys = {}
+    for key_node, _value_node in node.value:
+        if key_node.tag == "tag:yaml.org,2002:merge":
+            continue
         key = loader.construct_object(key_node, deep=deep)
-        if key in mapping:
+        if key in explicit_keys:
             mark = getattr(key_node, "start_mark", None)
             line = (mark.line + 1) if mark else "?"
             raise ValueError(f"duplicate YAML mapping key {key!r} at line {line}")
+        explicit_keys[key] = True
+
+    loader.flatten_mapping(node)
+    mapping = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
         mapping[key] = loader.construct_object(value_node, deep=deep)
     return mapping
 
