@@ -7,6 +7,7 @@ idempotent: applying the transformation repeatedly must produce identical text.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from pathlib import Path
@@ -159,8 +160,6 @@ def upsert_object(text: str, marker: str, value) -> str:
 
 
 def restore_airport_exceptions(text: str) -> str:
-    # These patterns intentionally target the generated JS syntax, not literal
-    # backslash-n sequences, so the operation remains stable across formatting.
     text = re.sub(
         r'^\s*"geosite:category-ads-all":\s*"rcode://name_error",\s*\n',
         "",
@@ -171,18 +170,8 @@ def restore_airport_exceptions(text: str) -> str:
         '"RULE-SET,category-ads-all,REJECT-DROP",',
         '"RULE-SET,category-ads-all,🛑 广告拦截",',
     )
-    text = re.sub(
-        r'^\s*var privateGroup = .*?;\s*\n',
-        "",
-        text,
-        flags=re.MULTILINE,
-    )
-    text = re.sub(
-        r'^\s*var domesticGroup = .*?;\s*\n',
-        "",
-        text,
-        flags=re.MULTILINE,
-    )
+    text = re.sub(r'^\s*var privateGroup = .*?;\s*\n', "", text, flags=re.MULTILINE)
+    text = re.sub(r'^\s*var domesticGroup = .*?;\s*\n', "", text, flags=re.MULTILINE)
     text = text.replace('adBlockGroup, privateGroup, domesticGroup,', 'adBlockGroup,')
     return text
 
@@ -204,9 +193,7 @@ def map_airport_targets(text: str) -> str:
 def assert_no_chain_features(text: str) -> None:
     for marker in FORBIDDEN_CHAIN_MARKERS:
         if re.search(marker, text, flags=re.IGNORECASE):
-            raise RuntimeError(
-                "forbidden chain-mode feature remains in Airport overwrite: " + marker
-            )
+            raise RuntimeError("forbidden chain-mode feature remains in Airport overwrite: " + marker)
     for group in ("落地优选出口", "前置机场", "VPS落地", "EXIT_NODES"):
         if group in text:
             raise RuntimeError("forbidden chain-mode group remains in Airport overwrite: " + group)
@@ -221,7 +208,6 @@ def validate_airport(text: str) -> None:
     for marker in required:
         if marker not in text:
             raise RuntimeError(f"post-sync sanity check failed: {marker}")
-
     if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text:
         raise RuntimeError("airport ad rule is not connected to the ad group")
     if 'var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"]' not in text:
@@ -232,7 +218,6 @@ def validate_airport(text: str) -> None:
         raise RuntimeError("private/domestic UI groups must remain hidden")
     if 'exclude-type: vmess' in text:
         raise RuntimeError("protocol exclusion must not exist")
-
     for group in ("🤖 AI服务", "🌍 国外服务", "📺 Media", "🐟 漏网之鱼", "🔧 远控工具", "🛑 广告拦截"):
         if 'name: "' + group + '"' not in text:
             raise RuntimeError("required airport group missing: " + group)
@@ -241,7 +226,6 @@ def validate_airport(text: str) -> None:
             raise RuntimeError("unmapped chain-mode group target remains: " + target)
     if '"geosite:category-ads-all": "rcode://name_error"' in text:
         raise RuntimeError("ad DNS NXDOMAIN would defeat DIRECT")
-
     assert_no_chain_features(text)
 
 
@@ -261,7 +245,14 @@ def transform(template: dict, airport: str) -> str:
     return result
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Synchronize template public behavior into airport_overwrite.js")
+    parser.add_argument("--check", action="store_true", help="validate synchronization without writing the file")
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = parse_args()
     template = yaml.safe_load(TEMPLATE.read_text(encoding="utf-8"))
     original = AIRPORT.read_text(encoding="utf-8")
 
@@ -270,8 +261,17 @@ def main() -> None:
     if first != second:
         raise RuntimeError("Airport synchronization is not idempotent: second pass changes the output")
 
+    if args.check:
+        if first != original:
+            raise RuntimeError("Airport overwrite is out of sync; run the synchronizer without --check")
+        print("airport_overwrite.js synchronized")
+        print("idempotence check: PASS; non-chain hard gate: PASS; sync check: PASS")
+        return
+
     if first != original:
-        AIRPORT.write_text(first, encoding="utf-8")
+        tmp = AIRPORT.with_suffix(AIRPORT.suffix + ".tmp")
+        tmp.write_text(first, encoding="utf-8")
+        tmp.replace(AIRPORT)
         print("airport_overwrite.js synchronized")
     else:
         print("airport_overwrite.js already synchronized")
