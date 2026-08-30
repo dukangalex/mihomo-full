@@ -2,14 +2,27 @@
 # mihomo-full 一键安装（需已安装 v2ray-agent）
 set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
-info(){ echo -e "${GREEN}[+]${NC} $1"; }; warn(){ echo -e "${YELLOW}[!]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1"; exit 1; }; title(){ echo -e "\n${CYAN}==== $1 ====${NC}\n"; }
-INSTALL_DIR="/opt/mihomo-full"; OUTPUT_DIR="${INSTALL_DIR}/output"; REPO="dukangalex/mihomo-full"
+info(){ echo -e "${GREEN}[+]${NC} $1"; }; warn(){ echo -e "${YELLOW}[!]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1" >&2; exit 1; }; title(){ echo -e "\n${CYAN}==== $1 ====${NC}\n"; }
+INSTALL_DIR="/opt/mihomo-full"; OUTPUT_DIR="${INSTALL_DIR}/output"; REPO="dukangalex/mihomo-full"; MARKER="${INSTALL_DIR}/.mihomo-full-managed"; MARKER_VALUE="mihomo-full-managed-v1"
+[[ $EUID -eq 0 ]] || err "请使用 root 运行：sudo bash install.sh"
 command -v curl >/dev/null 2>&1 || err "需要 curl"
+command -v python3 >/dev/null 2>&1 || err "需要 python3"
+command -v systemctl >/dev/null 2>&1 || err "需要 systemd/systemctl"
+
+# 安装前先证明目标目录属于本项目；未知目录一律停止，绝不覆盖。
+if [[ -e "$INSTALL_DIR" ]]; then
+  [[ -d "$INSTALL_DIR" ]] || err "$INSTALL_DIR 已存在但不是目录，拒绝继续"
+  [[ -f "$MARKER" ]] || err "$INSTALL_DIR 已存在但没有 Mihomo Full 所有权标记，拒绝覆盖"
+  [[ "$(cat "$MARKER" 2>/dev/null)" == "$MARKER_VALUE" ]] || err "$INSTALL_DIR 所有权标记无效，拒绝覆盖"
+  info "检测到受 Mihomo Full 管理的现有安装，允许安全更新"
+fi
+# v2ray-agent 只读检测；绝不停止、修改或删除它。
+if [[ -d /etc/v2ray-agent ]]; then info "检测到 v2ray-agent：仅读取其 clashMeta 输出，不接管其生命周期"; else warn "未检测到 /etc/v2ray-agent，请确认 v2ray-agent 已正确安装"; fi
+
 REPO_COMMIT="$(curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 "https://api.github.com/repos/${REPO}/commits/main" | sed -n 's/.*"sha":"\([0-9a-f]\{40\}\)".*/\1/p' | head -n1)"
 [[ "$REPO_COMMIT" =~ ^[0-9a-f]{40}$ ]] || err "无法解析仓库 main 的有效提交 SHA"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/${REPO_COMMIT}"
 clear; echo -e "${CYAN}"; echo "  Mihomo 完整配置 + v2ray-agent 一键部署"; echo "  --------------------------------------"; echo "  · 客户端只导入一个固定订阅"; echo "  · 公网路径安装时生成一次，使用自然语言随机词组"; echo "  · 公网路径不使用 hex / UUID / token / 节点语义"; echo -e "${NC}"
-[[ $EUID -eq 0 ]] || err "请使用 root 运行：sudo bash install.sh"
 title "1. 填写必要信息"
 read -rp "请输入机场订阅链接: " AIRPORT_SUB_URL
 [[ "$AIRPORT_SUB_URL" =~ ^https://[^[:space:]\"]+$ ]] || err "机场订阅必须使用 HTTPS，且不能含空格或双引号"
@@ -21,27 +34,30 @@ V2RAY_DIR="${V2RAY_DIR:-/etc/v2ray-agent/subscribe_local/clashMeta}"
 
 title "2. 下载并生成安装状态"
 mkdir -p "$INSTALL_DIR" "$OUTPUT_DIR" "$INSTALL_DIR/tools" "$INSTALL_DIR/telegram-bot"
+printf '%s\n' "$MARKER_VALUE" > "$MARKER"
+chmod 600 "$MARKER"
 download(){ curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 -o "$1" "$2" || err "下载失败：$2"; }
 download "${INSTALL_DIR}/generate.sh" "${RAW_BASE}/generate.sh"
 download "${INSTALL_DIR}/template.yaml" "${RAW_BASE}/template.yaml"
 download "${INSTALL_DIR}/manage.sh" "${RAW_BASE}/manage.sh"
 download "${INSTALL_DIR}/uninstall.sh" "${RAW_BASE}/uninstall.sh"
 download "${INSTALL_DIR}/tools/generate-endpoint.py" "${RAW_BASE}/tools/generate-endpoint.py"
+download "${INSTALL_DIR}/tools/load-settings.sh" "${RAW_BASE}/tools/load-settings.sh"
 download "${INSTALL_DIR}/tools/audit-generated-config.sh" "${RAW_BASE}/tools/audit-generated-config.sh"
-# TG Bot 代码作为可选管理面随主项目部署，但不会自动启用。
 download "${INSTALL_DIR}/telegram-bot/bot.py" "${RAW_BASE}/telegram-bot/bot.py"
 download "${INSTALL_DIR}/telegram-bot/install-telegram-bot.sh" "${RAW_BASE}/telegram-bot/install-telegram-bot.sh"
 download "${INSTALL_DIR}/telegram-bot/mihomo-full-bot.service" "${RAW_BASE}/telegram-bot/mihomo-full-bot.service"
 download "${INSTALL_DIR}/telegram-bot/requirements.txt" "${RAW_BASE}/telegram-bot/requirements.txt"
 download "${INSTALL_DIR}/telegram-bot.example.env" "${RAW_BASE}/telegram-bot.example.env"
-chmod 700 "${INSTALL_DIR}/manage.sh" "${INSTALL_DIR}/generate.sh" "${INSTALL_DIR}/uninstall.sh" "${INSTALL_DIR}/tools/audit-generated-config.sh" "${INSTALL_DIR}/tools/generate-endpoint.py" "${INSTALL_DIR}/telegram-bot/install-telegram-bot.sh"
+chmod 700 "${INSTALL_DIR}/manage.sh" "${INSTALL_DIR}/generate.sh" "${INSTALL_DIR}/uninstall.sh" "${INSTALL_DIR}/tools/audit-generated-config.sh" "${INSTALL_DIR}/tools/generate-endpoint.py" "${INSTALL_DIR}/tools/load-settings.sh" "${INSTALL_DIR}/telegram-bot/install-telegram-bot.sh"
 chmod 600 "${INSTALL_DIR}/telegram-bot/bot.py" "${INSTALL_DIR}/telegram-bot/requirements.txt"
 
-# Endpoint 只在首次安装时生成；后续 generate/manage 永远读取 settings.conf，不重新生成。
 if [[ -f "${INSTALL_DIR}/settings.conf" ]]; then
-  source "${INSTALL_DIR}/settings.conf"
-  [[ "${FIXED_FULL_CONFIG_PATH:-}" =~ ^/assets/[a-z]+(-[a-z]+){7,15}$ ]] || err "已有订阅路径格式不符合当前 Endpoint 策略，拒绝覆盖"
-  [[ "${FIXED_EXIT_NODES_PATH:-}" =~ ^/assets/[a-z]+(-[a-z]+){7,15}$ ]] || err "已有落地路径格式不符合当前 Endpoint 策略，拒绝覆盖"
+  # 使用安全加载器验证旧状态，不执行配置文件。
+  # shellcheck source=/dev/null
+  source "${INSTALL_DIR}/tools/load-settings.sh" "${INSTALL_DIR}/settings.conf"
+  [[ "$FIXED_FULL_CONFIG_PATH" =~ ^/assets/[a-z]+(-[a-z]+){7,15}$ ]] || err "已有订阅路径格式不符合当前 Endpoint 策略，拒绝覆盖"
+  [[ "$FIXED_EXIT_NODES_PATH" =~ ^/assets/[a-z]+(-[a-z]+){7,15}$ ]] || err "已有落地路径格式不符合当前 Endpoint 策略，拒绝覆盖"
   FULL_PATH="$FIXED_FULL_CONFIG_PATH"; NODES_PATH="$FIXED_EXIT_NODES_PATH"
   info "检测到已有安装状态，保留固定公网路径"
 else
@@ -54,13 +70,26 @@ info "代码快照 : $REPO_COMMIT"; info "机场订阅 : $AIRPORT_SUB_URL"; info
 read -rp "确认无误？(Y/n): " CONFIRM; [[ "${CONFIRM:-Y}" =~ ^[Yy]$ ]] || { echo "已取消"; exit 0; }
 
 if [[ ! -f "${INSTALL_DIR}/settings.conf" ]]; then
-  { printf "%s\n" "# auto-generated by install.sh"; printf "AIRPORT_SUB_URL=%q\n" "$AIRPORT_SUB_URL"; printf "FIXED_FULL_CONFIG_PATH=%q\n" "$FULL_PATH"; printf "FIXED_EXIT_NODES_PATH=%q\n" "$NODES_PATH"; printf "DOMAIN=%q\n" "$DOMAIN"; printf "V2RAY_AGENT_CLASHMETA_DIR=%q\n" "$V2RAY_DIR"; printf "OUTPUT_DIR=%q\n" "$OUTPUT_DIR"; } > "${INSTALL_DIR}/settings.conf"
+  { printf '%s\n' '# auto-generated by install.sh'; printf 'AIRPORT_SUB_URL=%q\n' "$AIRPORT_SUB_URL"; printf 'FIXED_FULL_CONFIG_PATH=%q\n' "$FULL_PATH"; printf 'FIXED_EXIT_NODES_PATH=%q\n' "$NODES_PATH"; printf 'DOMAIN=%q\n' "$DOMAIN"; printf 'V2RAY_AGENT_CLASHMETA_DIR=%q\n' "$V2RAY_DIR"; printf 'OUTPUT_DIR=%q\n' "$OUTPUT_DIR"; } > "${INSTALL_DIR}/settings.conf"
 else
-  sed -i "s|^AIRPORT_SUB_URL=.*$|AIRPORT_SUB_URL=$(printf '%q' "$AIRPORT_SUB_URL")|; s|^DOMAIN=.*$|DOMAIN=$(printf '%q' "$DOMAIN")|; s|^V2RAY_AGENT_CLASHMETA_DIR=.*$|V2RAY_AGENT_CLASHMETA_DIR=$(printf '%q' "$V2RAY_DIR")|" "${INSTALL_DIR}/settings.conf"
+  NEW_URL="$AIRPORT_SUB_URL" NEW_DOMAIN="$DOMAIN" NEW_V2RAY_DIR="$V2RAY_DIR" SETTINGS_FILE="${INSTALL_DIR}/settings.conf" python3 - <<'PY'
+import os, re, shlex
+from pathlib import Path
+p=Path(os.environ['SETTINGS_FILE']); vals={'AIRPORT_SUB_URL':os.environ['NEW_URL'],'DOMAIN':os.environ['NEW_DOMAIN'],'V2RAY_AGENT_CLASHMETA_DIR':os.environ['NEW_V2RAY_DIR']}
+lines=p.read_text(encoding='utf-8').splitlines(); out=[]; seen=set()
+for line in lines:
+    m=re.match(r'^(AIRPORT_SUB_URL|DOMAIN|V2RAY_AGENT_CLASHMETA_DIR)=', line)
+    if m:
+        k=m.group(1); out.append(k+'='+shlex.quote(vals[k])); seen.add(k)
+    else: out.append(line)
+for k,v in vals.items():
+    if k not in seen: out.append(k+'='+shlex.quote(v))
+t=p.with_suffix('.conf.tmp'); t.write_text('\n'.join(out)+'\n',encoding='utf-8'); os.chmod(t,0o600); t.replace(p)
+PY
 fi
 chmod 600 "${INSTALL_DIR}/settings.conf"
 ln -sf "${INSTALL_DIR}/manage.sh" /usr/local/bin/mihomo-full
-if [[ ! -f "${INSTALL_DIR}/rulesets.local.conf" ]]; then printf '%s\n' '# provider|https_mrs_url|behavior|target|enabled' > "${INSTALL_DIR}/rulesets.local.conf"; fi
+[[ -f "${INSTALL_DIR}/rulesets.local.conf" ]] || printf '%s\n' '# provider|https_mrs_url|behavior|target|enabled' > "${INSTALL_DIR}/rulesets.local.conf"
 chmod 600 "${INSTALL_DIR}/rulesets.local.conf"
 
 title "3. 生成配置"
@@ -81,7 +110,6 @@ location = ${NODES_PATH} {
     add_header Cache-Control "no-cache";
 }
 
-# 不开放未知 /assets/ 路径
 location /assets/ { return 404; }
 EOF
 if command -v nginx >/dev/null 2>&1; then info "检测到 Nginx 已安装"; else warn "未检测到 Nginx，请自行配置 Web 服务器"; fi
