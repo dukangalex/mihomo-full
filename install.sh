@@ -4,24 +4,43 @@ set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 info(){ echo -e "${GREEN}[+]${NC} $1"; }; warn(){ echo -e "${YELLOW}[!]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1" >&2; exit 1; }; title(){ echo -e "\n${CYAN}==== $1 ====${NC}\n"; }
 INSTALL_DIR="/opt/mihomo-full"; OUTPUT_DIR="${INSTALL_DIR}/output"; REPO="dukangalex/mihomo-full"; MARKER="${INSTALL_DIR}/.mihomo-full-managed"; MARKER_VALUE="mihomo-full-managed-v1"
-[[ $EUID -eq 0 ]] || err "请使用 root 运行：sudo bash install.sh"
-command -v curl >/dev/null 2>&1 || err "需要 curl"
-command -v python3 >/dev/null 2>&1 || err "需要 python3"
-command -v systemctl >/dev/null 2>&1 || err "需要 systemd/systemctl"
 
-# 安装前先证明目标目录属于本项目；未知目录一律停止，绝不覆盖。
+# ---------- 安装前只读预检 ----------
+title "0. 安装前安全预检"
+[[ $EUID -eq 0 ]] || err "请使用 root 运行：sudo bash install.sh"
+for cmd in curl python3 systemctl; do command -v "$cmd" >/dev/null 2>&1 || err "需要 $cmd"; done
+
+# 目标目录必须先证明属于 Mihomo Full；未知目录绝不覆盖。
 if [[ -e "$INSTALL_DIR" ]]; then
   [[ -d "$INSTALL_DIR" ]] || err "$INSTALL_DIR 已存在但不是目录，拒绝继续"
-  [[ -f "$MARKER" ]] || err "$INSTALL_DIR 已存在但没有 Mihomo Full 所有权标记，拒绝覆盖"
+  [[ -f "$MARKER" && ! -L "$MARKER" ]] || err "$INSTALL_DIR 已存在但没有有效的 Mihomo Full 所有权标记，拒绝覆盖"
   [[ "$(cat "$MARKER" 2>/dev/null)" == "$MARKER_VALUE" ]] || err "$INSTALL_DIR 所有权标记无效，拒绝覆盖"
+  [[ -O "$MARKER" ]] || err "$INSTALL_DIR 所有权标记不属于当前 root，拒绝继续"
   info "检测到受 Mihomo Full 管理的现有安装，允许安全更新"
+else
+  info "未发现现有 Mihomo Full 安装目录，可执行首次安装"
 fi
+
 # v2ray-agent 只读检测；绝不停止、修改或删除它。
-if [[ -d /etc/v2ray-agent ]]; then info "检测到 v2ray-agent：仅读取其 clashMeta 输出，不接管其生命周期"; else warn "未检测到 /etc/v2ray-agent，请确认 v2ray-agent 已正确安装"; fi
+if [[ -d /etc/v2ray-agent ]]; then
+  info "检测到 v2ray-agent：仅读取其 clashMeta 输出，不接管其生命周期"
+else
+  warn "未检测到 /etc/v2ray-agent，请确认 v2ray-agent 已正确安装；后续生成阶段可能没有落地节点"
+fi
+
+# systemd 可用性检查；不启动/停止任何第三方服务。
+systemctl is-system-running >/dev/null 2>&1 || {
+  state="$(systemctl is-system-running 2>/dev/null || true)"
+  case "$state" in
+    starting|degraded|maintenance) warn "systemd 当前状态：$state，继续前请确认这是预期状态";;
+    *) err "systemd 不可正常使用（状态：${state:-unknown}），拒绝继续";;
+  esac
+}
 
 REPO_COMMIT="$(curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 "https://api.github.com/repos/${REPO}/commits/main" | sed -n 's/.*"sha":"\([0-9a-f]\{40\}\)".*/\1/p' | head -n1)"
 [[ "$REPO_COMMIT" =~ ^[0-9a-f]{40}$ ]] || err "无法解析仓库 main 的有效提交 SHA"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/${REPO_COMMIT}"
+
 clear; echo -e "${CYAN}"; echo "  Mihomo 完整配置 + v2ray-agent 一键部署"; echo "  --------------------------------------"; echo "  · 客户端只导入一个固定订阅"; echo "  · 公网路径安装时生成一次，使用自然语言随机词组"; echo "  · 公网路径不使用 hex / UUID / token / 节点语义"; echo -e "${NC}"
 title "1. 填写必要信息"
 read -rp "请输入机场订阅链接: " AIRPORT_SUB_URL
@@ -31,6 +50,7 @@ DOMAIN="${DOMAIN#https://}"; DOMAIN="${DOMAIN#http://}"; DOMAIN="${DOMAIN%%/*}"
 [[ "$DOMAIN" =~ ^[A-Za-z0-9.-]+(:[0-9]+)?$ ]] || err "域名格式不正确"
 read -rp "v2ray-agent clashMeta 目录 [默认 /etc/v2ray-agent/subscribe_local/clashMeta]: " V2RAY_DIR
 V2RAY_DIR="${V2RAY_DIR:-/etc/v2ray-agent/subscribe_local/clashMeta}"
+[[ "$V2RAY_DIR" == /* && "$V2RAY_DIR" != *$'\n'* && "$V2RAY_DIR" != *$'\r'* ]] || err "v2ray-agent 目录必须是绝对路径且不能包含换行"
 
 title "2. 下载并生成安装状态"
 mkdir -p "$INSTALL_DIR" "$OUTPUT_DIR" "$INSTALL_DIR/tools" "$INSTALL_DIR/telegram-bot"
