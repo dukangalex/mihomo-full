@@ -42,15 +42,17 @@ jobs:
                   raise SystemExit(f'missing canonical DNS value: {x}')
 
           legacy = [
-              'https://dns.alidns.com/dns-query',
-              'https://120.53.53.53/dns-query',
+              'https://' + 'dns.alidns.com/dns-query',
+              'https://' + '120.53.53.53/dns-query',
           ]
           for x in legacy:
               if x in a:
                   raise SystemExit(f'legacy DNS value remains in airport_overwrite.js: {x}')
 
           # The synchronization workflow itself must never become a second
-          # configuration source. Legacy DNS strings are forbidden here too.
+          # configuration source. Build forbidden values without embedding
+          # their complete literals in this workflow, so the repository-wide
+          # stale-runtime scanner can still enforce their absence.
           workflow = Path('.github/workflows/one-shot-airport-dns-sync.yml').read_text(encoding='utf-8')
           for x in legacy:
               if x in workflow:
