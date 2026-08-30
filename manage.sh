@@ -32,7 +32,6 @@ noninteractive(){ local action="${1:-}"; shift || true; case "$action" in
   --rule-restore) [[ $# -eq 1 ]] || err "--rule-restore NAME"; local n="$1"; [[ "$n" =~ ^[A-Za-z0-9_-]+$ ]] || err "规则集名称不合法"; core_rule "$n" && err "核心安全规则不可从本地覆盖恢复：$n"; sed -i "/^$n|/d" "$RULES"; bash "$GENERATE";;
   --generate) bash "$GENERATE";;
   --update) exec "$UPDATE";;
-  --rules-list) grep -vE '^[[:space:]]*(#|$)' "$RULES" || true;;
   --audit) [[ -f "$SCRIPT_DIR/tools/audit-generated-config.sh" ]] || err "缺少最终配置审计脚本"; [[ -s "$SCRIPT_DIR/output/full-config.yaml" ]] || err "尚未生成最终配置"; bash "$SCRIPT_DIR/tools/audit-generated-config.sh" "$SCRIPT_DIR/output/full-config.yaml";;
   --uninstall) [[ -x "$UNINSTALL" ]] || err "缺少安全卸载脚本"; bash "$UNINSTALL";;
   --check) test -s "$SETTINGS" && test -s "$SCRIPT_DIR/template.yaml" && test -s "$GENERATE" && test -s "$UNINSTALL" && test -s "$UPDATE" && test -s "$SETTINGS_LOADER" && bash -n "$GENERATE" && bash -n "$0" && bash -n "$UNINSTALL" && bash -n "$UPDATE" && bash -n "$SETTINGS_LOADER"; info "管理、生成、更新、卸载、配置加载脚本语法检查通过";;
