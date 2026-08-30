@@ -3,7 +3,7 @@
 set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 info(){ echo -e "${GREEN}[+]${NC} $1"; }; warn(){ echo -e "${YELLOW}[!]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1" >&2; exit 1; }; title(){ echo -e "\n${CYAN}==== $1 ====${NC}\n"; }
-INSTALL_DIR="/opt/mihomo-full"; REPO="dukangalex/mihomo-full"; MARKER_VALUE="mihomo-full-managed-v1"
+INSTALL_DIR="/opt/mihomo-full"; REPO="dukangalex/mihomo-full"; MARKER_VALUE="mihomo-full-managed-v1"; GO_LINK="/usr/local/bin/go"; MIHOMO_LINK="/usr/local/bin/mihomo-full"
 
 title "0. 安装前安全预检"
 [[ $EUID -eq 0 ]] || err "请使用 root 运行：sudo bash install.sh"
@@ -20,6 +20,26 @@ if [[ -e "$INSTALL_DIR" ]]; then
   info "检测到受 Mihomo Full 管理的现有安装，允许安全更新"
 else
   info "未发现现有 Mihomo Full 安装，将使用临时目录完成事务式首次安装"
+fi
+
+if [[ -e "$GO_LINK" || -L "$GO_LINK" ]]; then
+  if [[ -L "$GO_LINK" ]]; then
+    existing_go_target="$(readlink -f "$GO_LINK" 2>/dev/null || true)"
+    if [[ "$existing_go_target" != "$INSTALL_DIR/manage.sh" ]]; then
+      err "$GO_LINK 已被其他程序占用；为避免覆盖现有 go 命令，本次安装已停止。请先处理该命令冲突。"
+    fi
+  else
+    err "$GO_LINK 已存在且不是 Mihomo Full 创建的符号链接；为避免覆盖现有 go 命令，本次安装已停止。"
+  fi
+fi
+
+if [[ -e "$MIHOMO_LINK" || -L "$MIHOMO_LINK" ]]; then
+  if [[ -L "$MIHOMO_LINK" ]]; then
+    existing_mihomo_target="$(readlink -f "$MIHOMO_LINK" 2>/dev/null || true)"
+    [[ "$existing_mihomo_target" == "$INSTALL_DIR/manage.sh" ]] || err "$MIHOMO_LINK 已被其他程序占用，拒绝覆盖"
+  else
+    err "$MIHOMO_LINK 已存在且不是符号链接，拒绝覆盖"
+  fi
 fi
 
 if [[ -d /etc/v2ray-agent ]]; then
@@ -63,7 +83,6 @@ mkdir -p "$OUTPUT_DIR" "$WORK_DIR/tools" "$WORK_DIR/telegram-bot"
 cleanup(){ if (( CLEANUP_STAGE )); then rm -rf -- "$WORK_DIR"; fi; }
 trap cleanup EXIT INT TERM
 
-# 更新时保留用户状态，不让公开仓库代码覆盖私有配置。
 if (( EXISTING )); then
   for f in settings.conf rulesets.local.conf; do
     [[ -f "$INSTALL_DIR/$f" ]] && install -m 600 "$INSTALL_DIR/$f" "$WORK_DIR/$f"
@@ -159,7 +178,13 @@ else
   rm -rf -- "$BACKUP_DIR" "${INSTALL_DIR}.previous"
 fi
 
-ln -sfn "${INSTALL_DIR}/manage.sh" /usr/local/bin/mihomo-full
+ln -sfn "${INSTALL_DIR}/manage.sh" "$MIHOMO_LINK"
+if [[ ! -e "$GO_LINK" && ! -L "$GO_LINK" ]]; then
+  ln -s "${INSTALL_DIR}/manage.sh" "$GO_LINK"
+  info "已创建快捷入口：go"
+else
+  info "已存在受 Mihomo Full 管理的快捷入口：go"
+fi
 if [[ -f "${INSTALL_DIR}/settings.conf" ]]; then
   sed -i "s|^OUTPUT_DIR=.*$|OUTPUT_DIR=$(printf '%q' "${INSTALL_DIR}/output")|" "${INSTALL_DIR}/settings.conf"
   chmod 600 "${INSTALL_DIR}/settings.conf"
@@ -187,8 +212,8 @@ if command -v nginx >/dev/null 2>&1; then info "检测到 Nginx 已安装"; else
 
 title "完成"
 echo -e "客户端导入：${GREEN}https://${DOMAIN}${FULL_PATH}${NC}"
-echo "更新入口：mihomo-full update"
-echo "管理入口：mihomo-full"
+echo "管理入口：go"
+echo "兼容入口：mihomo-full"
 echo "安全卸载：${INSTALL_DIR}/uninstall.sh"
-echo "TG Bot：已部署代码但默认不启用，填写 telegram-bot.env 后运行 telegram-bot/install-telegram-bot.sh"
+echo "TG Bot：已部署代码但默认不启用；运行 telegram-bot/install-telegram-bot.sh 后按提示设置"
 info "全部完成"
