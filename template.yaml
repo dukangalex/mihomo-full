@@ -3,11 +3,8 @@
 # 零泄露（宁可断网也不泄露） · 零误判 · 零风控隐患 · 高隐匿 · 国内流量无感
 #
 # ── 本版本相对早期 PATCH 版本的关键变更（供以后回来自己核对）──
-# 1. empty-fallback: REJECT 已从全部分组移除
-#    实测确认 FlClash/Bettbox 绑定的 mihomo 核心不识别这个字段，
-#    会导致整份配置直接加载失败。CMFA（跑 Alpha 开发分支）能识别，
-#    但为保证三个客户端通用，统一不使用。不要再加回来。
-# 2. tun.exclude-package 已移除，原因与上面相同（同样导致加载失败），
+# 1. 前置优选出口 empty-fallback: REJECT 是必须的，否则落地出口会在前置节点失效时直连，链式代理失效，不成立，
+# 2. tun.exclude-package 已移除，
 #    且该字段对设备级 VPN 接口检测（banking App 风控）本来就无效，
 #    银行 App 的直连保障靠 rules 里的 PROCESS-NAME-WILDCARD 兜底。
 # 3. 全部 rule-provider 与 geox-url 下载源统一使用 gcore.jsdelivr.net，
@@ -147,8 +144,7 @@ tun:
   dns-hijack:
     - any:53
     - tcp://any:53
-  # exclude-package 字段已再次移除：实测确认 FlClash/Bettbox 绑定的
-  # mihomo 核心版本不识别这个字段，会导致整份配置直接加载失败。
+  # exclude-package 字段已再次移除，
   # 该字段即便生效，对设备级 VPN 接口检测（农行掌上银行的实测情况）
   # 也无法解决，去掉不损失实际防护——银行 App 的直连保障已经由
   # rules 里的 PROCESS-NAME-WILDCARD 规则在路由层兜底。如需针对
@@ -639,7 +635,7 @@ proxy-providers:
       ip-version: ipv4-only
     health-check:
       enable: true
-      url: https://www.gstatic.com/generate_204  # 纯 IP，无域名解析无 SNI，与 Cloudflare 节点基础设施独立
+      url: https://www.gstatic.com/generate_204  
       interval: 300
       expected-status: 204              # 只接受 204，过滤“能连通但返回异常状态”的节点
 
@@ -655,7 +651,7 @@ proxy-providers:
       ip-version: ipv4-only
     health-check:
       enable: true
-      url: https://www.gstatic.com/generate_204  # 纯 IP，无域名解析无 SNI，与 Cloudflare 节点基础设施独立
+      url: https://www.gstatic.com/generate_204  
       interval: 600
       expected-status: 204              # 只接受 204，过滤“能连通但返回异常状态”的节点
 
@@ -671,20 +667,13 @@ proxy-groups:
     lazy: false
     timeout: 3000
     max-failed-times: 2
-    # empty-fallback: REJECT 不用（见头部说明 #1），组内节点全灭时会
+    empty-fallback: REJECT #组内节点全灭时会
     # 按 mihomo 默认行为尝试拨号最后已知节点直到超时失败，而不是立即拒绝
     # 参数已优化：更频繁探测 + 更低切换门槛 + 更严格超时，降低入口延迟
 
   - name: "落地优选出口"
     type: url-test
     use: [provider_exit]
-    # exclude-filter 是 mihomo 专门的"排除"字段，跟 filter（筛选保留）
-    # 是两个不同的字段，不要混用。之前这里用 filter 硬写
-    # "(?i)^(?!.*vmess).*$" 想拿负向先行断言凑排除效果，实测 Vmess
-    # 节点照样出现——因为 mihomo 是 Go 写的，Go 标准库正则引擎(RE2)
-    # 根本不支持 (?!...) 这种断言语法，这条规则要么编译失败要么被
-    # 静默忽略，从头到尾没生效过。exclude-filter 本身就是排除语义，
-    # 不需要再套断言语法，直接写要排除的关键词即可。
     url: https://www.gstatic.com/generate_204
     expected-status: 204
     interval: 180
@@ -748,7 +737,7 @@ proxy-groups:
 
   - name: "🛑 广告拦截"
     type: select
-    # 默认 REJECT-DROP；仅当免费站点依赖广告收入且被误伤/无法正常使用时，
+    # 默认 REJECT；仅当免费站点依赖广告收入且被误伤/无法正常使用时，
     # 用户才主动切换 DIRECT。此 DIRECT 不是全局直连开关。
     proxies: ["REJECT", "DIRECT"]
 
@@ -761,7 +750,7 @@ proxy-groups:
 #
 # 全链路 DNS 架构：
 #
-#  1) default-nameserver：加密 DoT + 纯 IP，只负责解析 DNS 服务端域名。
+#  1) default-nameserver：- tls://223.5.5.5,- tls://223.6.6.6
 #  2) proxy-server-nameserver：专门解析代理节点域名，使用腾讯 DNSPod DoH
 #     域名入口 + 阿里公共 DNS IP DoH 双厂商冗余，避免“解析代理节点需要先走代理”。
 #  3) nameserver-policy：按国内/境外目标精细选择解析器；国内统一使用同一组
