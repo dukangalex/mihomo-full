@@ -1,4 +1,4 @@
-name: One-shot airport DNS synchronization
+name: One-shot airport configuration synchronization
 
 on:
   push:
@@ -23,12 +23,13 @@ jobs:
       - run: pip install pyyaml
       - name: Sync airport overwrite from template
         run: python3 tools/sync-airport-overwrite.py
-      - name: Verify canonical DNS
+      - name: Verify canonical public configuration
         run: |
           python3 - <<'PY'
           from pathlib import Path
           t = Path('template.yaml').read_text(encoding='utf-8')
           a = Path('airport_overwrite.js').read_text(encoding='utf-8')
+
           required = [
               'https://doh.pub/dns-query',
               'https://223.5.5.5/dns-query',
@@ -39,10 +40,23 @@ jobs:
           for x in required:
               if x not in t or x not in a:
                   raise SystemExit(f'missing canonical DNS value: {x}')
-          for x in ['https://dns.alidns.com/dns-query', 'https://120.53.53.53/dns-query']:
+
+          legacy = [
+              'https://dns.alidns.com/dns-query',
+              'https://120.53.53.53/dns-query',
+          ]
+          for x in legacy:
               if x in a:
                   raise SystemExit(f'legacy DNS value remains in airport_overwrite.js: {x}')
-          print('airport DNS synchronization verification passed')
+
+          # The synchronization workflow itself must never become a second
+          # configuration source. Legacy DNS strings are forbidden here too.
+          workflow = Path('.github/workflows/one-shot-airport-dns-sync.yml').read_text(encoding='utf-8')
+          for x in legacy:
+              if x in workflow:
+                  raise SystemExit(f'legacy DNS value remains in synchronization workflow: {x}')
+
+          print('canonical public configuration verification passed')
           PY
       - name: Commit synchronized airport overwrite
         run: |
@@ -50,5 +64,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add airport_overwrite.js
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'fix: synchronize airport DNS with template'
+          git commit -m 'fix: synchronize airport overwrite with template'
           git push
