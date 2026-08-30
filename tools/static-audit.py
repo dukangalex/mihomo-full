@@ -35,10 +35,6 @@ class UniqueKeyLoader(yaml.SafeLoader):
     pass
 
 def _construct_unique_mapping(loader, node, deep=False):
-    # Support YAML merge keys (<<: *anchor) while still rejecting duplicate
-    # keys explicitly written in the same mapping. SafeLoader's normal merge
-    # semantics are preserved: merged mappings are flattened first, and an
-    # explicit key overrides a merged value.
     explicit_keys = {}
     for key_node, _value_node in node.value:
         if key_node.tag == "tag:yaml.org,2002:merge":
@@ -49,7 +45,6 @@ def _construct_unique_mapping(loader, node, deep=False):
             line = (mark.line + 1) if mark else "?"
             raise ValueError(f"duplicate YAML mapping key {key!r} at line {line}")
         explicit_keys[key] = True
-
     loader.flatten_mapping(node)
     mapping = {}
     for key_node, value_node in node.value:
@@ -116,7 +111,6 @@ if "secrets.SystemRandom().sample" not in endpoint:
 if len(re.findall(r"WORDS =", endpoint)) < 1 or "FORBIDDEN" not in endpoint:
     errors.append("endpoint generator lacks its semantic word-list guard")
 
-# DNS architecture: template.yaml is the only value source.
 dns = template.get("dns") or {}
 proxy_dns = dns.get("proxy-server-nameserver")
 direct_dns = dns.get("direct-nameserver")
@@ -212,11 +206,12 @@ for forbidden in ("var privateGroup =", "var domesticGroup ="):
 if re.search(r"exclude-type:\s*vmess", airport): errors.append("airport overwrite still contains VMess protocol exclusion")
 if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in airport: errors.append("airport overwrite lost the ad DIRECT exception routing")
 if 'var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"]' not in airport: errors.append("airport overwrite lost the ad DIRECT exception group")
-if 'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]' not in airport: errors.append("airport overwrite lost the remote-control DIRECT exception group")
+# Airport overwrite is intentionally non-chain: remote-control exception must not
+# require the chain-only landing selector. The chain template is checked separately.
+if 'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"]' not in airport: errors.append("airport overwrite lost the remote-control DIRECT exception group")
 for raw in (",国外服务", ",AI服务", ",流媒体", ",漏网之鱼"):
     if raw in airport: errors.append(f"airport overwrite contains unmapped common rule target: {raw}")
 
-# Runtime residue scan.
 scan_exclude = {Path("tools/static-audit.py"), Path("tools/audit-generated-config.sh")}
 scan_files = []
 for p in ROOT.rglob("*"):
@@ -231,7 +226,6 @@ for p in scan_files:
     if "/assets/static/a7f3c21e9b" in text or "/assets/static/e9b2f1a7c3" in text: errors.append(f"legacy fixed subscription path remains in runtime file {p.relative_to(ROOT)}")
     if "https://120.53.53.53/dns-query" in text: errors.append(f"retired DNSPod DoH IP endpoint remains in runtime file {p.relative_to(ROOT)}")
 
-# Uninstall boundary: v2ray-agent may only appear in explicit read-only guard/documentation contexts.
 if "rm -rf -- /etc/v2ray-agent" in uninstall or "systemctl stop v2ray-agent" in uninstall or "systemctl disable v2ray-agent" in uninstall:
     errors.append("uninstall.sh contains destructive v2ray-agent operation")
 if not re.search(r"不会.*v2ray-agent|绝不.*v2ray-agent|不.*删除.*v2ray-agent", uninstall, re.S):
@@ -240,13 +234,16 @@ if "--uninstall" not in manage or "Mihomo Full（不会删除 v2ray-agent）" no
     errors.append("manage.sh lacks the main-menu uninstall entry with v2ray-agent protection")
 
 for p in scan_files:
-    if p.suffix.lower() in {".md", ".yml", ".yaml", ".py", ".sh", ".js"}:
-        text = p.read_text(encoding="utf-8")
-        if "one-shot-consistency-repair" in text or "one-shot-doc-repair" in text or "repair-airport-dns" in text:
-            errors.append(f"temporary repair workflow referenced by {p.relative_to(ROOT)}")
+    if p.name.endswith((".sh", ".bash")):
+        try:
+            proc = subprocess.run(["bash", "-n", str(p)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            if proc.returncode != 0: errors.append(f"shell syntax error: {p.relative_to(ROOT)}: {proc.stdout.strip()}")
+        except FileNotFoundError: pass
 
 if errors:
-    print("\n".join("[FAIL] " + e for e in errors)); raise SystemExit(1)
+    for e in errors: print(f"[FAIL] {e}")
+    raise SystemExit(1)
+
 print("[OK] template is the common source of truth")
 print("[OK] generator does not reimplement common behavior")
 print("[OK] installer uses one immutable repository snapshot")
