@@ -5,7 +5,6 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC
 info(){ echo -e "${GREEN}[+]${NC} $1"; }; warn(){ echo -e "${YELLOW}[!]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1" >&2; exit 1; }; title(){ echo -e "\n${CYAN}==== $1 ====${NC}\n"; }
 INSTALL_DIR="/opt/mihomo-full"; REPO="dukangalex/mihomo-full"; MARKER_VALUE="mihomo-full-managed-v1"
 
-# ---------- 安装前只读预检 ----------
 title "0. 安装前安全预检"
 [[ $EUID -eq 0 ]] || err "请使用 root 运行：sudo bash install.sh"
 for cmd in curl python3 systemctl; do command -v "$cmd" >/dev/null 2>&1 || err "需要 $cmd"; done
@@ -23,7 +22,6 @@ else
   info "未发现现有 Mihomo Full 安装，将使用临时目录完成事务式首次安装"
 fi
 
-# v2ray-agent 只读检测；绝不停止、修改或删除它。
 if [[ -d /etc/v2ray-agent ]]; then
   info "检测到 v2ray-agent：仅读取其 clashMeta 输出，不接管其生命周期"
 else
@@ -54,17 +52,25 @@ V2RAY_DIR="${V2RAY_DIR:-/etc/v2ray-agent/subscribe_local/clashMeta}"
 [[ "$V2RAY_DIR" == /* && "$V2RAY_DIR" != *$'\n'* && "$V2RAY_DIR" != *$'\r'* ]] || err "v2ray-agent 目录必须是绝对路径且不能包含换行"
 
 if (( EXISTING )); then
-  WORK_DIR="$INSTALL_DIR"
-  CLEANUP_STAGE=0
+  WORK_DIR="$(mktemp -d /opt/.mihomo-full-update.XXXXXX)"
+  CLEANUP_STAGE=1
 else
   WORK_DIR="$(mktemp -d /opt/.mihomo-full-install.XXXXXX)"
   CLEANUP_STAGE=1
-  cleanup(){ rm -rf -- "$WORK_DIR"; }
-  trap cleanup EXIT INT TERM
 fi
 OUTPUT_DIR="${WORK_DIR}/output"
 MARKER="${WORK_DIR}/.mihomo-full-managed"
 mkdir -p "$OUTPUT_DIR" "$WORK_DIR/tools" "$WORK_DIR/telegram-bot"
+cleanup(){ if (( CLEANUP_STAGE )); then rm -rf -- "$WORK_DIR"; fi; }
+trap cleanup EXIT INT TERM
+
+# 更新时保留用户状态，不让公开仓库代码覆盖私有配置。
+if (( EXISTING )); then
+  for f in settings.conf rulesets.local.conf; do
+    [[ -f "$INSTALL_DIR/$f" ]] && install -m 600 "$INSTALL_DIR/$f" "$WORK_DIR/$f"
+  done
+  [[ -f "$INSTALL_DIR/telegram-bot.env" ]] && install -m 600 "$INSTALL_DIR/telegram-bot.env" "$WORK_DIR/telegram-bot.env"
+fi
 
 download(){ curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 -o "$1" "$2" || err "下载失败：$2"; }
 
@@ -77,14 +83,14 @@ download "${WORK_DIR}/tools/generate-endpoint.py" "${RAW_BASE}/tools/generate-en
 download "${WORK_DIR}/tools/load-settings.sh" "${RAW_BASE}/tools/load-settings.sh"
 download "${WORK_DIR}/tools/audit-generated-config.sh" "${RAW_BASE}/tools/audit-generated-config.sh"
 download "${WORK_DIR}/telegram-bot/bot.py" "${RAW_BASE}/telegram-bot/bot.py"
+download "${WORK_DIR}/telegram-bot/vps_usage.py" "${RAW_BASE}/telegram-bot/vps_usage.py"
 download "${WORK_DIR}/telegram-bot/install-telegram-bot.sh" "${RAW_BASE}/telegram-bot/install-telegram-bot.sh"
 download "${WORK_DIR}/telegram-bot/mihomo-full-bot.service" "${RAW_BASE}/telegram-bot/mihomo-full-bot.service"
 download "${WORK_DIR}/telegram-bot/requirements.txt" "${RAW_BASE}/telegram-bot/requirements.txt"
 download "${WORK_DIR}/telegram-bot.example.env" "${RAW_BASE}/telegram-bot.example.env"
 chmod 700 "${WORK_DIR}/manage.sh" "${WORK_DIR}/generate.sh" "${WORK_DIR}/uninstall.sh" "${WORK_DIR}/tools/audit-generated-config.sh" "${WORK_DIR}/tools/generate-endpoint.py" "${WORK_DIR}/tools/load-settings.sh" "${WORK_DIR}/telegram-bot/install-telegram-bot.sh"
-chmod 600 "${WORK_DIR}/telegram-bot/bot.py" "${WORK_DIR}/telegram-bot/requirements.txt"
+chmod 600 "${WORK_DIR}/telegram-bot/bot.py" "${WORK_DIR}/telegram-bot/vps_usage.py" "${WORK_DIR}/telegram-bot/requirements.txt"
 
-# 固定 Endpoint：首次安装生成一次；更新严格保留旧值。
 if [[ -f "${WORK_DIR}/settings.conf" ]]; then
   source "${WORK_DIR}/tools/load-settings.sh" "${WORK_DIR}/settings.conf"
   [[ "$FIXED_FULL_CONFIG_PATH" =~ ^/assets/[a-z]+(-[a-z]+){7,15}$ ]] || err "已有订阅路径格式不符合当前 Endpoint 策略，拒绝覆盖"
@@ -122,11 +128,9 @@ chmod 600 "${WORK_DIR}/settings.conf"
 [[ -f "${WORK_DIR}/rulesets.local.conf" ]] || printf '%s\n' '# provider|https_mrs_url|behavior|target|enabled' > "${WORK_DIR}/rulesets.local.conf"
 chmod 600 "${WORK_DIR}/rulesets.local.conf"
 
-# ---------- 事务式首次生成 ----------
 title "3. 生成并审计配置"
 bash "${WORK_DIR}/generate.sh"
 
-# 首次安装只有在下载、生成、审计全部成功后才写入 ownership marker 并原子落地。
 if (( ! EXISTING )); then
   printf '%s\n' "$MARKER_VALUE" > "$MARKER"
   chmod 600 "$MARKER"
@@ -136,15 +140,28 @@ if (( ! EXISTING )); then
   trap - EXIT INT TERM
   info "首次安装事务提交成功：正式目录已原子落地"
 else
+  # 当前更新仍在 staging 中完成生成/审计；提交阶段保持正式路径不变。
   printf '%s\n' "$MARKER_VALUE" > "$MARKER"
   chmod 600 "$MARKER"
+  chmod 700 "$WORK_DIR" "$WORK_DIR/tools" "$WORK_DIR/telegram-bot"
+  BACKUP_DIR="$(mktemp -d /opt/.mihomo-full-backup.XXXXXX)"
+  cp -a -- "$INSTALL_DIR/." "$BACKUP_DIR/"
+  if ! mv -- "$WORK_DIR" "${INSTALL_DIR}.next"; then
+    rm -rf -- "$BACKUP_DIR"
+    err "无法准备更新目录，原安装保持不变"
+  fi
+  CLEANUP_STAGE=0
+  if ! mv -- "$INSTALL_DIR" "${INSTALL_DIR}.previous" || ! mv -- "${INSTALL_DIR}.next" "$INSTALL_DIR"; then
+    rm -rf -- "$INSTALL_DIR" "${INSTALL_DIR}.next" 2>/dev/null || true
+    mv -- "$BACKUP_DIR" "$INSTALL_DIR"
+    rm -rf -- "${INSTALL_DIR}.previous" 2>/dev/null || true
+    err "更新提交失败，已尝试恢复原安装"
+  fi
+  rm -rf -- "$BACKUP_DIR" "${INSTALL_DIR}.previous"
 fi
 
-# 只在正式目录提交成功后创建管理命令链接。
 ln -sfn "${INSTALL_DIR}/manage.sh" /usr/local/bin/mihomo-full
-
-# settings.conf 中 OUTPUT_DIR 在首次安装时使用临时目录，需要在正式落地后修正为固定路径。
-if (( ! EXISTING )); then
+if [[ -f "${INSTALL_DIR}/settings.conf" ]]; then
   sed -i "s|^OUTPUT_DIR=.*$|OUTPUT_DIR=$(printf '%q' "${INSTALL_DIR}/output")|" "${INSTALL_DIR}/settings.conf"
   chmod 600 "${INSTALL_DIR}/settings.conf"
 fi
