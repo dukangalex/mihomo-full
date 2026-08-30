@@ -125,7 +125,14 @@ def update_private_env(values):
 
 
 def restart_bot():
-    subprocess.run(["systemctl", "restart", "mihomo-full-bot.service"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # Restart after the current Telegram update has been acknowledged. A synchronous
+    # restart can terminate this process before the confirmation message is delivered.
+    subprocess.Popen(
+        ["bash", "-lc", "sleep 1; systemctl restart mihomo-full-bot.service"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
 
 
 async def start(update, context):
