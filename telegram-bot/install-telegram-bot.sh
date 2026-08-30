@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # 安装 Mihomo-Full Telegram 管理机器人
 set -euo pipefail
-BASE="/opt/mihomo-full"; BOT_DIR="$BASE/telegram-bot"; ENV_FILE="$BASE/telegram-bot.env"; SERVICE_SRC="$BOT_DIR/mihomo-full-bot.service"
+BASE="/opt/mihomo-full"; BOT_DIR="$BASE/telegram-bot"; ENV_FILE="$BASE/telegram-bot.env"; SERVICE_SRC="$BOT_DIR/mihomo-full-bot.service"; BOT_UNINSTALLER="$BOT_DIR/uninstall-bot.sh"
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 info(){ echo -e "${GREEN}[+]${NC} $1"; }; warn(){ echo -e "${YELLOW}[!]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || err "请使用 root 运行"; [[ -f "$BOT_DIR/bot.py" ]] || err "找不到 $BOT_DIR/bot.py，请先安装 Mihomo Full"
 [[ -f "$BOT_DIR/vps_usage.py" ]] || err "缺少 VPS 流量统计模块，请重新安装/更新 Mihomo Full"
+[[ -f "$BOT_UNINSTALLER" ]] || err "缺少 Bot 独立卸载器，请先更新 Mihomo Full"
 command -v python3 >/dev/null || err "需要 python3"; python3 -m pip --version >/dev/null 2>&1 || err "需要 python3-pip"
 
 write_env(){
@@ -47,7 +48,6 @@ if [[ ! -f "$ENV_FILE" ]]; then
   write_env "$TG_BOT_TOKEN" "$TG_ADMIN_IDS" "$VPS_MONTHLY_GB" "$VPS_EXPIRES_AT" "$VPS_TRAFFIC_ALERT_PERCENT" "$VPS_TRAFFIC_INTERFACE"
   info "已保存 Telegram Bot 私有配置"
 else
-  # Backfill newly introduced VPS-plan settings without overwriting existing values.
   for line in 'VPS_MONTHLY_GB=0' 'VPS_EXPIRES_AT=' 'VPS_TRAFFIC_ALERT_PERCENT=80' 'VPS_TRAFFIC_INTERFACE='; do
     key="${line%%=*}"
     grep -q "^${key}=" "$ENV_FILE" || printf '%s\n' "$line" >> "$ENV_FILE"
@@ -55,7 +55,6 @@ else
   chmod 600 "$ENV_FILE"
 fi
 
-# Parse the fixed configuration format as data. Never source the Telegram config.
 declare -A CFG=()
 while IFS= read -r line || [[ -n "$line" ]]; do
   [[ -z "$line" || "$line" == \#* ]] && continue
@@ -84,7 +83,7 @@ PY
 
 python3 -m py_compile "$BOT_DIR/bot.py" "$BOT_DIR/vps_usage.py"
 python3 -m pip install --disable-pip-version-check --no-input -r "$BOT_DIR/requirements.txt"
-chmod 700 "$BOT_DIR/bot.py" "$BOT_DIR/vps_usage.py"
+chmod 700 "$BOT_DIR/bot.py" "$BOT_DIR/vps_usage.py" "$BOT_UNINSTALLER"
 install -m 644 "$SERVICE_SRC" /etc/systemd/system/mihomo-full-bot.service
 systemctl daemon-reload
 systemctl enable --now mihomo-full-bot.service
