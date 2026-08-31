@@ -63,6 +63,7 @@ FILES=(
   generate.sh template.yaml manage.sh uninstall.sh update.sh
   tools/generate-endpoint.py tools/load-settings.sh tools/audit-generated-config.sh
   telegram-bot/bot.py telegram-bot/vps_usage.py telegram-bot/install-telegram-bot.sh
+  telegram-bot/uninstall-bot.sh
   telegram-bot/mihomo-full-bot.service telegram-bot/requirements.txt telegram-bot.example.env
 )
 for f in "${FILES[@]}"; do
@@ -70,7 +71,7 @@ for f in "${FILES[@]}"; do
   download "$STAGE/$f" "$RAW_BASE/$f"
 done
 
-chmod 700 "$STAGE/generate.sh" "$STAGE/manage.sh" "$STAGE/uninstall.sh" "$STAGE/update.sh" "$STAGE/tools" "$STAGE/tools/audit-generated-config.sh" "$STAGE/tools/generate-endpoint.py" "$STAGE/tools/load-settings.sh" "$STAGE/telegram-bot" "$STAGE/telegram-bot/install-telegram-bot.sh"
+chmod 700 "$STAGE/generate.sh" "$STAGE/manage.sh" "$STAGE/uninstall.sh" "$STAGE/update.sh" "$STAGE/tools" "$STAGE/tools/audit-generated-config.sh" "$STAGE/tools/generate-endpoint.py" "$STAGE/tools/load-settings.sh" "$STAGE/telegram-bot" "$STAGE/telegram-bot/install-telegram-bot.sh" "$STAGE/telegram-bot/uninstall-bot.sh"
 chmod 600 "$STAGE/settings.conf" "$STAGE/rulesets.local.conf" "$STAGE/telegram-bot.env" 2>/dev/null || true
 
 [[ -f "$STAGE/settings.conf" ]] || err "当前安装缺少 settings.conf，拒绝自动更新；请先修复安装"

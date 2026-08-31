@@ -166,10 +166,11 @@ def restore_airport_exceptions(text: str) -> str:
         text,
         flags=re.MULTILINE,
     )
-    text = text.replace(
-        '"RULE-SET,category-ads-all,REJECT-DROP",',
-        '"RULE-SET,category-ads-all,🛑 广告拦截",',
-    )
+    # NOTE: template.yaml's ad rule target is already the literal Airport
+    # group name ("RULE-SET,category-ads-all,🛑 广告拦截"), so no rewrite is
+    # needed here. A prior version of the template used a bare REJECT-DROP
+    # target requiring translation; that mapping has been removed since it
+    # can no longer match anything template.yaml produces.
     text = re.sub(r'^\s*var privateGroup = .*?;\s*\n', "", text, flags=re.MULTILINE)
     text = re.sub(r'^\s*var domesticGroup = .*?;\s*\n', "", text, flags=re.MULTILINE)
     text = text.replace('adBlockGroup, privateGroup, domesticGroup,', 'adBlockGroup,')
