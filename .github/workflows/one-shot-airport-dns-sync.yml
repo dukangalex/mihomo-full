@@ -1,12 +1,12 @@
 name: One-shot airport configuration synchronization
 
 on:
-  push:
-    paths:
-      - '.github/workflows/one-shot-airport-dns-sync.yml'
-      - 'template.yaml'
-      - 'airport_overwrite.js'
-      - 'tools/sync-airport-overwrite.py'
+  # One-time DNS migration workflow. The migration it enforces has already
+  # landed and is now covered by the permanent stale-literal scan in
+  # tools/static-audit.py. Keeping a push trigger here would race with
+  # sync-airport-overwrite.yml, which listens on the same paths and also
+  # commits/pushes airport_overwrite.js. Left as workflow_dispatch only so
+  # it remains available as a manual, on-demand repair tool.
   workflow_dispatch:
 
 permissions:
