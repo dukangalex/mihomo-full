@@ -190,25 +190,158 @@ if [[ -f "${INSTALL_DIR}/settings.conf" ]]; then
   chmod 600 "${INSTALL_DIR}/settings.conf"
 fi
 
-title "4. Nginx 配置（必须）"
-cat <<EOF
-请把以下内容加入你的 Nginx server 块，然后执行 nginx -t && systemctl reload nginx：
+title "4. 配置 Nginx（自动）"
+SNIPPET_FILE="/etc/nginx/snippets/mihomo-full-assets.conf"
+BEGIN_MARK="# BEGIN mihomo-full managed assets"
+END_MARK="# END mihomo-full managed assets"
+INCLUDE_LINE="include ${SNIPPET_FILE};"
 
+command -v nginx >/dev/null 2>&1 || err "未检测到 Nginx。
+
+操作指示：
+  1) Debian/Ubuntu:  apt update && apt install -y nginx
+  2) RHEL/CentOS:    dnf install -y nginx
+  3) 安装并启动 Nginx 后，为域名 ${DOMAIN} 配置 HTTPS（见下方证书步骤）
+  4) 重新执行本安装脚本
+"
+
+NGX_HOST="${DOMAIN%%:*}"
+
+has_cert=0
+if [[ -f "/etc/letsencrypt/live/${NGX_HOST}/fullchain.pem" && -f "/etc/letsencrypt/live/${NGX_HOST}/privkey.pem" ]]; then
+  has_cert=1
+  info "检测到 Let's Encrypt 证书：/etc/letsencrypt/live/${NGX_HOST}/"
+fi
+
+mapfile -t NGX_CANDIDATES < <(find /etc/nginx -type f \( -name '*.conf' -o -name '*enabled*' \) 2>/dev/null | sort -u)
+MATCH_CONF=""
+for f in "${NGX_CANDIDATES[@]:-}"; do
+  [[ -f "$f" ]] || continue
+  if grep -Eq "server_name[[:space:]]+[^;]*\b${NGX_HOST//./\\.}\b" "$f" 2>/dev/null; then
+    MATCH_CONF="$f"
+    if grep -qE 'ssl_certificate[[:space:]]+' "$f" 2>/dev/null; then
+      has_cert=1
+    fi
+    break
+  fi
+done
+
+if (( ! has_cert )); then
+  err "未检测到域名 ${NGX_HOST} 的有效 HTTPS 证书，拒绝继续（订阅必须走 HTTPS）。
+
+操作指示（任选其一完成证书后，重新执行本安装脚本）：
+
+【方式 A · certbot 自动签发（常用）】
+  1) 确认 ${NGX_HOST} 的 DNS A/AAAA 已指向本机公网 IP
+  2) 安装 certbot：
+       Debian/Ubuntu:  apt install -y certbot python3-certbot-nginx
+       RHEL/CentOS:    dnf install -y certbot python3-certbot-nginx
+  3) 若已有该域名的 Nginx server 块：
+       certbot --nginx -d ${NGX_HOST}
+     若还没有 server 块，可先：
+       certbot certonly --nginx -d ${NGX_HOST}
+       或先写好带 server_name ${NGX_HOST} 的 80/443 站点再执行 certbot --nginx -d ${NGX_HOST}
+  4) 确认存在：
+       /etc/letsencrypt/live/${NGX_HOST}/fullchain.pem
+  5) 重新运行安装：
+       bash <(curl -fsSL https://raw.githubusercontent.com/dukangalex/mihomo-full/main/install.sh)
+
+【方式 B · 已有其它路径的证书】
+  在对应域名的 Nginx server 块中配置 ssl_certificate / ssl_certificate_key 后执行：
+       nginx -t && systemctl reload nginx
+  再重新运行本安装脚本。
+
+说明：本脚本不会在无证书时强行开放明文 HTTP 订阅，以避免订阅内容被中间人读取。"
+fi
+
+mkdir -p /etc/nginx/snippets
+cat > "$SNIPPET_FILE" <<EOF
+# Managed by mihomo-full — do not edit by hand; re-run install/generate to refresh paths.
+${BEGIN_MARK}
 location = ${FULL_PATH} {
     alias ${INSTALL_DIR}/output/full-config.yaml;
     default_type application/octet-stream;
     add_header Cache-Control "no-cache";
+    add_header Content-Disposition "inline";
 }
-
 location = ${NODES_PATH} {
     alias ${INSTALL_DIR}/output/exit-nodes.yaml;
     default_type application/octet-stream;
     add_header Cache-Control "no-cache";
+    add_header Content-Disposition "inline";
 }
-
-location /assets/ { return 404; }
+location /assets/ {
+    return 404;
+}
+${END_MARK}
 EOF
-if command -v nginx >/dev/null 2>&1; then info "检测到 Nginx 已安装"; else warn "未检测到 Nginx，请自行配置 Web 服务器"; fi
+chmod 644 "$SNIPPET_FILE"
+info "已写入 Nginx 片段：$SNIPPET_FILE"
+
+if [[ -z "$MATCH_CONF" ]]; then
+  err "已写入片段，但未找到 server_name 含 ${NGX_HOST} 的 Nginx 站点配置。
+
+操作指示：
+  1) 编辑站点配置（常见路径）：
+       /etc/nginx/sites-available/default
+       /etc/nginx/sites-enabled/
+       /etc/nginx/conf.d/
+  2) 在域名 ${NGX_HOST} 的 HTTPS server { ... } 内加入一行：
+       include ${SNIPPET_FILE};
+  3) 测试并重载：
+       nginx -t && systemctl reload nginx
+  4) 若站点文件已存在只是未匹配到，检查 server_name 是否恰好为 ${NGX_HOST}
+  5) 完成后客户端导入：
+       https://${DOMAIN}${FULL_PATH}
+
+说明：文件与订阅内容已生成；只需补上 include 并 reload 即可使用。"
+fi
+
+if grep -Fq "$SNIPPET_FILE" "$MATCH_CONF" 2>/dev/null; then
+  info "站点配置已包含 mihomo-full 片段引用：$MATCH_CONF"
+else
+  BACKUP_NGX="${MATCH_CONF}.mihomo-full.bak.$(date +%Y%m%d%H%M%S)"
+  cp -a -- "$MATCH_CONF" "$BACKUP_NGX"
+  info "已备份 Nginx 配置：$BACKUP_NGX"
+  TMP_NGX="$(mktemp)"
+  HOST_RE="${NGX_HOST//./\\.}"
+  awk -v hostre="$HOST_RE" -v incl="$INCLUDE_LINE" '
+    BEGIN { done=0 }
+    {
+      print
+      if (!done && $0 ~ ("server_name[[:space:]]+[^;]*" hostre)) {
+        print "    " incl
+        done=1
+      }
+    }
+    END { if (!done) exit 2 }
+  ' "$MATCH_CONF" > "$TMP_NGX" || {
+    rm -f "$TMP_NGX"
+    err "无法在 $MATCH_CONF 中自动插入 include。请手动在该域名的 server 块内加入：
+    include ${SNIPPET_FILE};
+然后执行：nginx -t && systemctl reload nginx"
+  }
+  mv -- "$TMP_NGX" "$MATCH_CONF"
+  info "已在 $MATCH_CONF 插入：include ${SNIPPET_FILE};"
+fi
+
+if ! nginx -t 2>/tmp/mihomo-full-nginx-test.err; then
+  echo "----- nginx -t 输出 -----" >&2
+  cat /tmp/mihomo-full-nginx-test.err >&2 || true
+  err "nginx -t 失败，已保留片段与备份，未执行 reload。
+
+操作指示：
+  1) 查看上方错误信息
+  2) 必要时用备份恢复：ls /etc/nginx/**/*.mihomo-full.bak.* 2>/dev/null
+  3) 修好配置后：nginx -t && systemctl reload nginx
+  4) 客户端地址：https://${DOMAIN}${FULL_PATH}"
+fi
+
+if systemctl reload nginx 2>/dev/null || nginx -s reload 2>/dev/null; then
+  info "Nginx 已重载，固定订阅路径已生效"
+else
+  warn "无法自动 reload Nginx，请手动执行：systemctl reload nginx"
+fi
 
 title "完成"
 echo -e "客户端导入：${GREEN}https://${DOMAIN}${FULL_PATH}${NC}"
