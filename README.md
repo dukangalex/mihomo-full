@@ -11,7 +11,7 @@
 - 一台已经安装并正常运行 **v2ray-agent** 的 VPS。
 - 一个已经解析到 VPS 的域名。
 - 一个 HTTPS 机场订阅地址。
-- VPS 上可正常使用 Nginx。
+- VPS 上可正常使用 Nginx，且该域名**已具备 HTTPS 证书**（推荐 Let's Encrypt / certbot）。
 
 本项目不会安装、升级、接管或卸载 v2ray-agent。
 
@@ -27,26 +27,31 @@ bash <(curl -fsSL https://raw.githubusercontent.com/dukangalex/mihomo-full/main/
 
 1. 机场订阅链接
 2. 域名
-3. v2ray-agent 的 clashMeta 目录
+3. v2ray-agent 的 clashMeta 目录（多数情况直接回车）
 
-安装完成后会显示两个固定 HTTPS 地址。
+安装完成后会显示固定 HTTPS 订阅地址。
 
 > 固定地址只在首次安装时生成。以后更换机场、更新落地节点或更新项目时，不需要更换客户端订阅地址。
 
-## 2. 配置 Nginx
+## 2. Nginx 与 HTTPS
 
-安装结束后，安装器会显示需要加入 Nginx 的两个 `location`。
+安装脚本会**尽量自动**：
 
-把安装器显示的内容加入对应的 `server` 块，然后执行：
+1. 检测域名是否已有 HTTPS 证书（Let's Encrypt 或站点中的 `ssl_certificate`）
+2. 写入 `/etc/nginx/snippets/mihomo-full-assets.conf`
+3. 在匹配的 `server_name` 站点中插入 `include`
+4. 执行 `nginx -t` 并 reload
+
+若**没有证书**或**找不到对应站点配置**，脚本会**报错退出**并打印可执行的操作指示（例如用 certbot 签发后再重新运行安装），不会在无 HTTPS 时强行上线订阅。
+
+手动复查：
 
 ```bash
 nginx -t
-systemctl reload nginx
+curl -fsSI "https://你的域名/你的订阅路径"
 ```
 
-浏览器或客户端访问完整订阅地址即可测试。
-
-如果访问了不存在的 `/assets/` 地址，应返回 404。
+访问不存在的 `/assets/` 路径应返回 404。
 
 ## 3. 管理入口
 
