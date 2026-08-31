@@ -7,7 +7,16 @@ INSTALL_DIR="/opt/mihomo-full"; REPO="dukangalex/mihomo-full"; MARKER_VALUE="mih
 
 title "0. 安装前安全预检"
 [[ $EUID -eq 0 ]] || err "请使用 root 运行：sudo bash install.sh"
-for cmd in curl python3 systemctl; do command -v "$cmd" >/dev/null 2>&1 || err "需要 $cmd"; done
+for cmd in curl python3 systemctl awk; do command -v "$cmd" >/dev/null 2>&1 || err "需要 $cmd"; done
+command -v nginx >/dev/null 2>&1 || err "未检测到 Nginx。
+
+操作指示：
+  1) Debian/Ubuntu:  apt update && apt install -y nginx
+  2) RHEL/CentOS:    dnf install -y nginx
+  3) 安装并启动 Nginx：systemctl enable --now nginx
+  4) 为域名配置好 HTTPS 证书（见 README 步骤 C）
+  5) 重新执行本安装脚本
+"
 
 EXISTING=0
 if [[ -e "$INSTALL_DIR" ]]; then
@@ -56,8 +65,19 @@ systemctl is-system-running >/dev/null 2>&1 || {
   esac
 }
 
-REPO_COMMIT="$(curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 "https://api.github.com/repos/${REPO}/commits/main" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha",""))')"
-[[ "$REPO_COMMIT" =~ ^[0-9a-f]{40}$ ]] || err "无法解析仓库 main 的有效提交 SHA"
+REPO_COMMIT_JSON="$(curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 "https://api.github.com/repos/${REPO}/commits/main")" || err "无法连接 GitHub API（网络异常或 DNS 解析失败）。
+
+请检查：
+  1) VPS 网络是否能访问 api.github.com：
+       curl -v https://api.github.com
+  2) DNS 是否正常解析：
+       getent ahostsv4 api.github.com
+  3) 网络恢复后重新执行本安装脚本"
+REPO_COMMIT="$(printf '%s' "$REPO_COMMIT_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha",""))' 2>/dev/null || true)"
+[[ "$REPO_COMMIT" =~ ^[0-9a-f]{40}$ ]] || err "无法解析仓库 main 的有效提交 SHA（可能是 GitHub API 限流或返回异常）。
+
+请稍后重试，或手动检查：
+  curl -s https://api.github.com/repos/${REPO}/commits/main"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/${REPO_COMMIT}"
 
 clear; echo -e "${CYAN}"; echo "  Mihomo 完整配置 + v2ray-agent 一键部署"; echo "  --------------------------------------"; echo "  · 客户端只导入一个固定订阅"; echo "  · 公网路径安装时生成一次，使用自然语言随机词组"; echo "  · 公网路径不使用 hex / UUID / token / 节点语义"; echo -e "${NC}"
@@ -195,15 +215,6 @@ SNIPPET_FILE="/etc/nginx/snippets/mihomo-full-assets.conf"
 BEGIN_MARK="# BEGIN mihomo-full managed assets"
 END_MARK="# END mihomo-full managed assets"
 INCLUDE_LINE="include ${SNIPPET_FILE};"
-
-command -v nginx >/dev/null 2>&1 || err "未检测到 Nginx。
-
-操作指示：
-  1) Debian/Ubuntu:  apt update && apt install -y nginx
-  2) RHEL/CentOS:    dnf install -y nginx
-  3) 安装并启动 Nginx 后，为域名 ${DOMAIN} 配置 HTTPS（见下方证书步骤）
-  4) 重新执行本安装脚本
-"
 
 NGX_HOST="${DOMAIN%%:*}"
 

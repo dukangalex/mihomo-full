@@ -40,7 +40,15 @@ log "提取 v2ray-agent 落地节点（不按协议类型排除节点）..."
 if [[ -d "$V2RAY_AGENT_CLASHMETA_DIR" ]]; then
   find "$V2RAY_AGENT_CLASHMETA_DIR" -type f -print0 2>/dev/null | while IFS= read -r -d '' f; do [[ -s "$f" ]] && cat "$f" >> "$TMP_NODES"; done
 else
-  warn "未找到目录 $V2RAY_AGENT_CLASHMETA_DIR（请先用 vasma 添加协议）"
+  err "未找到目录 $V2RAY_AGENT_CLASHMETA_DIR。
+
+请先完成 v2ray-agent 节点配置：
+  1) 在 VPS 上运行 v2ray-agent 菜单（常见为 vasma），添加至少一种入站/协议
+  2) 确认已生成 clashMeta 订阅文件：
+       ls -la $V2RAY_AGENT_CLASHMETA_DIR
+  3) 确认目录里有文件后，重新执行本脚本或重新运行一键安装
+
+不要在没有落地节点的情况下继续，否则生成的订阅会没有可用节点。"
 fi
 {
   echo "# auto-generated $(date '+%Y-%m-%d %H:%M:%S')"
@@ -62,6 +70,17 @@ fi
   fi
 } > "$EXIT_NODES"
 NODE_COUNT=$(grep -cE "^  - [Nn][Aa][Mm][Ee]:" "$EXIT_NODES" 2>/dev/null || true); NODE_COUNT=${NODE_COUNT:-0}
+if (( NODE_COUNT == 0 )); then
+  err "从 $V2RAY_AGENT_CLASHMETA_DIR 提取到 0 个落地节点，拒绝生成配置。
+
+请先完成 v2ray-agent 节点配置：
+  1) 在 VPS 上运行 v2ray-agent 菜单（常见为 vasma），添加至少一种入站/协议
+  2) 确认目录内容非空：
+       ls -la $V2RAY_AGENT_CLASHMETA_DIR
+  3) 确认能看到节点后，重新执行本脚本或重新运行一键安装
+
+不要在零落地节点的情况下继续，否则生成的订阅导入后策略组里不会有任何可用节点。"
+fi
 log "落地节点数量: $NODE_COUNT（未按协议类型排除）"
 
 log "生成完整配置..."
