@@ -206,9 +206,28 @@ Telegram Bot 是可选的远程管理入口。
 
 ### 9.2 获取 Telegram User ID
 
-准备一个你自己的 Telegram 数字 User ID。
+Bot 只用**数字 User ID** 识别管理员，**不能**用 `@用户名`。
 
-Bot 使用数字 User ID 判断管理员身份，不使用 Telegram 用户名作为权限依据。
+按下面任一方式获取你自己的数字 ID：
+
+**方式 A（推荐）**
+
+1. 打开 Telegram，搜索 `@userinfobot`（或 `@getidsbot`）。
+2. 进入对话，点击 **Start** / 发送 `/start`。
+3. 机器人回复里的 **Id** / **Id** 一串纯数字（例如 `123456789`）就是你的 User ID。
+4. 把这串数字记下来，安装 Bot 时填入「Telegram 管理员 User ID」。
+
+**方式 B**
+
+1. 搜索 `@RawDataBot`，发送任意消息。
+2. 在返回的 JSON 里找到 `"id":` 后面的数字（在 `from` 或 `message` 对象中）。
+3. 使用该数字作为管理员 User ID。
+
+**注意：**
+
+- User ID 是一串数字，不是 `@xxx` 用户名。
+- 可填写多个管理员，用英文逗号分隔，例如：`123456789,987654321`。
+- 只有列表中的 ID 才能操作 Bot；填错会导致你无法管理。
 
 ### 9.3 安装 Bot
 
