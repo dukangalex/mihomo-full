@@ -68,7 +68,67 @@ apt install -y certbot python3-certbot-nginx
 dnf install -y certbot python3-certbot-nginx
 ```
 
-4. 确认防火墙/安全组放行 **80** 和 **443**（云厂商控制台与系统防火墙都要检查）。
+4. **确认防火墙 / 安全组已放行 80 和 443**（证书申请与 HTTPS 都依赖这两端口）。按下面逐项检查：
+
+   **4.1 云厂商安全组 / 防火墙（几乎所有 VPS 都要查）**
+
+   1. 登录云服务商控制台（如阿里云、腾讯云、AWS、Azure、Oracle、Vultr、Linode 等）。
+   2. 找到该 VPS 实例绑定的 **安全组** / **Network ACL** / **Firewall rules**。
+   3. 入站（Inbound）规则中应允许：
+      - **TCP 80**（来源建议先 `0.0.0.0/0`，仅用于申请/续期证书；若你有固定 IP 也可收紧）
+      - **TCP 443**（来源 `0.0.0.0/0`，否则外网无法访问 HTTPS 订阅）
+   4. 若使用 IPv6，同时放行对应的 IPv6 入站 80/443。
+   5. 保存规则后等待约 1 分钟再生效。
+
+   **4.2 系统防火墙（在 VPS 上执行）**
+
+   先看是否启用了防火墙：
+
+   ```bash
+   # Ubuntu/Debian 常见
+   command -v ufw >/dev/null && ufw status verbose
+
+   # RHEL/CentOS/Fedora 常见
+   command -v firewall-cmd >/dev/null && firewall-cmd --state && firewall-cmd --list-all
+
+   # 通用
+   command -v iptables >/dev/null && iptables -L INPUT -n | head -30
+   ```
+
+   若 **ufw** 为 active，放行并重载：
+
+   ```bash
+   ufw allow 80/tcp
+   ufw allow 443/tcp
+   ufw reload
+   ufw status
+   ```
+
+   若 **firewalld** 在运行：
+
+   ```bash
+   firewall-cmd --permanent --add-service=http
+   firewall-cmd --permanent --add-service=https
+   firewall-cmd --reload
+   firewall-cmd --list-services
+   ```
+
+   **4.3 本机监听确认（可选但推荐）**
+
+   ```bash
+   ss -lntu | grep -E ':80|:443' || netstat -lntu | grep -E ':80|:443'
+   ```
+
+   看到 Nginx（或 certbot 临时）在听 80/443 即正常。若安全组已放行但这里无监听，先保证 `systemctl status nginx` 为 running。
+
+   **4.4 外网探测（在你自己电脑上，可选）**
+
+   ```bash
+   # 把 IP 换成 VPS 公网 IP
+   curl -sI --connect-timeout 5 http://VPS公网IP/ | head -5
+   ```
+
+   能连上（哪怕返回 404/301）说明 80 大致通；443 可在证书配好后用 `curl -sI https://你的域名` 验证。
 
 5. 为域名申请证书（把 `你的域名.com` 换成真实域名）：
 
@@ -627,3 +687,24 @@ go
 - Mihomo：https://github.com/MetaCubeX/mihomo
 - Cloudflare EdgeTunnel：https://github.com/cmliu/edgetunnel
 - Cloudflare Country-Specific IP Filter：https://github.com/alienwaregf/Cloudflare-Country-Specific-IP-Filter
+
+## 15. 免责声明
+
+1. 本项目按「现状」提供，作者与贡献者不就使用本软件产生的任何直接或间接损失承担责任，包括但不限于账号封禁、流量费用、服务中断、数据泄露或配置失误。
+2. 你应遵守所在地法律法规及 VPS、机场、Telegram、域名等服务商的服务条款。本项目不提供任何形式的违法用途指导。
+3. 网络代理、订阅与节点涉及隐私与安全风险；请自行评估并做好凭据保管。因密钥/订阅泄露造成的损失由使用者自行承担。
+4. 第三方项目（如 v2ray-agent、Mihomo、Nginx、certbot、Telegram 等）的行为与可用性以其官方说明为准，本项目不对其变更或故障负责。
+5. 在公共模板仓库中，请只使用占位配置；切勿提交真实订阅、Token 或固定订阅完整 URL。
+
+## 16. 鸣谢
+
+感谢以下项目与社区（排名不分先后）：
+
+- [v2ray-agent](https://github.com/mack-a/v2ray-agent) — VPS 多协议落地与 clashMeta 订阅生成
+- [Mihomo (MetaCubeX)](https://github.com/MetaCubeX/mihomo) — 内核与规则能力
+- [Nginx](https://nginx.org/) — 反向代理与静态订阅托管
+- [Let's Encrypt](https://letsencrypt.org/) / [certbot](https://certbot.eff.org/) — 免费 HTTPS 证书
+- 规则集与社区贡献者（广告/地理/防钓鱼等公开规则源）
+- 所有提交 Issue、建议与测试反馈的用户
+
+若你是相关项目作者，需要调整署名或链接，欢迎通过仓库 Issue 联系。
