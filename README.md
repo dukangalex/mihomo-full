@@ -693,7 +693,7 @@ go
 1. 本项目按「现状」提供，作者与贡献者不就使用本软件产生的任何直接或间接损失承担责任，包括但不限于账号封禁、流量费用、服务中断、数据泄露或配置失误。
 2. 你应遵守所在地法律法规及 VPS、机场、Telegram、域名等服务商的服务条款。本项目不提供任何形式的违法用途指导。
 3. 网络代理、订阅与节点涉及隐私与安全风险；请自行评估并做好凭据保管。因密钥/订阅泄露造成的损失由使用者自行承担。
-4. 第三方项目（如 v2ray-agent、Mihomo、Nginx、certbot、Telegram 等）的行为与可用性以其官方说明为准，本项目不对其变更或故障负责。
+4. 第三方项目（如 v2ray-agent、Mihomo、Nginx、certbot、Telegram、以及下文鸣谢中的进阶玩法项目等）的行为与可用性以其官方说明为准，本项目不对其变更或故障负责。
 5. 在公共模板仓库中，请只使用占位配置；切勿提交真实订阅、Token 或固定订阅完整 URL。
 
 ## 16. 鸣谢
@@ -704,7 +704,11 @@ go
 - [Mihomo (MetaCubeX)](https://github.com/MetaCubeX/mihomo) — 内核与规则能力
 - [Nginx](https://nginx.org/) — 反向代理与静态订阅托管
 - [Let's Encrypt](https://letsencrypt.org/) / [certbot](https://certbot.eff.org/) — 免费 HTTPS 证书
+- [Cloudflare EdgeTunnel (cmliu/edgetunnel)](https://github.com/cmliu/edgetunnel) — 文档中引用的 Cloudflare 免费机场进阶玩法
+- [Cloudflare Country-Specific IP Filter](https://github.com/alienwaregf/Cloudflare-Country-Specific-IP-Filter) — 文档中引用的 Cloudflare 优选 IP 进阶玩法
 - 规则集与社区贡献者（广告/地理/防钓鱼等公开规则源）
 - 所有提交 Issue、建议与测试反馈的用户
+
+本仓库仅作入口说明与链接引用，不内置上述第三方项目的代码；使用方式以其官方仓库为准。
 
 若你是相关项目作者，需要调整署名或链接，欢迎通过仓库 Issue 联系。
