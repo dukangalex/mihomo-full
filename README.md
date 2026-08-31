@@ -2,56 +2,179 @@
 
 > Mihomo Full 的安装与使用说明。
 
+**原则：能自动的绝不让你改配置文件；安全永远优先于省事。**  
+订阅地址、机场链接、Bot Token 都是私密凭据，不要发到群聊、截图或 GitHub。
+
 ## 1. 安装
 
-### 使用前准备
+### 1.1 使用前必须完成的准备（按顺序做）
 
-请先准备：
+下面四步是**安装脚本无法替你省掉**的前提。做完再运行一键安装。
 
-- 一台已经安装并正常运行 **v2ray-agent** 的 VPS。
-- 一个已经解析到 VPS 的域名。
-- 一个 HTTPS 机场订阅地址。
-- VPS 上可正常使用 Nginx，且该域名**已具备 HTTPS 证书**（推荐 Let's Encrypt / certbot）。
+#### 步骤 A · VPS 与 v2ray-agent（落地节点）
 
-本项目不会安装、升级、接管或卸载 v2ray-agent。
+1. 准备一台可 SSH 登录的 Linux VPS（建议常见 Debian / Ubuntu）。
+2. 使用 **root**（或 `sudo -i`）登录。
+3. 按 [v2ray-agent](https://github.com/mack-a/v2ray-agent) 官方说明安装并运行（本项目**不**安装、不升级、不卸载它）。
+4. 用其菜单（常见为 `vasma`）添加至少一种入站/协议，确保已生成 clashMeta 订阅文件。
+5. 在 VPS 上确认目录里有内容（路径以你实际安装为准，默认常见为）：
 
-### 开始安装
+```bash
+ls -la /etc/v2ray-agent/subscribe_local/clashMeta
+```
 
-以 root 身份执行：
+有文件即可。若目录不存在或为空，先回到 v2ray-agent 完成节点配置，**不要急着装 Mihomo Full**。
+
+#### 步骤 B · 域名解析到本机
+
+1. 在域名服务商处添加 **A 记录**（或 AAAA）：主机名指向你的 VPS **公网 IP**。
+2. 等待解析生效（通常几分钟，最长可能数小时）。
+3. 在 VPS 上自检（把 `你的域名.com` 换成真实域名）：
+
+```bash
+# 应能解析到本机公网 IP
+getent ahostsv4 你的域名.com || ping -c1 你的域名.com
+```
+
+解析不对时不要继续申请证书或安装，否则后续会失败。
+
+#### 步骤 C · Nginx + HTTPS 证书（安全必做）
+
+订阅必须走 **HTTPS**。脚本**不会**在无证书时用明文 HTTP 暴露配置。
+
+1. 安装 Nginx（若尚未安装）：
+
+```bash
+# Debian / Ubuntu
+apt update && apt install -y nginx
+
+# RHEL / CentOS / Fedora
+dnf install -y nginx
+```
+
+2. 启动并设置开机自启：
+
+```bash
+systemctl enable --now nginx
+```
+
+3. 安装 certbot 并签发证书（推荐）：
+
+```bash
+# Debian / Ubuntu
+apt install -y certbot python3-certbot-nginx
+
+# RHEL / CentOS
+dnf install -y certbot python3-certbot-nginx
+```
+
+4. 确认防火墙/安全组放行 **80** 和 **443**（云厂商控制台与系统防火墙都要检查）。
+
+5. 为域名申请证书（把 `你的域名.com` 换成真实域名）：
+
+```bash
+certbot --nginx -d 你的域名.com
+```
+
+按提示完成。成功后应存在：
+
+```bash
+ls /etc/letsencrypt/live/你的域名.com/fullchain.pem
+ls /etc/letsencrypt/live/你的域名.com/privkey.pem
+```
+
+6. 若你使用自己购买的证书：在对应域名的 Nginx `server` 中配置好 `ssl_certificate` 与 `ssl_certificate_key`，并执行：
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+7. 浏览器访问 `https://你的域名.com` 应无证书告警（至少证书有效）。
+
+**不要跳过本步。** 无有效 HTTPS 时，安装脚本会报错并再次打印操作指示。
+
+#### 步骤 D · 机场订阅（入口）
+
+1. 在机场用户中心复制 **Clash / Mihomo 订阅链接**。
+2. 必须是以 `https://` 开头的地址。
+3. 不要把完整链接发到公开群或提交到 GitHub。
+4. 安装时粘贴一次即可；以后换机场用管理菜单，**不用改客户端固定地址**。
+
+---
+
+### 1.2 一键安装
+
+确认 A～D 都完成后，在 VPS 上以 root 执行：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/dukangalex/mihomo-full/main/install.sh)
 ```
 
-按屏幕提示填写：
+按提示填写：
 
-1. 机场订阅链接
-2. 域名
-3. v2ray-agent 的 clashMeta 目录（多数情况直接回车）
+1. **机场订阅链接**（步骤 D）
+2. **域名**（不要带 `https://`，例 `example.com`）
+3. **clashMeta 目录**（默认路径直接回车即可）
 
-安装完成后会显示固定 HTTPS 订阅地址。
+确认摘要后回车。脚本将：
 
-> 固定地址只在首次安装时生成。以后更换机场、更新落地节点或更新项目时，不需要更换客户端订阅地址。
+- 下载固定版本代码并生成配置  
+- **自动**写入 Nginx 订阅路径并尝试 reload  
+- 打印**唯一**需要导入客户端的固定 HTTPS 订阅地址  
 
-## 2. Nginx 与 HTTPS
+> 固定地址只在首次安装时生成。以后更换机场、更新落地节点或更新项目时，一般不需要更换客户端订阅地址。
+
+### 1.3 安装成功后怎么用
+
+1. 复制终端里的 `https://你的域名/assets/...` 完整地址。  
+2. 在 Clash Meta / Mihomo 等客户端中「从 URL 导入订阅」。  
+3. 选中策略组后开始使用。  
+4. 日常维护优先用：
+
+```bash
+go
+```
+
+---
+
+## 2. Nginx 与 HTTPS（脚本自动 + 失败时怎么办）
 
 安装脚本会**尽量自动**：
 
-1. 检测域名是否已有 HTTPS 证书（Let's Encrypt 或站点中的 `ssl_certificate`）
+1. 检测域名是否已有 HTTPS 证书（Let's Encrypt 路径或站点中的 `ssl_certificate`）
 2. 写入 `/etc/nginx/snippets/mihomo-full-assets.conf`
 3. 在匹配的 `server_name` 站点中插入 `include`
 4. 执行 `nginx -t` 并 reload
 
-若**没有证书**或**找不到对应站点配置**，脚本会**报错退出**并打印可执行的操作指示（例如用 certbot 签发后再重新运行安装），不会在无 HTTPS 时强行上线订阅。
+### 若提示没有证书
 
-手动复查：
+按终端里的【方式 A / B】操作，或回到上文 **步骤 C**，完成后再重新执行 1.2 的安装命令。
+
+### 若提示找不到 server_name 站点
+
+说明证书或 Nginx 已存在，但脚本没匹配到站点文件。按终端提示：
+
+1. 打开该域名的 HTTPS `server { ... }` 配置  
+2. 加入一行：
+
+```nginx
+include /etc/nginx/snippets/mihomo-full-assets.conf;
+```
+
+3. 执行：
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+### 手动复查
 
 ```bash
 nginx -t
 curl -fsSI "https://你的域名/你的订阅路径"
 ```
 
-访问不存在的 `/assets/` 路径应返回 404。
+访问不存在的 `/assets/任意不存在路径` 应返回 **404**。
 
 ## 3. 管理入口
 
@@ -488,14 +611,15 @@ go
 
 只会移除 Bot，不会卸载 Mihomo Full。
 
-## 13. 重要提醒
+## 13. 重要提醒（安全优先）
 
-1. 不要把真实机场订阅、节点凭据、Bot Token 或固定订阅地址提交到 GitHub。
-2. 不要公开完整固定订阅地址。
-3. 不要直接编辑生成后的 `output/full-config.yaml`。
-4. 规则集优先通过 `go` 或 Telegram Bot 管理。
-5. 不要手动删除 `/etc/v2ray-agent`。
-6. 不要为了处理单个问题而删除现有功能或配置模块。
+1. **安全永远优先于省事**：没有 HTTPS 证书时不要强行用 HTTP 暴露订阅。
+2. 不要把真实机场订阅、节点凭据、Bot Token 或固定订阅地址提交到 GitHub，也不要发到群聊或公开截图。
+3. 不要公开完整固定订阅地址；泄露后应视为凭据已曝光并尽快轮换。
+4. 不要直接编辑生成后的 `output/full-config.yaml`。
+5. 规则集优先通过 `go` 或 Telegram Bot 管理。
+6. 不要手动删除 `/etc/v2ray-agent`；本项目不接管其生命周期。
+7. 不要为了处理单个问题而删除现有功能或配置模块。
 
 ## 14. 相关项目
 
