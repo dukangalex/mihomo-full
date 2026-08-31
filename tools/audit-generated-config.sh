@@ -13,6 +13,13 @@ ok(){ echo -e "${GREEN}[✓]${NC} $1"; }
 grep -qE '^\s*exclude-type:\s*vmess\s*$' "$CONFIG" && fail "最终配置仍排除 VMess 节点" || true
 ok "落地节点未按协议类型排除"
 
+EXIT_NODES_FILE="$(dirname "$CONFIG")/exit-nodes.yaml"
+if [[ -f "$EXIT_NODES_FILE" ]]; then
+  EXIT_NODE_COUNT="$(grep -cE '^  - [Nn][Aa][Mm][Ee]:' "$EXIT_NODES_FILE" 2>/dev/null || true)"; EXIT_NODE_COUNT=${EXIT_NODE_COUNT:-0}
+  (( EXIT_NODE_COUNT > 0 )) || fail "落地节点文件存在但节点数为 0：$EXIT_NODES_FILE（请先在 v2ray-agent 中添加协议）"
+  ok "落地节点数量非零：$EXIT_NODE_COUNT"
+fi
+
 grep -qF 'provider_entry_J:' "$CONFIG" || fail "缺少前置机场 provider"
 grep -qF 'provider_exit:' "$CONFIG" || fail "缺少落地 VPS provider"
 grep -qF 'dialer-proxy: "前置优选入口"' "$CONFIG" || fail "落地 provider 未强制经前置优选入口"
