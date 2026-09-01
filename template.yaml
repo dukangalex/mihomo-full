@@ -659,7 +659,7 @@ proxy-groups:
 
   - name: "前置优选入口"
     type: url-test
-    use: [provider_entry-J]
+    use: [provider_entry_J]
     url: https://www.gstatic.com/generate_204
     expected-status: 204
     interval: 180
