@@ -1257,7 +1257,9 @@ function main(config) {
   "query-v6": false,
   "default-nameserver": [
     "tls://223.5.5.5",
-    "tls://223.6.6.6"
+    "tls://223.6.6.6",
+    "tls://1.12.12.12",
+    "tls://120.53.53.53"
   ],
   "proxy-server-nameserver": [
     "https://doh.pub/dns-query",
@@ -1951,9 +1953,21 @@ function main(config) {
 };
 
   config["hosts"] = {
+  "dns.alidns.com": [
+    "223.5.5.5",
+    "223.6.6.6"
+  ],
+  "doh.pub": [
+    "1.12.12.12",
+    "120.53.53.53"
+  ],
   "dns.google": [
     "8.8.8.8",
     "8.8.4.4"
+  ],
+  "cloudflare-dns.com": [
+    "1.1.1.1",
+    "1.0.0.1"
   ]
 };
 
@@ -1993,7 +2007,7 @@ function main(config) {
   config["external-ui-url"] = "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip";
 
   // 兜底规则会连带失效，因此单独指定镜像而非依赖客户端默认源
-  config["geodata-mode"] = true;
+  config["geodata-mode"] = false;
   config["geodata-loader"] = "memconservative";
   config["geo-auto-update"] = true;
   config["geo-update-interval"] = 168;
