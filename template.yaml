@@ -3,41 +3,37 @@
 # 零泄露（宁可断网也不泄露） · 零误判 · 零风控隐患 · 高隐匿 · 国内流量无感
 #
 # ── 本版本相对早期 PATCH 版本的关键变更（供以后回来自己核对）──
-# 1. empty-fallback: REJECT 已从全部分组移除
-#    实测确认 FlClash/Bettbox 绑定的 mihomo 核心不识别这个字段，
-#    会导致整份配置直接加载失败。CMFA（跑 Alpha 开发分支）能识别，
-#    但为保证三个客户端通用，统一不使用。不要再加回来。
-# 2. tun.exclude-package 已移除，原因与上面相同（同样导致加载失败），
+# 1. tun.exclude-package 已移除，原因与上面相同（同样导致加载失败），
 #    且该字段对设备级 VPN 接口检测（banking App 风控）本来就无效，
 #    银行 App 的直连保障靠 rules 里的 PROCESS-NAME-WILDCARD 兜底。
-# 3. 全部 rule-provider 与 geox-url 下载源统一使用 gcore.jsdelivr.net，
+# 2. 全部 rule-provider 与 geox-url 下载源统一使用 gcore.jsdelivr.net，
 #    不用 testingcf.jsdelivr.net——后者在国内的可用性会不定期被单独
 #    干扰，历史上已经因此导致过多次加载失败（EOF / rule set not found）。
 #    如果 gcore 哪天也不通了，参考同一域名下 fastly/cdn 等其他 jsDelivr
 #    边缘节点做替换，全局替换一个域名字符串即可。
-# 4. QUIC 嗅探已关闭（sniffer.sniff.QUIC.enable: false）。P7 的境外 QUIC
+# 3. QUIC 嗅探已关闭（sniffer.sniff.QUIC.enable: false）。P7 的境外 QUIC
 #    封堵靠 RULE-SET,cn-ip 做 IP 段判断，不依赖嗅探结果，关闭嗅探不影响
 #    封堵效果，同时彻底消除历史上 QUIC sniffer 的崩溃漏洞攻击面，不再
 #    需要关注"内核版本是否 ≥v1.19.27"这件事。
-# 5. 远程控制/内网穿透工具（Tailscale/AnyDesk/RustDesk/frp等）不再是硬编码
+# 4. 远程控制/内网穿透工具（Tailscale/AnyDesk/RustDesk/frp等）不再是硬编码
 #    DIRECT 或 REJECT-DROP，改指向一个叫"远控工具"的 select 分组，默认
 #    选中 REJECT-DROP（安全默认，收窄"进程名可被伪造绕开代理"这个信任
 #    盲区）。真要用这类工具时，直接在 FlClash/Bettbox 的分组切换界面里
 #    把"远控工具"这个分组手动选成 DIRECT 即可，不用再回来改 YAML。
-# 6. log-level 设为 info（而非更省日志的 warning/error）——用户主动选择
+# 5. log-level 设为 info（而非更省日志的 warning/error）——用户主动选择
 #    "日志量最大，换取以后排查问题的能力"这个权衡，如果观感上日志太吵，
 #    可以自行调回 warning。
-# 7. 节点协议不再做自动排除。
+# 6. 节点协议不再做自动排除。
 #    VMess、Shadowsocks、Trojan、VLESS、Hysteria/Hysteria2、TUIC 等
 #    均保留；是否可用由实际链式测试、服务端配置和节点来源决定。
 #    前置机场同样不按协议/线路名称过滤。
-# 8. inet4-route-only 改为 false（原为 true）。原设置下 TUN 只接管
+# 7. inet4-route-only 改为 false（原为 true）。原设置下 TUN 只接管
 #    IPv4 路由，操作系统若有能用的原生 IPv6 出口，IPv6 流量会完全
 #    绕过 TUN、绕过 rules 里 P1 的 IPv6 封堵规则，是个从未被真正
 #    验证过的潜在泄露口——大陆手机 IPv6 部署本就不完整，这条隐患
 #    过去概率低，但现在要在 Windows/macOS 家宽环境用（IPv6 双栈
 #    很常见），风险显著上升，因此关闭。
-# 9. secret 字段是占位符，必须自己在设备本地生成替换，不要把生成的值
+# 8. secret 字段是占位符，必须自己在设备本地生成替换，不要把生成的值
 #    粘贴回任何对话——旧密钥已经在聊天记录里出现过，按最佳实践视为已
 #    泄露，不能继续用。
 #
@@ -628,9 +624,9 @@ rule-providers:
 
 proxy-providers:
 
-  provider_entry-J:
+  provider_entry_J:
     type: http
-    url: ""  #前置入口订阅
+    url: "__AIRPORT_SUB_URL__"  #前置入口订阅
     interval: 3600
     path: ./proxy_providers/entry_J.yaml
     override:
@@ -645,7 +641,7 @@ proxy-providers:
 
   provider_exit:
     type: http
-    url: ""  #落地出口订阅
+    url: "__EXIT_NODES_URL__"  #落地出口订阅
     interval: 3600
     path: ./proxy_providers/exit.yaml
     override:
