@@ -963,7 +963,7 @@ function main(config) {
   "auto-detect-interface": true,
   "inet4-route-only": false,
   "mtu": 1500,
-  "gso": false,
+  "gso": true,
   "gso-max-size": 65536,
   "udp-timeout": 300,
   "dns-hijack": [
