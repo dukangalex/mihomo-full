@@ -718,11 +718,11 @@ proxy-groups:
     lazy: false
     timeout: 5000
 
-  - name: "落地手动选择"
-    type: select
+ # - name: "落地手动选择"
+   # type: select
     # 仅暴露落地 VPS 节点，供功能分组手动挑选具体协议/端口。
     # 严格止于落地节点，不包含前置入口、DIRECT、REJECT。
-    use: [provider_exit]
+   # use: [provider_exit]
 
   - name: "AI服务"
     type: select
@@ -730,34 +730,34 @@ proxy-groups:
     proxies:
       - 落地优选出口
       - 落地负载均衡
-      - 落地手动选择
+     # - 落地手动选择
 
   - name: "国外服务"
     type: select
     proxies:
       - 落地优选出口
       - 落地负载均衡
-      - 落地手动选择
+     # - 落地手动选择
 
   - name: "流媒体"
     type: select
     proxies:
       - 落地优选出口
       - 落地负载均衡
-      - 落地手动选择
+     # - 落地手动选择
 
   - name: "漏网之鱼"
     type: select
     proxies:
       - 落地优选出口
       - 落地负载均衡
-      - 落地手动选择
+     # - 落地手动选择
 
   - name: "🛑 广告拦截"
     type: select
-    # 默认 REJECT；仅当免费站点依赖广告收入且被误伤/无法正常使用时，
+    # 默认 REJECT-DROP；仅当免费站点依赖广告收入且被误伤/无法正常使用时，
     # 用户才主动切换 DIRECT。此 DIRECT 不是全局直连开关。
-    proxies: ["REJECT", "DIRECT"]
+    proxies: ["REJECT-DROP","REJECT", "DIRECT"]
 
   - name: "远控工具"
     type: select
