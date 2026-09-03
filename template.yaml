@@ -2,9 +2,8 @@
 # 目标：中国大陆用户 · 境内全直连 · 境外链式代理（机场入口 + 自建VPS落地）
 # 零泄露（宁可断网也不泄露） · 零误判 · 零风控隐患 · 高隐匿 · 国内流量无感
 #
-# ── 本版本相对早期 PATCH 版本的关键变更（供以后回来自己核对）──
-# 1. tun.exclude-package 已移除，原因与上面相同（同样导致加载失败），
-#    且该字段对设备级 VPN 接口检测（banking App 风控）本来就无效，
+# ── 本版本相对早期 PATCH 版本的关键变更（供以后核对）──
+# 1. tun.exclude-package 已移除，且该字段对设备级 VPN 接口检测（banking App 风控）本来就无效，
 #    银行 App 的直连保障靠 rules 里的 PROCESS-NAME-WILDCARD 兜底。
 # 2. 全部 rule-provider 与 geox-url 下载源统一使用 gcore.jsdelivr.net，
 #    不用 testingcf.jsdelivr.net——后者在国内的可用性会不定期被单独
@@ -23,19 +22,20 @@
 # 5. log-level 设为 info（而非更省日志的 warning/error）——用户主动选择
 #    "日志量最大，换取以后排查问题的能力"这个权衡，如果观感上日志太吵，
 #    可以自行调回 warning。
-# 6. 节点协议不再做自动排除。
-#    VMess、Shadowsocks、Trojan、VLESS、Hysteria/Hysteria2、TUIC 等
-#    均保留；是否可用由实际链式测试、服务端配置和节点来源决定。
-#    前置机场同样不按协议/线路名称过滤。
-# 7. inet4-route-only 改为 false（原为 true）。原设置下 TUN 只接管
+# 6. inet4-route-only 改为 false（原为 true）。原设置下 TUN 只接管
 #    IPv4 路由，操作系统若有能用的原生 IPv6 出口，IPv6 流量会完全
 #    绕过 TUN、绕过 rules 里 P1 的 IPv6 封堵规则，是个从未被真正
 #    验证过的潜在泄露口——大陆手机 IPv6 部署本就不完整，这条隐患
 #    过去概率低，但现在要在 Windows/macOS 家宽环境用（IPv6 双栈
 #    很常见），风险显著上升，因此关闭。
-# 8. secret 字段是占位符，必须自己在设备本地生成替换，不要把生成的值
+# 7. secret 字段是占位符，必须自己在设备本地生成替换，不要把生成的值
 #    粘贴回任何对话——旧密钥已经在聊天记录里出现过，按最佳实践视为已
 #    泄露，不能继续用。
+# 8. [2026-09 内核对齐 v1.19.30] tun.gso 已由 false 改回 true。原因见下方
+#    tun 段落内联注释——v1.19.30 已修复此前阻塞 GSO 的 DNS hijack 问题，
+#    三端（Android/Apple 系/Windows）核心均已确认升级到 v1.19.30，前提
+#    已满足，恢复开启换回吞吐量。若任一端核心回退到 v1.19.30 以下，
+#    需要把这一项改回 false，参见内联注释里的回退指引。
 #
 # 落地 VPS 是自建，IP 地理声誉需要自己定期抽查
 # （ipinfo.io / MaxMind demo 页面，看有没有被误判成中国相关），
@@ -62,7 +62,7 @@ secret: "必须替换】终端执行 openssl rand -hex 32 生成新密钥，直�
 # CORS 防护：只允许本地 origin，彻底断绝远程利用路径
 # yacd.haishan.me / metacubexd.pages.dev 是外部 CDN 域名
 # 若 CDN 被劫持或投毒，其 JS 可通过 CORS 读取本地控制器数据
-# 总统专机级安全：只保留 127.0.0.1 和 localhost
+# 为安全计：只保留 127.0.0.1 和 localhost
 external-controller-cors:
   allow-origins:
     - "http://127.0.0.1:19090"
@@ -132,23 +132,29 @@ tun:
   # 绕过。
   inet4-route-only: false
   mtu: 1500  # 标准以太网 MTU，消除 TUN 网卡指纹特征
-  # gso 改为 false：规避 Alpha 分支已确认但 stable 分支(含 v1.19.29)尚未修复的
-  # "tun dns hijack sending zero-filled or stale packets when PackBuffer reallocates"
-  # 该问题可能导致过期/损坏的 DNS 应答被用于路由分类判断，后果不是断网而是
-  # 可能把本该走代理的境外域名误判直连——属于真实泄露风险而非单纯故障，
-  # 在官方 stable 修复落地前关闭 GSO 换取正确性优先于吞吐量。
-  gso: false
+  # [2026-09 内核对齐 v1.19.30] gso 由 false 改回 true。
+  # 此前关闭原因：Alpha 分支已确认、stable 分支（含 v1.19.29）尚未修复的
+  # "tun dns hijack sending zero-filled or stale packets when PackBuffer
+  # reallocates"问题——该问题会导致过期/损坏的 DNS 应答被用于路由分类
+  # 判断，后果不是断网而是可能把本该走代理的境外域名误判直连，属于真实
+  # 泄露风险而非单纯故障，因此当时关闭 GSO 换正确性优先于吞吐量。
+  # 现状：该问题已在 mihomo v1.19.30 的官方修复列表中确认修复
+  # （fix: tun dns hijack sending zero-filled or stale packets when
+  # PackBuffer reallocates, PR #3037）。三端（Android/Apple 系/Windows）
+  # 核心均已确认升级到 v1.19.30，前提已满足，重新开启 GSO 拿回吞吐量。
+  # 回退指引：若任一端核心版本回退到 v1.19.30 以下，或升级后在任一端
+  # 观察到 DNS 解析异常/该走代理的境外域名被误判直连，立刻把这一项改回
+  # false 并重新排查，不要假设"新版本就一定没问题"。
+  gso: true   # 若DNS 解析异常/该走代理的境外域名被误判直连，立刻把这一项改回false 并重新排查
   gso-max-size: 65536
   udp-timeout: 300
   dns-hijack:
     - any:53
     - tcp://any:53
-  # exclude-package 字段已再次移除：实测确认 FlClash/Bettbox 绑定的
-  # mihomo 核心版本不识别这个字段，会导致整份配置直接加载失败。
-  # 该字段即便生效，对设备级 VPN 接口检测（农行掌上银行的实测情况）
+  # exclude-package 字段已再次移除，该字段即便生效，对设备级 VPN 接口检测（农行掌上银行的实测情况）
   # 也无法解决，去掉不损失实际防护——银行 App 的直连保障已经由
   # rules 里的 PROCESS-NAME-WILDCARD 规则在路由层兜底。如需针对
-  # 个别银行 App 做系统层面 VPN 排除，请改用 FlClash/Bettbox App 内
+  # 个别银行 App 做系统层面 VPN 排除，请改用App 内
   # 自带的"应用分流/分应用代理"GUI 设置，不要在 YAML 里配置这个字段。
 
 sniffer:
@@ -635,7 +641,7 @@ proxy-providers:
       ip-version: ipv4-only
     health-check:
       enable: true
-      url: https://www.gstatic.com/generate_204  # 纯 IP，无域名解析无 SNI，与 Cloudflare 节点基础设施独立
+      url: https://www.gstatic.com/generate_204  
       interval: 300
       expected-status: 204              # 只接受 204，过滤“能连通但返回异常状态”的节点
 
@@ -651,7 +657,7 @@ proxy-providers:
       ip-version: ipv4-only
     health-check:
       enable: true
-      url: https://www.gstatic.com/generate_204  # 纯 IP，无域名解析无 SNI，与 Cloudflare 节点基础设施独立
+      url: https://www.gstatic.com/generate_204  
       interval: 600
       expected-status: 204              # 只接受 204，过滤“能连通但返回异常状态”的节点
 
@@ -667,8 +673,13 @@ proxy-groups:
     lazy: false
     timeout: 3000
     max-failed-times: 2
-    empty-fallback: REJECT #组内节点全灭时会
-    # 按 mihomo 默认行为尝试拨号最后已知节点直到超时失败，而不是立即拒绝
+    empty-fallback: REJECT  # 前置入口分组节点全灭时返回 REJECT
+    # 已实测确认生效：不设置这一项时，前置入口全灭会导致落地节点的
+    # dialer-proxy 链路失败开放成 DIRECT（境外流量绕过整条代理链，
+    # 直接从本机出口发出）。设成 REJECT 后前置故障时链路直接失败关闭
+    # （fail-closed），不会退化成明文直连，符合文件头部"宁可断网也不
+    # 泄露"的总原则，必须保留，不要因为它不在官方字段文档常见列表里
+    # 就删掉。
     # 参数已优化：更频繁探测 + 更低切换门槛 + 更严格超时，降低入口延迟
 
   - name: "落地优选出口"
@@ -744,7 +755,7 @@ proxy-groups:
 
   - name: "🛑 广告拦截"
     type: select
-    # 默认 REJECT-DROP；仅当免费站点依赖广告收入且被误伤/无法正常使用时，
+    # 默认 REJECT；仅当免费站点依赖广告收入且被误伤/无法正常使用时，
     # 用户才主动切换 DIRECT。此 DIRECT 不是全局直连开关。
     proxies: ["REJECT", "DIRECT"]
 
