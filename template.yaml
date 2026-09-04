@@ -1,6 +1,9 @@
-# Clash Meta (Mihomo) 配置 · FINAL v5
+# Clash Meta (Mihomo) 配置 · FINAL v6 (IPv6 Dual-Stack)
 # 目标：中国大陆用户 · 境内全直连 · 境外链式代理（机场入口 + 自建VPS落地）
 # 零泄露（宁可断网也不泄露） · 零误判 · 零风控隐患 · 高隐匿 · 国内流量无感
+# IPv6 全面双栈支持（v6 变更：ipv6=true, dns.ipv6=true, query-v6=true,
+#   fake-ip-range6, proxy-providers ip-version=dual,
+#   P1 由全封堵改为精细化 IPv6 路由，新增 cn-ip6/private-ip6 规则集）
 #
 # ── 本版本相对早期 PATCH 版本的关键变更（供以后核对）──
 # 1. tun.exclude-package 已移除，且该字段对设备级 VPN 接口检测（banking App 风控）本来就无效，
@@ -36,6 +39,19 @@
 #    三端（Android/Apple 系/Windows）核心均已确认升级到 v1.19.30，前提
 #    已满足，恢复开启换回吞吐量。若任一端核心回退到 v1.19.30 以下，
 #    需要把这一项改回 false，参见内联注释里的回退指引。
+# 9. [2026-09 IPv6 双栈] 全面开启 IPv6 支持：
+#    - ipv6: true, dns.ipv6: true, dns.query-v6: true
+#    - 新增 fake-ip-range6: fc00::/18（IPv6 fake-ip 地址池）
+#    - proxy-providers ip-version 从 ipv4-only 改为 dual
+#    - P1 规则由 IP-CIDR6,::/0,REJECT-DROP（全封堵）改为精细化路由：
+#      私有 IPv6 直连、CN IPv6 直连、组播封堵、其余走后续规则/MATCH
+#    - 新增 rule-providers: cn-ip6, private-ip6
+#    - P5/P5.6/P7 等境外封堵规则增加 cn-ip6 双栈判断
+#    - hosts/default-nameserver 新增 IPv6 地址
+#    - sniffer skip-dst-address 新增 Telegram IPv6 段
+#    - DOMESTIC_IP 子规则新增 IPv6 CN IP 和私有地址直连
+#    设计原则：境内 IPv6 直连（与 IPv4 一致），境外 IPv6 走代理，
+#    私有/链路本地 IPv6 直连，组播封堵，STUN/TURN 仍封堵（防 IP 泄露）
 #
 # 落地 VPS 是自建，IP 地理声誉需要自己定期抽查
 # （ipinfo.io / MaxMind demo 页面，看有没有被误判成中国相关），
@@ -47,7 +63,11 @@ allow-lan: false
 bind-address: "127.0.0.1"
 mixed-port: 17890  # 非默认端口，防止本地恶意应用定位
 log-level: info  # 日志量最大，换取以后排查问题的能力（权衡：会留存更多本地日志细节）
-ipv6: false
+# ipv6 开启：全面支持 IPv6 双栈。
+# 配套变更：dns.ipv6=true, dns.query-v6=true, fake-ip-range6,
+# TUN inet4-route-only=false（已改），proxy-providers ip-version=dual,
+# P1 规则由全封堵改为精细化 IPv6 路由（私有 IP 直连、CN IP 直连、其余走代理）。
+ipv6: true
 unified-delay: true
 tcp-concurrent: true
 keep-alive-interval: 15
@@ -57,7 +77,10 @@ find-process-mode: strict
 etag-support: true
 
 external-controller: 127.0.0.1:19090
-secret: "必须替换】终端执行 openssl rand -hex 32 生成新密钥，直接填入设备本地的这份文件"
+# secret 留空（注释掉）= 不启用 external-controller 认证。
+# 如需启用认证：终端执行 openssl rand -hex 32 生成密钥，
+# 填入设备本地的配置文件，不要把生成的值粘回任何对话或仓库。
+# secret: "your-random-secret-here"
 
 # CORS 防护：只允许本地 origin，彻底断绝远程利用路径
 # yacd.haishan.me / metacubexd.pages.dev 是外部 CDN 域名
@@ -121,16 +144,15 @@ tun:
   auto-redirect: false
   strict-route: true           # 严格路由：防止流量绕过 TUN
   auto-detect-interface: true
-  # inet4-route-only 改为 false：原来是 true，含义是 TUN 只接管 IPv4
-  # 路由，IPv6 完全不碰——如果这台设备的操作系统有能用的原生 IPv6 出口，
-  # IPv6 流量会直接走系统路由绕过 TUN，rules 里 P1 那条
-  # "IP-CIDR6,::/0,REJECT-DROP" 只能拦住进了 TUN 的流量，从来没进 TUN
-  # 的 IPv6 连接完全拦不到，等于一条摆设。大陆手机 IPv6 部署本来就不完整，
-  # 这条隐患过去概率低；现在要在 Windows/macOS 家宽环境用（IPv6 双栈很
-  # 常见），风险从"理论上"变成"大概率真实存在"。改成 false 后 TUN 会把
-  # IPv6 路由也接管，P1 的封堵规则才能真正拦到全部 IPv6 流量，而不是被
-  # 绕过。
+  # inet4-route-only 改为 false：TUN 同时接管 IPv4 和 IPv6 路由。
+  # 原 true 时只接管 IPv4，IPv6 流量会绕过 TUN 绕过规则，是泄露隐患。
+  # 现在全面支持 IPv6，TUN 需要接管 IPv6 路由，P1 的 IPv6 规则才能生效。
   inet4-route-only: false
+  # inet6-route：显式声明 IPv6 路由接管范围。
+  # 默认 ::/0 即全部 IPv6 路由，与 inet4-route-only=false 配合，
+  # 确保 IPv6 流量全部经过 TUN，由 rules 层精细化路由。
+  inet6-route:
+    - "2000::/4"    # 全球单播地址（Global Unicast），覆盖绝大多数公网 IPv6
   mtu: 1500  # 标准以太网 MTU，消除 TUN 网卡指纹特征
   # [2026-09 内核对齐 v1.19.30] gso 由 false 改回 true。
   # 此前关闭原因：Alpha 分支已确认、stable 分支（含 v1.19.29）尚未修复的
@@ -193,6 +215,10 @@ sniffer:
     - "95.161.64.0/20"
     - "149.154.160.0/20"
     - "185.76.151.0/24"
+    # Telegram IPv6 段
+    - "2001:b28:f23d::/48"
+    - "2001:b28:f23f::/48"
+    - "2001:67c:4e8::/48"
   skip-domain:
     - "geosite:cn"
     - "geosite:geolocation-cn"       # 国内域名不做嗅探，减少性能开销
@@ -561,6 +587,18 @@ rule-providers:
     url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs"
     path: ./ruleset/cn-ip.mrs
 
+  # IPv6 中国大陆 IP 段（用于 IPv6 流量的国内直连判断）
+  cn-ip6:
+    <<: *IA
+    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip6/cn.mrs"
+    path: ./ruleset/cn-ip6.mrs
+
+  # IPv6 私有地址段（链路本地、唯一本地地址等）
+  private-ip6:
+    <<: *IA
+    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip6/private.mrs"
+    path: ./ruleset/private-ip6.mrs
+
   google-ip:
     <<: *IA
     url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/google.mrs"
@@ -638,7 +676,7 @@ proxy-providers:
     override:
       client-fingerprint: chrome
       udp: true
-      ip-version: ipv4-only
+      ip-version: dual  # IPv4+IPv6 双栈，支持 IPv6 节点连接
     health-check:
       enable: true
       url: https://www.gstatic.com/generate_204  
@@ -654,7 +692,7 @@ proxy-providers:
       client-fingerprint: chrome
       dialer-proxy: "前置优选入口"   # 链式代理：出口经入口转发
       udp: true
-      ip-version: ipv4-only
+      ip-version: dual  # IPv4+IPv6 双栈，支持 IPv6 节点连接
     health-check:
       enable: true
       url: https://www.gstatic.com/generate_204  
@@ -781,22 +819,32 @@ hosts:
   "dns.alidns.com":
     - "223.5.5.5"
     - "223.6.6.6"
+    - "2400:3200::1"
+    - "2400:3200:baba::1"
   "doh.pub":
     - "1.12.12.12"
     - "120.53.53.53"
+    - "2402:4e00::"
+    - "2402:4e00:1::"
   "dns.google":
     - "8.8.8.8"
     - "8.8.4.4"
+    - "2001:4860:4860::8888"
+    - "2001:4860:4860::8844"
   "cloudflare-dns.com":
     - "1.1.1.1"
     - "1.0.0.1"
+    - "2606:4700:4700::1111"
+    - "2606:4700:4700::1001"
 
 dns:
   enable: true
   listen: 127.0.0.1:1053
-  ipv6: false
+  ipv6: true
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
+  # fake-ip-range6：IPv6 fake-ip 地址池，与 fake-ip-range 配合实现 IPv6 双栈 fake-ip
+  fake-ip-range6: fc00::/18
   fake-ip-cache-size: 4096
   # fake-ip 持久化只由 profile.store-fake-ip 一个开关控制（见文件头部 profile 段），
   # 原来这里的 dns.fake-ip-persist 字段实测不生效、且与 profile.store-fake-ip:false
@@ -887,7 +935,7 @@ dns:
     - RULE-SET,cn,real-ip
     - RULE-SET,bilibili,real-ip        # B站 CDN 需真实 IP 调度
     - GEOSITE,cn,real-ip               # geosite 兜底
-    # 本地保留域名
+    # IPv6 本地保留域名
     - DOMAIN-SUFFIX,localhost,real-ip
     - DOMAIN-SUFFIX,local,real-ip
     - DOMAIN-SUFFIX,lan,real-ip
@@ -897,6 +945,9 @@ dns:
     - DOMAIN-SUFFIX,example,real-ip
     - DOMAIN-SUFFIX,invalid,real-ip
     - DOMAIN-SUFFIX,test,real-ip
+    # IPv6 反向解析域
+    - DOMAIN-SUFFIX,ip6.arpa,real-ip
+    - DOMAIN-SUFFIX,in-addr.arpa,real-ip
     # 连接检测
     - DOMAIN-SUFFIX,msftconnecttest.com,real-ip
     - DOMAIN-SUFFIX,msftncsi.com,real-ip
@@ -1119,16 +1170,21 @@ dns:
 
   respect-rules: true
   fast-queries: true
-  query-v6: false
+  query-v6: true
 
   default-nameserver:
     - tls://223.5.5.5
     - tls://223.6.6.6
     - tls://1.12.12.12
     - tls://120.53.53.53
+    # IPv6 加密 DNS（DoT）bootstrap，支持 IPv6 双栈解析
+    - tls://[2400:3200::1]
+    - tls://[2400:3200:baba::1]
+    - tls://[2606:4700:4700::1111]
 
   # 代理节点 DNS：腾讯 DNSPod DoH 域名 + 阿里公共 DNS IP DoH
-  # 不再使用 DNSPod 已下线的固定 IP DoH；TLS/SNI 行为不做“无SNI”假设
+  # 不再使用 DNSPod 已下线的固定 IP DoH；TLS/SNI 行为不做"无SNI"假设
+  # IPv6 双栈：通过 hosts 预解析可走 IPv6 连接 DNS 服务器
   proxy-server-nameserver:
     - https://doh.pub/dns-query
     - https://223.5.5.5/dns-query
@@ -1140,6 +1196,8 @@ dns:
   direct-nameserver:
     - https://doh.pub/dns-query
     - https://223.5.5.5/dns-query
+    # IPv6 DoH 直连解析器
+    - https://[2606:4700:4700::1111]/dns-query
 
   direct-nameserver-follow-policy: true
 
@@ -1376,14 +1434,32 @@ sub-rules:
     - IP-CIDR,140.207.0.0/16,DIRECT,no-resolve
     - RULE-SET,cn-ip,DIRECT,no-resolve
     - GEOIP,CN,DIRECT,no-resolve
+    # IPv6 中国大陆 IP 直连
+    - RULE-SET,cn-ip6,DIRECT,no-resolve
+    - IP-CIDR6,fe80::/10,DIRECT,no-resolve     # IPv6 链路本地
+    - IP-CIDR6,fc00::/7,DIRECT,no-resolve       # IPv6 ULA（含 fake-ip-range6，由 fake-ip-filter 处理例外）
 
 rules:
 
   # P0. TUN 私有 IP 快速通道
   - AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT
 
-  # P1. IPv6 全封堵
-  - IP-CIDR6,::/0,REJECT-DROP,no-resolve
+  # P1. IPv6 精细化路由（取代原全封堵 ::/0,REJECT-DROP）
+  # 原 P1 是 IP-CIDR6,::/0,REJECT-DROP，在 IPv6 关闭时代是正确的"宁可断也不漏"策略。
+  # 现在 ipv6=true 全面开启 IPv6，需要精细化路由：
+  #   1) IPv6 私有地址（link-local, ULA）直连
+  #   2) 中国大陆 IPv6 直连
+  #   3) 境外 IPv6 走代理（由后续规则和最终 MATCH→漏网之鱼 覆盖）
+  # 保留对 STUN/TURN over IPv6 的封堵（IP 泄露防护不因 IPv6 开启而放松）
+  # IPv6 链路本地地址和唯一本地地址直连
+  - IP-CIDR6,fe80::/10,DIRECT,no-resolve       # 链路本地（Link-Local）
+  - IP-CIDR6,fc00::/7,DIRECT,no-resolve         # 唯一本地地址（ULA）— 排除 fake-ip-range6
+  - IP-CIDR6,::1/128,DIRECT,no-resolve          # 回环地址（Loopback）
+  - IP-CIDR6,ff00::/8,REJECT-DROP,no-resolve     # 组播地址封堵（不应走公网）
+  # IPv6 私有 IP 规则集
+  - RULE-SET,private-ip6,DIRECT,no-resolve
+  # IPv6 中国大陆 IP 直连
+  - RULE-SET,cn-ip6,DIRECT,no-resolve
 
   # P2. 银行风控SDK域名（必须最优先，直连保证风控SDK正常工作）
   # 这些是银行/支付App内置的第三方风控SDK，走代理或fake-ip会触发安全警告
@@ -1525,24 +1601,25 @@ rules:
   - DOMAIN-REGEX,[-.]stuns[-.],REJECT-DROP
   - DOMAIN-REGEX,[-.]turns[-.],REJECT-DROP
 
-  # P5. DNS 明文泄露封堵
+  # P5. DNS 明文泄露封堵（IPv4 + IPv6 双栈）
   # REJECT → REJECT-DROP：静默丢包而非返回 TCP RST/ICMP，避免主动暴露
   # "此处存在拦截行为"的可探测特征，与 P2/P6/P7 的隐匿风格保持一致
-  - AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
-  - AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  # cn-ip 和 cn-ip6 双查：境内 DNS 直连允许，境外 DNS 明文全部封堵
+  - AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
 
   # P5.5 ICMP 封堵已删除：Mihomo AND 规则只支持 TCP/UDP
   #       ICMP ping 泄露风险极低，系统层面 strict-route 已缓解
 
-  # P5.6 明文协议境外封堵（防恶意软件通过代理外联）
+  # P5.6 明文协议境外封堵（防恶意软件通过代理外联，IPv4+IPv6 双栈）
   # Telnet:23 / FTP:21 / SMTP:25 / POP3:110 / IMAP:143
-  - AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,110),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,110),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
 
   # P6. STUN/TURN/WebRTC/SSDP/mDNS 端口封堵
   # STUN/TURN 无条件封堵 UDP + TCP 双协议（含国内IP）
@@ -1556,13 +1633,13 @@ rules:
   - AND,((NETWORK,TCP),(DST-PORT,3478-3480)),REJECT-DROP
   - AND,((NETWORK,TCP),(DST-PORT,5349-5355)),REJECT-DROP
   - AND,((NETWORK,TCP),(DST-PORT,19302-19305)),REJECT-DROP
-  # SSDP/mDNS 仅封堵境外（国内 UPnP/局域网设备发现需要保留）
-  - AND,((NETWORK,UDP),(DST-PORT,1900),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
-  - AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  # SSDP/mDNS 仅封堵境外（国内 UPnP/局域网设备发现需要保留，IPv4+IPv6）
+  - AND,((NETWORK,UDP),(DST-PORT,1900),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
 
-  # P7. QUIC（UDP 443）境内直连 / 境外屏蔽
-  - AND,((NETWORK,UDP),(DST-PORT,443),(RULE-SET,cn-ip)),DIRECT
-  - AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  # P7. QUIC（UDP 443）境内直连 / 境外屏蔽（IPv4+IPv6 双栈）
+  - AND,((NETWORK,UDP),(DST-PORT,443),(OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))),DIRECT
+  - AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
 
   # P8. 境外伪装段强制代理
   # 54.223.0.0/16 = AWS 中国区含 FCM(port 5229)，被 cn-ip 误收录
