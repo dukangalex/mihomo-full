@@ -4,6 +4,9 @@
 The template is authoritative for common Mihomo behavior. Airport-specific node
 handling and UX remain local to airport_overwrite.js. The synchronizer is
 idempotent: applying the transformation repeatedly must produce identical text.
+
+This file is the repository's existing synchronization mechanism; keep generated
+airport_overwrite.js derived from it rather than maintaining a second sync path.
 """
 from __future__ import annotations
 
