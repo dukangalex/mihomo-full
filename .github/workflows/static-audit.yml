@@ -36,3 +36,55 @@ jobs:
         run: python -m py_compile tools/sync-airport-overwrite.py tools/generate-endpoint.py tools/test-endpoint.py tools/test-vps-usage.py telegram-bot/bot.py telegram-bot/vps_usage.py tools/static-audit.py
       - name: JavaScript syntax audit
         run: node --check airport_overwrite.js
+      - name: End-to-end generate.sh regression audit
+        run: |
+          set -euo pipefail
+          # Exercises the full generate.sh -> tools/audit-generated-config.sh
+          # pipeline against a synthetic v2ray-agent landing node, so that a
+          # template.yaml change which is internally consistent but breaks the
+          # generator or the final-config auditor's string-literal assertions
+          # is caught here instead of only surfacing on a real VPS install/update.
+          FAKE_V2RAY_DIR="$RUNNER_TEMP/fake-v2ray/clashMeta"
+          mkdir -p "$FAKE_V2RAY_DIR"
+          python3 - "$FAKE_V2RAY_DIR/vless_TCP_inbound.yaml" << 'PY'
+          import sys
+          lines = [
+              '  - name: "CI-Synthetic-Landing-01"',
+              '    type: vless',
+              '    server: 198.51.100.10',
+              '    port: 443',
+              '    uuid: 00000000-0000-0000-0000-000000000000',
+              '    network: tcp',
+              '    tls: true',
+              '    servername: example.invalid',
+              '    flow: xtls-rprx-vision',
+              '    reality-opts:',
+              '      public-key: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+              '      short-id: abcd1234',
+              '    client-fingerprint: chrome',
+          ]
+          with open(sys.argv[1], "w", encoding="utf-8") as f:
+              f.write("\n".join(lines) + "\n")
+          PY
+          cp settings.conf settings.conf.ci-backup
+          cat > settings.conf << EOF
+          AIRPORT_SUB_URL="https://example.invalid/sub/token"
+          FIXED_FULL_CONFIG_PATH="/assets/orange-river-forest-cloud-window-simple-market-basic"
+          FIXED_EXIT_NODES_PATH="/assets/violet-stone-garden-summer-quiet-bridge-honest-cover"
+          DOMAIN="example.invalid"
+          V2RAY_AGENT_CLASHMETA_DIR="$FAKE_V2RAY_DIR"
+          OUTPUT_DIR="$RUNNER_TEMP/mf-output"
+          EOF
+          bash generate.sh
+          mv settings.conf.ci-backup settings.conf
+      - name: Validate generated config against real mihomo core
+        run: |
+          set -euo pipefail
+          MIHOMO_VERSION="v1.19.30"
+          curl -fsSL -o "$RUNNER_TEMP/mihomo.gz" \
+            "https://github.com/MetaCubeX/mihomo/releases/download/${MIHOMO_VERSION}/mihomo-linux-amd64-${MIHOMO_VERSION}.gz"
+          gunzip -f "$RUNNER_TEMP/mihomo.gz"
+          chmod +x "$RUNNER_TEMP/mihomo"
+          mkdir -p "$RUNNER_TEMP/mihomo-test-dir"
+          cp "$RUNNER_TEMP/mf-output/full-config.yaml" "$RUNNER_TEMP/mihomo-test-dir/config.yaml"
+          "$RUNNER_TEMP/mihomo" -d "$RUNNER_TEMP/mihomo-test-dir" -t

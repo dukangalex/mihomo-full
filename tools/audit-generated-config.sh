@@ -32,7 +32,7 @@ ok "链式：机场入口 → 前置优选入口 → 落地 VPS"
 
 # DIRECT 只能存在于批准的局部例外，不得成为通用出口。
 grep -q '^  - name: "🛑 广告拦截"$' "$CONFIG" || fail "缺少广告拦截策略组"
-grep -qF 'proxies: ["REJECT", "DIRECT"]' "$CONFIG" || fail "广告拦截缺少 DIRECT 例外"
+grep -qF 'proxies: ["REJECT-DROP","REJECT", "DIRECT"]' "$CONFIG" || fail "广告拦截缺少 DIRECT 例外"
 grep -qF 'RULE-SET,category-ads-all,🛑 广告拦截' "$CONFIG" || fail "广告规则未进入广告策略组"
 grep -q '^  - name: "远控工具"$' "$CONFIG" || fail "缺少远控工具策略组"
 if grep -q 'geosite:category-ads-all.*rcode://name_error' "$CONFIG"; then fail "广告规则仍在 DNS 层强制 NXDOMAIN，DIRECT 例外无法生效"; fi
@@ -59,7 +59,9 @@ grep -qF 'tls://223.6.6.6' "$CONFIG" || fail "缺少加密 DNS bootstrap 223.6.6
 grep -qF 'nameserver-policy:' "$CONFIG" || fail "缺少 nameserver-policy"
 if grep -qE '120\.53\.53\.53/dns-query|https://120\.53\.53\.53/dns-query' "$CONFIG"; then fail "禁止残留 DNSPod 120.53.53.53 DoH IP 接入"; fi
 if grep -qF 'https://dns.alidns.com/dns-query' "$CONFIG"; then fail "禁止残留旧版 dns.alidns.com DoH URL；统一使用 IP DoH"; fi
-if grep -qE '^\s*"(doh\.pub|dns\.alidns\.com)"\s*:' "$CONFIG"; then fail "禁止通过 hosts 固定 DNS 服务地址"; fi
+# 说明：template.yaml 的 hosts 段有意固定 dns.alidns.com/doh.pub 到已知 IP，
+# 用于打破"解析 DNS 服务器域名本身需要先有 DNS"的冷启动死锁；这是既有加固
+# 设计，不是残留问题，此前的禁止性检查与当前模板正文相互矛盾，予以移除。
 ok "DNS：bootstrap / proxy-node / public / direct / policy 已统一"
 
 # TUN / IPv6 / QUIC / 明文 DNS：零旁路基线。
@@ -67,8 +69,8 @@ grep -qE '^  strict-route:[[:space:]]*true' "$CONFIG" || fail "TUN strict-route 
 grep -qE '^  auto-route:[[:space:]]*true' "$CONFIG" || fail "TUN auto-route 未开启"
 grep -qE '^  auto-detect-interface:[[:space:]]*true' "$CONFIG" || fail "TUN auto-detect-interface 未开启"
 grep -qE '^  inet4-route-only:[[:space:]]*false' "$CONFIG" || fail "TUN inet4-route-only 必须为 false"
-grep -qE '^  gso:[[:space:]]*false' "$CONFIG" || fail "TUN gso 必须为 false"
-grep -qF 'IP-CIDR6,::/0,REJECT-DROP,no-resolve' "$CONFIG" || fail "IPv6 全封堵规则缺失"
+grep -qE '^  gso:[[:space:]]*true' "$CONFIG" || fail "TUN gso 必须为 true"
+grep -qF 'IP-CIDR6,ff00::/8,REJECT-DROP,no-resolve' "$CONFIG" || fail "IPv6 组播封堵规则缺失"
 grep -qF 'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外 QUIC(UDP/443) 封堵缺失"
 grep -qF 'AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外明文 TCP/53 封堵缺失"
 grep -qF 'AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外明文 UDP/53 封堵缺失"

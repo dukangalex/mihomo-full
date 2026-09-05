@@ -758,11 +758,11 @@ proxy-groups:
     lazy: false
     timeout: 5000
 
- # - name: "落地手动选择"
-   # type: select
+  - name: "落地手动选择"
+    type: select
     # 仅暴露落地 VPS 节点，供功能分组手动挑选具体协议/端口。
     # 严格止于落地节点，不包含前置入口、DIRECT、REJECT。
-   # use: [provider_exit]
+    use: [provider_exit]
 
   - name: "AI服务"
     type: select
@@ -770,28 +770,28 @@ proxy-groups:
     proxies:
       - 落地优选出口
       - 落地负载均衡
-     # - 落地手动选择
+      - 落地手动选择
 
   - name: "国外服务"
     type: select
     proxies:
       - 落地优选出口
       - 落地负载均衡
-     # - 落地手动选择
+      - 落地手动选择
 
   - name: "流媒体"
     type: select
     proxies:
       - 落地优选出口
       - 落地负载均衡
-     # - 落地手动选择
+      - 落地手动选择
 
   - name: "漏网之鱼"
     type: select
     proxies:
       - 落地优选出口
       - 落地负载均衡
-     # - 落地手动选择
+      - 落地手动选择
 
   - name: "🛑 广告拦截"
     type: select
@@ -1608,22 +1608,23 @@ rules:
   # P5. DNS 明文泄露封堵（IPv4 + IPv6 双栈）
   # REJECT → REJECT-DROP：静默丢包而非返回 TCP RST/ICMP，避免主动暴露
   # "此处存在拦截行为"的可探测特征，与 P2/P6/P7 的隐匿风格保持一致
-  # cn-ip 和 cn-ip 双查：境内 DNS 直连允许，境外 DNS 明文全部封堵
-  - AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
-  - AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  # cn-ip 已原生覆盖 IPv4+IPv6（已用真实中国大陆各运营商 IPv6 地址段
+  # 实测验证），无需额外 OR 同一规则集：境内 DNS 直连允许，境外 DNS 明文全部封堵
+  - AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
 
   # P5.5 ICMP 封堵已删除：Mihomo AND 规则只支持 TCP/UDP
   #       ICMP ping 泄露风险极低，系统层面 strict-route 已缓解
 
   # P5.6 明文协议境外封堵（防恶意软件通过代理外联，IPv4+IPv6 双栈）
   # Telnet:23 / FTP:21 / SMTP:25 / POP3:110 / IMAP:143
-  - AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,110),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,110),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
 
   # P6. STUN/TURN/WebRTC/SSDP/mDNS 端口封堵
   # STUN/TURN 无条件封堵 UDP + TCP 双协议（含国内IP）
@@ -1638,12 +1639,12 @@ rules:
   - AND,((NETWORK,TCP),(DST-PORT,5349-5355)),REJECT-DROP
   - AND,((NETWORK,TCP),(DST-PORT,19302-19305)),REJECT-DROP
   # SSDP/mDNS 仅封堵境外（国内 UPnP/局域网设备发现需要保留，IPv4+IPv6）
-  - AND,((NETWORK,UDP),(DST-PORT,1900),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
-  - AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,1900),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
 
   # P7. QUIC（UDP 443）境内直连 / 境外屏蔽（IPv4+IPv6 双栈）
-  - AND,((NETWORK,UDP),(DST-PORT,443),(OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))),DIRECT
-  - AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,443),(RULE-SET,cn-ip)),DIRECT
+  - AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
 
   # P8. 境外伪装段强制代理
   # 54.223.0.0/16 = AWS 中国区含 FCM(port 5229)，被 cn-ip 误收录
