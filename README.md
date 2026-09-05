@@ -7,7 +7,16 @@
 **原则：能自动的绝不让你改配置文件；安全永远优先于省事。**  
 订阅地址、机场链接、Bot Token 都是私密凭据，不要发到群聊、截图或 GitHub。
 
-## 1. 安装
+**两种用法：**
+
+| 方案 | 适用场景 | 需要 VPS / v2ray-agent | 说明 |
+| --- | --- | --- | --- |
+| A. 链式代理 | 机场作入口 + 自建落地 | 需要 | 见下方「1. 安装」 |
+| B. 仅机场 | 只用机场节点，不要落地链 | 不需要 | 见「2. 方案 B：仅机场模式」 |
+
+下面「1. 安装」章节说明的是**方案 A（链式）**；只想用机场节点、不想折腾 VPS 的，直接跳到「2. 方案 B」。
+
+## 1. 安装（方案 A：链式代理）
 
 ### 1.1 使用前必须完成的准备（按顺序做）
 
@@ -199,7 +208,47 @@ go
 
 ---
 
-## 2. Nginx 与 HTTPS（脚本自动 + 失败时怎么办）
+## 2. 方案 B：仅机场模式（覆写脚本，无需 VPS）
+
+如果你**不需要**自建 VPS 落地、只想用机场节点直连目标，不用走 1.1～1.3 的整套 VPS/Nginx/HTTPS 流程，改用覆写脚本即可。
+
+### 2.1 效果
+
+- 不需要 VPS，不需要 v2ray-agent，不需要域名和证书。
+- 机场原有的节点、地区分组、自动测速、负载均衡等全部保留。
+- 额外获得：完整的规则集（含本次新增的微信规则集）、DNS 防泄漏、Sniffer、银行/微信直连保护、STUN/远控默认拦截等本项目的安全加固能力。
+
+### 2.2 使用方法
+
+在支持"订阅覆写/进策处理脚本"的客户端（如 FlClash、Bettbox 等 Mihomo/Clash Meta 内核客户端）中，为你的机场订阅启用**覆写脚本**，脚本地址填写：
+
+```text
+https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.js
+```
+
+具体填写位置因客户端而异，一般在订阅的「编辑」或「高级设置」里找类似「覆写脚本 / Override Script / Pre-processing」的选项，把上面这个地址粘贴进去，保存后刷新订阅即可。
+
+若使用私有机场订阅仓库，或 GitHub raw 在你的网络环境下访问不稳定，可以把 `airport_overwrite.js` 下载到本地，改用客户端支持的本地文件路径代替上面的 URL。
+
+### 2.3 与方案 A（链式）的区别
+
+| 方案 | 需要 VPS/v2ray-agent | 落地节点 | 适用场景 |
+| --- | --- | --- | --- |
+| A. 链式 | 需要 | 自建 VPS 落地 | 想要固定且可控的落地出口 IP，或对机场落地质量不放心 |
+| B. 仅机场 | 不需要 | 机场自身节点 | 不想折腾 VPS，直接信任机场的落地质量 |
+
+两种方案的安全规则、DNS、Sniffer 等公共行为保持一致（详见 [`docs/BEHAVIOR_POLICY.md`](./docs/BEHAVIOR_POLICY.md)），只有节点来源和策略组 UI 不同。
+
+### 2.4 日常维护
+
+- 更换机场：直接在客户端里改订阅链接即可，不涉及本项目。
+- 更新覆写脚本：多数客户端会按你设置的间隔自动重新拉取 `airport_overwrite.js`；也可以在客户端里手动"刷新订阅"。
+- 规则集、DNS 等安全加固内容随本仓库更新；仓库有更新时，客户端下次拉取覆写脚本会自动生效，不需要手动改动。
+
+---
+
+## 3. Nginx 与 HTTPS（脚本自动 + 失败时怎么办）
+
 
 安装脚本会**尽量自动**：
 
@@ -238,7 +287,7 @@ curl -fsSI "https://你的域名/你的订阅路径"
 
 访问不存在的 `/assets/任意不存在路径` 应返回 **404**。
 
-## 3. 管理入口
+## 4. 管理入口
 
 安装完成后，推荐统一使用：
 
@@ -266,7 +315,7 @@ mihomo-full
 6. 更新 Mihomo Full
 7. 卸载 Mihomo Full
 
-## 4. 更换机场
+## 5. 更换机场
 
 进入：
 
@@ -287,7 +336,7 @@ go
 mihomo-full --set-airport 'https://example.invalid/subscription'
 ```
 
-## 5. 更新 VPS 落地节点
+## 6. 更新 VPS 落地节点
 
 更新 v2ray-agent 后，进入：
 
@@ -300,7 +349,7 @@ go
 
 客户端固定订阅地址不需要修改。
 
-## 6. 规则集
+## 7. 规则集
 
 进入：
 
@@ -327,7 +376,9 @@ go
 
 核心安全规则不能通过管理入口关闭或覆盖。
 
-## 7. 配置检查与审计
+> 说明：微信专用规则集（`wechat`，来自 blackmatrix7/ios_rule_script）已作为默认内置规则集随模板一起提供，用于补充顶层硬编码的微信域名保护，不需要手动通过本菜单添加；上方菜单用于追加你自己需要的**额外** MRS 规则集。
+
+## 8. 配置检查与审计
 
 日常检查：
 
@@ -345,7 +396,7 @@ mihomo-full --audit
 
 如果检查失败，先不要继续重启服务或删除文件，根据终端提示处理。
 
-## 8. 固定订阅地址
+## 9. 固定订阅地址
 
 安装完成后会得到一个固定 HTTPS 地址。
 
@@ -369,7 +420,7 @@ https://example.com/assets/普通英文词组...
 
 如果地址泄露，应尽快重新生成固定地址并重新配置客户端。
 
-## 9. Telegram Bot
+## 10. Telegram Bot
 
 Telegram Bot 是可选的远程管理入口。
 
@@ -562,7 +613,7 @@ mihomo-full uninstall
 
 **v2ray-agent 不会因为卸载 Mihomo Full 而被删除、停止或修改。**
 
-## 10. Cloudflare 进阶玩法
+## 11. Cloudflare 进阶玩法
 
 以下两个玩法彼此独立，也不属于 Mihomo Full 的安装必需项。
 
@@ -586,7 +637,7 @@ https://github.com/alienwaregf/Cloudflare-Country-Specific-IP-Filter
 
 它与 EdgeTunnel 独立，可以单独使用。
 
-## 11. 日常维护
+## 12. 日常维护
 
 ### 查看状态
 
@@ -622,7 +673,7 @@ mihomo-full --check
 mihomo-full --audit
 ```
 
-## 12. 常见问题
+## 13. 常见问题
 
 ### 机场换了，客户端地址需要重新导入吗？
 
@@ -673,7 +724,13 @@ go
 
 只会移除 Bot，不会卸载 Mihomo Full。
 
-## 13. 重要提醒（安全优先）
+### 落地 VPS 没有 IPv6，配置里的 IPv6 支持要不要关？
+
+一般**不需要关**。VPS 有没有 IPv6 和客户端本机网络有没有 IPv6 是两件独立的事：VPS 没有 IPv6，最多是极少数纯 IPv6 网站连不上（安全的失败，不是泄露）；但如果客户端本机网络有 IPv6、配置却没有相应开启拦截，反而可能让 IPv6 流量绕开代理直连，这才是真正的风险。
+
+只有在**客户端设备所在网络本身也没有 IPv6**时，关闭才有意义（纯粹省掉无效的 AAAA 查询延迟，不会有功能损失）。判断方法、利弊分析和具体开关步骤见 [`docs/IPV6_POLICY.md`](./docs/IPV6_POLICY.md)。
+
+## 14. 重要提醒（安全优先）
 
 1. **安全永远优先于省事**：没有 HTTPS 证书时不要强行用 HTTP 暴露订阅。
 2. 不要把真实机场订阅、节点凭据、Bot Token 或固定订阅地址提交到 GitHub，也不要发到群聊或公开截图。
@@ -683,14 +740,18 @@ go
 6. 不要手动删除 `/etc/v2ray-agent`；本项目不接管其生命周期。
 7. 不要为了处理单个问题而删除现有功能或配置模块。
 
-## 14. 相关项目
+## 15. 相关项目
 
 - v2ray-agent：https://github.com/mack-a/v2ray-agent
 - Mihomo：https://github.com/MetaCubeX/mihomo
 - Cloudflare EdgeTunnel：https://github.com/cmliu/edgetunnel
 - Cloudflare Country-Specific IP Filter：https://github.com/alienwaregf/Cloudflare-Country-Specific-IP-Filter
+- 仅机场覆写脚本：https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.js
+- 公共行为策略：[`docs/BEHAVIOR_POLICY.md`](./docs/BEHAVIOR_POLICY.md)
+- 机场模式行为规范：[`docs/AIRPORT_MODE_POLICY.md`](./docs/AIRPORT_MODE_POLICY.md)
+- IPv6 策略与开关说明：[`docs/IPV6_POLICY.md`](./docs/IPV6_POLICY.md)
 
-## 15. 免责声明
+## 16. 免责声明
 
 1. 本项目按「现状」提供，作者与贡献者不就使用本软件产生的任何直接或间接损失承担责任，包括但不限于账号封禁、流量费用、服务中断、数据泄露或配置失误。
 2. 你应遵守所在地法律法规及 VPS、机场、Telegram、域名等服务商的服务条款。本项目不提供任何形式的违法用途指导。
@@ -698,7 +759,7 @@ go
 4. 第三方项目（如 v2ray-agent、Mihomo、Nginx、certbot、Telegram、以及下文鸣谢中的进阶玩法项目等）的行为与可用性以其官方说明为准，本项目不对其变更或故障负责。
 5. 在公共模板仓库中，请只使用占位配置；切勿提交真实订阅、Token 或固定订阅完整 URL。
 
-## 16. 鸣谢
+## 17. 鸣谢
 
 感谢以下项目与社区（排名不分先后）：
 
@@ -715,7 +776,7 @@ go
 
 若你是相关项目作者，需要调整署名或链接，欢迎通过仓库 Issue 联系。
 
-## 17. 许可证
+## 18. 许可证
 
 本仓库源代码与文档以 **MIT License** 发布，详见根目录 [LICENSE](./LICENSE) 文件。
 
