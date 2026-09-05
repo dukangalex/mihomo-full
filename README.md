@@ -203,7 +203,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/dukangalex/mihomo-full/main/
 4. 日常维护优先用：
 
 ```bash
-go
+mff
 ```
 
 ---
@@ -292,7 +292,7 @@ curl -fsSI "https://你的域名/你的订阅路径"
 安装完成后，推荐统一使用：
 
 ```bash
-go
+mff
 ```
 
 进入管理菜单。
@@ -305,7 +305,7 @@ mihomo-full
 
 ### 管理菜单
 
-进入 `go` 后可以：
+进入 `mff` 后可以：
 
 1. 更换机场订阅
 2. 更新 VPS 落地节点
@@ -320,7 +320,7 @@ mihomo-full
 进入：
 
 ```text
-go
+mff
 → 更换机场订阅
 ```
 
@@ -341,7 +341,7 @@ mihomo-full --set-airport 'https://example.invalid/subscription'
 更新 v2ray-agent 后，进入：
 
 ```text
-go
+mff
 → 更新 VPS 落地节点
 ```
 
@@ -354,7 +354,7 @@ go
 进入：
 
 ```text
-go
+mff
 → 规则集管理
 ```
 
@@ -383,7 +383,7 @@ go
 日常检查：
 
 ```bash
-go
+mff
 → 配置完整性审计
 ```
 
@@ -599,7 +599,7 @@ Bot 显示的是 VPS 本机网卡统计值。
 也可以在 VPS 上执行：
 
 ```bash
-go
+mff
 → 卸载 Mihomo Full
 ```
 
@@ -642,14 +642,14 @@ https://github.com/alienwaregf/Cloudflare-Country-Specific-IP-Filter
 ### 查看状态
 
 ```bash
-go
+mff
 → 查看当前状态
 ```
 
 ### 更新项目
 
 ```bash
-go
+mff
 → 更新 Mihomo Full
 ```
 
@@ -706,7 +706,7 @@ bash /opt/mihomo-full/telegram-bot/install-telegram-bot.sh
 在 VPS 上进入：
 
 ```bash
-go
+mff
 → 查看当前状态
 ```
 
@@ -736,7 +736,7 @@ go
 2. 不要把真实机场订阅、节点凭据、Bot Token 或固定订阅地址提交到 GitHub，也不要发到群聊或公开截图。
 3. 不要公开完整固定订阅地址；泄露后应视为凭据已曝光并尽快轮换。
 4. 不要直接编辑生成后的 `output/full-config.yaml`。
-5. 规则集优先通过 `go` 或 Telegram Bot 管理。
+5. 规则集优先通过 `mff` 或 Telegram Bot 管理。
 6. 不要手动删除 `/etc/v2ray-agent`；本项目不接管其生命周期。
 7. 不要为了处理单个问题而删除现有功能或配置模块。
 

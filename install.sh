@@ -3,7 +3,7 @@
 set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 info(){ echo -e "${GREEN}[+]${NC} $1"; }; warn(){ echo -e "${YELLOW}[!]${NC} $1"; }; err(){ echo -e "${RED}[✗]${NC} $1" >&2; exit 1; }; title(){ echo -e "\n${CYAN}==== $1 ====${NC}\n"; }
-INSTALL_DIR="/opt/mihomo-full"; REPO="dukangalex/mihomo-full"; MARKER_VALUE="mihomo-full-managed-v1"; GO_LINK="/usr/local/bin/go"; MIHOMO_LINK="/usr/local/bin/mihomo-full"
+INSTALL_DIR="/opt/mihomo-full"; REPO="dukangalex/mihomo-full"; MARKER_VALUE="mihomo-full-managed-v1"; MF_LINK="/usr/local/bin/mff"; MIHOMO_LINK="/usr/local/bin/mihomo-full"
 
 title "0. 安装前安全预检"
 [[ $EUID -eq 0 ]] || err "请使用 root 运行：sudo bash install.sh"
@@ -31,14 +31,14 @@ else
   info "未发现现有 Mihomo Full 安装，将使用临时目录完成事务式首次安装"
 fi
 
-if [[ -e "$GO_LINK" || -L "$GO_LINK" ]]; then
-  if [[ -L "$GO_LINK" ]]; then
-    existing_go_target="$(readlink -f "$GO_LINK" 2>/dev/null || true)"
-    if [[ "$existing_go_target" != "$INSTALL_DIR/manage.sh" ]]; then
-      err "$GO_LINK 已被其他程序占用；为避免覆盖现有 go 命令，本次安装已停止。请先处理该命令冲突。"
+if [[ -e "$MF_LINK" || -L "$MF_LINK" ]]; then
+  if [[ -L "$MF_LINK" ]]; then
+    existing_mf_target="$(readlink -f "$MF_LINK" 2>/dev/null || true)"
+    if [[ "$existing_mf_target" != "$INSTALL_DIR/manage.sh" ]]; then
+      err "$MF_LINK 已被其他程序占用；为避免覆盖现有 mff 命令，本次安装已停止。请先处理该命令冲突。"
     fi
   else
-    err "$GO_LINK 已存在且不是 Mihomo Full 创建的符号链接；为避免覆盖现有 go 命令，本次安装已停止。"
+    err "$MF_LINK 已存在且不是 Mihomo Full 创建的符号链接；为避免覆盖现有 mff 命令，本次安装已停止。"
   fi
 fi
 
@@ -199,11 +199,11 @@ else
 fi
 
 ln -sfn "${INSTALL_DIR}/manage.sh" "$MIHOMO_LINK"
-if [[ ! -e "$GO_LINK" && ! -L "$GO_LINK" ]]; then
-  ln -s "${INSTALL_DIR}/manage.sh" "$GO_LINK"
-  info "已创建快捷入口：go"
+if [[ ! -e "$MF_LINK" && ! -L "$MF_LINK" ]]; then
+  ln -s "${INSTALL_DIR}/manage.sh" "$MF_LINK"
+  info "已创建快捷入口：mff"
 else
-  info "已存在受 Mihomo Full 管理的快捷入口：go"
+  info "已存在受 Mihomo Full 管理的快捷入口：mff"
 fi
 if [[ -f "${INSTALL_DIR}/settings.conf" ]]; then
   sed -i "s|^OUTPUT_DIR=.*$|OUTPUT_DIR=$(printf '%q' "${INSTALL_DIR}/output")|" "${INSTALL_DIR}/settings.conf"
@@ -356,7 +356,7 @@ fi
 
 title "完成"
 echo -e "客户端导入：${GREEN}https://${DOMAIN}${FULL_PATH}${NC}"
-echo "管理入口：go"
+echo "管理入口：mff"
 echo "兼容入口：mihomo-full"
 echo "安全卸载：${INSTALL_DIR}/uninstall.sh"
 echo "TG Bot：已部署代码但默认不启用；运行 telegram-bot/install-telegram-bot.sh 后按提示设置"
