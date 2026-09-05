@@ -601,6 +601,22 @@ function main(config) {
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs",
     "path": "./ruleset/cn-ip.mrs"
   },
+  "cn-ip6": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip6/cn.mrs",
+    "path": "./ruleset/cn-ip6.mrs"
+  },
+  "private-ip6": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "ipcidr",
+    "interval": 604800,
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip6/private.mrs",
+    "path": "./ruleset/private-ip6.mrs"
+  },
   "google-ip": {
     "type": "http",
     "format": "mrs",
@@ -685,7 +701,12 @@ function main(config) {
 
   config["rules"] = [
   "AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT",
-  "IP-CIDR6,::/0,REJECT-DROP,no-resolve",
+  "IP-CIDR6,fe80::/10,DIRECT,no-resolve",
+  "IP-CIDR6,fc00::/7,DIRECT,no-resolve",
+  "IP-CIDR6,::1/128,DIRECT,no-resolve",
+  "IP-CIDR6,ff00::/8,REJECT-DROP,no-resolve",
+  "RULE-SET,private-ip6,DIRECT,no-resolve",
+  "RULE-SET,cn-ip6,DIRECT,no-resolve",
   "DOMAIN-SUFFIX,tongdun.net,DIRECT",
   "DOMAIN-SUFFIX,tongduncdn.com,DIRECT",
   "DOMAIN-SUFFIX,ishumei.com,DIRECT",
@@ -800,25 +821,25 @@ function main(config) {
   "DOMAIN-REGEX,[-.]turn[-.],REJECT-DROP",
   "DOMAIN-REGEX,[-.]stuns[-.],REJECT-DROP",
   "DOMAIN-REGEX,[-.]turns[-.],REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,110),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,110),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
+  "AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,19302-19305)),REJECT-DROP",
   "AND,((NETWORK,TCP),(DST-PORT,3478-3480)),REJECT-DROP",
   "AND,((NETWORK,TCP),(DST-PORT,5349-5355)),REJECT-DROP",
   "AND,((NETWORK,TCP),(DST-PORT,19302-19305)),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,1900),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,443),(RULE-SET,cn-ip)),DIRECT",
-  "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,1900),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
+  "AND,((NETWORK,UDP),(DST-PORT,443),(OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))),DIRECT",
+  "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP",
   "IP-CIDR,54.223.0.0/16,🌍 国外服务,no-resolve",
   "IP-CIDR,52.80.168.0/24,🌍 国外服务,no-resolve",
   "DOMAIN-SUFFIX,browserleaks.com,🌍 国外服务",
@@ -962,6 +983,9 @@ function main(config) {
   "strict-route": true,
   "auto-detect-interface": true,
   "inet4-route-only": false,
+  "inet6-route": [
+    "2000::/4"
+  ],
   "mtu": 1500,
   "gso": true,
   "gso-max-size": 65536,
@@ -977,9 +1001,10 @@ function main(config) {
   config["dns"] = {
   "enable": true,
   "listen": "127.0.0.1:1053",
-  "ipv6": false,
+  "ipv6": true,
   "enhanced-mode": "fake-ip",
   "fake-ip-range": "198.18.0.1/16",
+  "fake-ip-range6": "fc00::/18",
   "fake-ip-cache-size": 4096,
   "ttl": 600,
   "min-ttl": 60,
@@ -1254,12 +1279,15 @@ function main(config) {
   ],
   "respect-rules": true,
   "fast-queries": true,
-  "query-v6": false,
+  "query-v6": true,
   "default-nameserver": [
     "tls://223.5.5.5",
     "tls://223.6.6.6",
     "tls://1.12.12.12",
-    "tls://120.53.53.53"
+    "tls://120.53.53.53",
+    "tls://[2400:3200::1]",
+    "tls://[2400:3200:baba::1]",
+    "tls://[2606:4700:4700::1111]"
   ],
   "proxy-server-nameserver": [
     "https://doh.pub/dns-query",
@@ -1844,7 +1872,10 @@ function main(config) {
     "91.108.56.0/22",
     "95.161.64.0/20",
     "149.154.160.0/20",
-    "185.76.151.0/24"
+    "185.76.151.0/24",
+    "2001:b28:f23d::/48",
+    "2001:b28:f23f::/48",
+    "2001:67c:4e8::/48"
   ],
   "skip-domain": [
     "geosite:cn",
@@ -1955,19 +1986,27 @@ function main(config) {
   config["hosts"] = {
   "dns.alidns.com": [
     "223.5.5.5",
-    "223.6.6.6"
+    "223.6.6.6",
+    "2400:3200::1",
+    "2400:3200:baba::1"
   ],
   "doh.pub": [
     "1.12.12.12",
-    "120.53.53.53"
+    "120.53.53.53",
+    "2402:4e00::",
+    "2402:4e00:1::"
   ],
   "dns.google": [
     "8.8.8.8",
-    "8.8.4.4"
+    "8.8.4.4",
+    "2001:4860:4860::8888",
+    "2001:4860:4860::8844"
   ],
   "cloudflare-dns.com": [
     "1.1.1.1",
-    "1.0.0.1"
+    "1.0.0.1",
+    "2606:4700:4700::1111",
+    "2606:4700:4700::1001"
   ]
 };
 
@@ -1977,7 +2016,7 @@ function main(config) {
   // allow-lan: true 即可。
   config["allow-lan"] = false;
   config["bind-address"] = "127.0.0.1";
-  config["ipv6"] = false;
+  config["ipv6"] = true;
   config["mode"] = "rule";
   config["log-level"] = "info";
   config["unified-delay"] = true;
@@ -2085,7 +2124,10 @@ function main(config) {
     "IP-CIDR,101.226.0.0/16,DIRECT,no-resolve",
     "IP-CIDR,140.207.0.0/16,DIRECT,no-resolve",
     "RULE-SET,cn-ip,DIRECT,no-resolve",
-    "GEOIP,CN,DIRECT,no-resolve"
+    "GEOIP,CN,DIRECT,no-resolve",
+    "RULE-SET,cn-ip6,DIRECT,no-resolve",
+    "IP-CIDR6,fe80::/10,DIRECT,no-resolve",
+    "IP-CIDR6,fc00::/7,DIRECT,no-resolve"
   ]
 };
 
@@ -2096,7 +2138,7 @@ function main(config) {
   "bind-address": "127.0.0.1",
   "mixed-port": 17890,
   "log-level": "info",
-  "ipv6": false,
+  "ipv6": true,
   "unified-delay": true,
   "tcp-concurrent": true,
   "keep-alive-interval": 15,
@@ -2106,7 +2148,7 @@ function main(config) {
   "etag-support": true,
   "external-controller": "127.0.0.1:19090",
   "global-ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-  "geodata-mode": true,
+  "geodata-mode": false,
   "geodata-loader": "memconservative",
   "geo-auto-update": true,
   "geo-update-interval": 168,
