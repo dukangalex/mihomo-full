@@ -585,6 +585,14 @@ function main(config) {
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.mrs",
     "path": "./ruleset/geolocation-!cn.mrs"
   },
+  "wechat": {
+    "type": "http",
+    "behavior": "classical",
+    "format": "yaml",
+    "interval": 86400,
+    "url": "https://gcore.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/WeChat/WeChat.yaml",
+    "path": "./ruleset/wechat.yaml"
+  },
   "private-ip": {
     "type": "http",
     "format": "mrs",
@@ -792,6 +800,7 @@ function main(config) {
   "DOMAIN-SUFFIX,wx.qq.com,DIRECT",
   "DOMAIN-SUFFIX,weixin.com,DIRECT",
   "DOMAIN-SUFFIX,wxs.qq.com,DIRECT",
+  "RULE-SET,wechat,DIRECT",
   "DOMAIN-SUFFIX,pddpic.com,DIRECT",
   "DOMAIN-SUFFIX,samsunghealth.com,DIRECT",
   "DOMAIN,connectivitycheck.gstatic.com,DIRECT",
@@ -1089,6 +1098,8 @@ function main(config) {
     "DOMAIN-SUFFIX,example,real-ip",
     "DOMAIN-SUFFIX,invalid,real-ip",
     "DOMAIN-SUFFIX,test,real-ip",
+    "DOMAIN-SUFFIX,ip6.arpa,real-ip",
+    "DOMAIN-SUFFIX,in-addr.arpa,real-ip",
     "DOMAIN-SUFFIX,msftconnecttest.com,real-ip",
     "DOMAIN-SUFFIX,msftncsi.com,real-ip",
     "DOMAIN,captive.apple.com,real-ip",
@@ -1299,7 +1310,8 @@ function main(config) {
   ],
   "direct-nameserver": [
     "https://doh.pub/dns-query",
-    "https://223.5.5.5/dns-query"
+    "https://223.5.5.5/dns-query",
+    "https://[2606:4700:4700::1111]/dns-query"
   ],
   "direct-nameserver-follow-policy": true,
   "nameserver-policy": {

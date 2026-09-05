@@ -67,6 +67,8 @@ log-level: info  # 日志量最大，换取以后排查问题的能力（权衡�
 # 配套变更：dns.ipv6=true, dns.query-v6=true, fake-ip-range6,
 # TUN inet4-route-only=false（已改），proxy-providers ip-version=dual,
 # P1 规则由全封堵改为精细化 IPv6 路由（私有 IP 直连、CN IP 直连、其余走代理）。
+# 落地 VPS 没有 IPv6 出口≠应该关闭这里的 IPv6 支持：两者是独立的维度，
+# 判断依据、利弊和开关步骤见 docs/IPV6_POLICY.md。
 ipv6: true
 unified-delay: true
 tcp-concurrent: true
@@ -575,6 +577,17 @@ rule-providers:
     <<: *DA
     url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.mrs"
     path: "./ruleset/geolocation-!cn.mrs"
+
+  # 微信补充规则集（MetaCubeX meta-rules-dat 无独立 wechat.mrs，仅有粗粒度 tencent.mrs；
+  # 改用 blackmatrix7/ios_rule_script 的专用 WeChat 规则，经 jsdelivr 镜像分发，
+  # classical/yaml 格式，与顶层 P2 微信硬编码 DIRECT 规则互为补充，双重保险）
+  wechat:
+    type: http
+    behavior: classical
+    format: yaml
+    interval: 86400
+    url: "https://gcore.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/WeChat/WeChat.yaml"
+    path: ./ruleset/wechat.yaml
 
   # ── IP 规则集 ──
   private-ip:
@@ -1555,6 +1568,8 @@ rules:
   - DOMAIN-SUFFIX,wx.qq.com,DIRECT
   - DOMAIN-SUFFIX,weixin.com,DIRECT
   - DOMAIN-SUFFIX,wxs.qq.com,DIRECT             # 微信CDN（wximg.wxs.qq.com 图片CDN）
+  # ── 微信规则集（blackmatrix7 专用集合，覆盖上方硬编码未包含的长尾域名/IP-ASN）──
+  - RULE-SET,wechat,DIRECT
   # ── 国内合法域名被误杀 ──────────────────────────────────────────
   - DOMAIN-SUFFIX,pddpic.com,DIRECT             # 拼多多图片CDN
   - DOMAIN-SUFFIX,samsunghealth.com,DIRECT      # 三星健康

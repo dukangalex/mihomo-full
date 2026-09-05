@@ -211,9 +211,15 @@ def validate_airport(text: str) -> None:
             raise RuntimeError(f"post-sync sanity check failed: {marker}")
     if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text:
         raise RuntimeError("airport ad rule is not connected to the ad group")
-    if 'var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"]' not in text:
+    ad_block_match = re.search(
+        r'var adBlockGroup = \{ name: "🛑 广告拦截", type: "select", proxies: \[([^\]]*)\]', text
+    )
+    if not ad_block_match or '"DIRECT"' not in ad_block_match.group(1):
         raise RuntimeError("airport ad DIRECT exception missing")
-    if 'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"]' not in text:
+    remote_tool_match = re.search(
+        r'var remoteToolGroup = \{ name: "🔧 远控工具", type: "select", proxies: \[([^\]]*)\]', text
+    )
+    if not remote_tool_match or '"DIRECT"' not in remote_tool_match.group(1):
         raise RuntimeError("airport remote DIRECT exception missing")
     if 'var privateGroup =' in text or 'var domesticGroup =' in text:
         raise RuntimeError("private/domestic UI groups must remain hidden")

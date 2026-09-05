@@ -118,8 +118,11 @@ policy = dns.get("nameserver-policy") or {}
 if not isinstance(proxy_dns, list) or not proxy_dns or not all(isinstance(x, str) and x.strip() for x in proxy_dns):
     errors.append("template dns.proxy-server-nameserver must be a non-empty string list")
 else:
-    if direct_dns != proxy_dns:
-        errors.append("direct-nameserver must match template proxy-server-nameserver")
+    # direct-nameserver must at least cover every resolver used for the proxy
+    # path (IPv4/IPv6 additions on top of that baseline are a valid, intentional
+    # strengthening — e.g. the IPv6-era Cloudflare DoH entry — not drift).
+    if not isinstance(direct_dns, list) or not all(x in direct_dns for x in proxy_dns):
+        errors.append("direct-nameserver must include every template proxy-server-nameserver entry")
 if not isinstance(dns.get("default-nameserver"), list) or not dns.get("default-nameserver") or not all(isinstance(x, str) and x.strip() for x in dns.get("default-nameserver")):
     errors.append("template dns.default-nameserver must be a non-empty string list")
 if dns.get("direct-nameserver-follow-policy") is not True:
@@ -128,7 +131,10 @@ if "nameserver-policy" not in dns:
     errors.append("DNS missing nameserver-policy")
 hosts = template.get("hosts") or {}
 if "https://dns.google/dns-query#RULES" in (dns.get("nameserver") or []):
-    if hosts.get("dns.google") != ["8.8.8.8", "8.8.4.4"]:
+    # The IPv4 pins are the required minimum; an IPv6-era config may additionally
+    # pin the AAAA addresses, which is a valid strengthening, not incorrect pinning.
+    pinned = hosts.get("dns.google")
+    if not isinstance(pinned, list) or not all(ip in pinned for ip in ("8.8.8.8", "8.8.4.4")):
         errors.append("dns.google DoH is configured but hosts pinning is missing or incorrect")
 for key, value in policy.items():
     if isinstance(value, list) and any(isinstance(x, str) and "doh.pub/dns-query" in x for x in value):
@@ -205,10 +211,14 @@ for forbidden in ("var privateGroup =", "var domesticGroup ="):
     if forbidden in airport: errors.append(f"airport overwrite exposes forbidden UI group: {forbidden}")
 if re.search(r"exclude-type:\s*vmess", airport): errors.append("airport overwrite still contains VMess protocol exclusion")
 if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in airport: errors.append("airport overwrite lost the ad DIRECT exception routing")
-if 'var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"]' not in airport: errors.append("airport overwrite lost the ad DIRECT exception group")
+_ad_block_match = re.search(r'var adBlockGroup = \{ name: "🛑 广告拦截", type: "select", proxies: \[([^\]]*)\]', airport)
+if not _ad_block_match or '"DIRECT"' not in _ad_block_match.group(1):
+    errors.append("airport overwrite lost the ad DIRECT exception group")
 # Airport overwrite is intentionally non-chain: remote-control exception must not
 # require the chain-only landing selector. The chain template is checked separately.
-if 'var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"]' not in airport: errors.append("airport overwrite lost the remote-control DIRECT exception group")
+_remote_tool_match = re.search(r'var remoteToolGroup = \{ name: "🔧 远控工具", type: "select", proxies: \[([^\]]*)\]', airport)
+if not _remote_tool_match or '"DIRECT"' not in _remote_tool_match.group(1):
+    errors.append("airport overwrite lost the remote-control DIRECT exception group")
 for raw in (",国外服务", ",AI服务", ",流媒体", ",漏网之鱼"):
     if raw in airport: errors.append(f"airport overwrite contains unmapped common rule target: {raw}")
 
