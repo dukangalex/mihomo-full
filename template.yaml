@@ -3,12 +3,12 @@
 # 零泄露（宁可断网也不泄露） · 零误判 · 零风控隐患 · 高隐匿 · 国内流量无感
 # IPv6 全面双栈支持（v6 变更：ipv6=true, dns.ipv6=true, query-v6=true,
 #   fake-ip-range6, proxy-providers ip-version=dual,
-#   P1 由全封堵改为精细化 IPv6 路由，新增 cn-ip6/private-ip6 规则集）
+#   P1 由全封堵改为精细化 IPv6 路由，新增 cn-ip/private-ip 规则集）
 #
 # ── 本版本相对早期 PATCH 版本的关键变更（供以后核对）──
 # 1. tun.exclude-package 已移除，且该字段对设备级 VPN 接口检测（banking App 风控）本来就无效，
 #    银行 App 的直连保障靠 rules 里的 PROCESS-NAME-WILDCARD 兜底。
-# 2. 全部 rule-provider 与 geox-url 下载源统一使用 gcore.jsdelivr.net，
+# 2. 全部 MetaCubeX rule-provider 与 geox-url 下载源统一使用官方 GitHub Raw，
 #    不用 testingcf.jsdelivr.net——后者在国内的可用性会不定期被单独
 #    干扰，历史上已经因此导致过多次加载失败（EOF / rule set not found）。
 #    如果 gcore 哪天也不通了，参考同一域名下 fastly/cdn 等其他 jsDelivr
@@ -45,8 +45,8 @@
 #    - proxy-providers ip-version 从 ipv4-only 改为 dual
 #    - P1 规则由 IP-CIDR6,::/0,REJECT-DROP（全封堵）改为精细化路由：
 #      私有 IPv6 直连、CN IPv6 直连、组播封堵、其余走后续规则/MATCH
-#    - 新增 rule-providers: cn-ip6, private-ip6
-#    - P5/P5.6/P7 等境外封堵规则增加 cn-ip6 双栈判断
+#    - 新增 rule-providers: cn-ip, private-ip
+#    - P5/P5.6/P7 等境外封堵规则增加 cn-ip 双栈判断
 #    - hosts/default-nameserver 新增 IPv6 地址
 #    - sniffer skip-dst-address 新增 Telegram IPv6 段
 #    - DOMESTIC_IP 子规则新增 IPv6 CN IP 和私有地址直连
@@ -113,10 +113,10 @@ geox-url:
   # "GEOIP,CN,DIRECT" 这类兜底规则会连带失效。改用 meta-rules-dat 官方
   # 提供的 jsDelivr 镜像（@release 分支，整包文件），与其余规则集统一走
   # 同一个已验证可用的 CDN 边缘节点。
-  geoip:   "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat"
-  geosite: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat"
-  mmdb:    "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb"
-  asn:     "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
+  geoip:   "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geoip.dat"
+  geosite: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geosite.dat"
+  mmdb:    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geoip.metadb"
+  asn:     "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/GeoLite2-ASN.mmdb"
 
 # 使用较中性的 Chrome UA，避免在 Windows/macOS 上出现明显的 Android 指纹。
 # 如主要只在 Android 使用，可改回 Pixel 专用 UA。
@@ -340,242 +340,242 @@ rule-providers:
 
   category-ads-all:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ads-all.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ads-all.mrs"
     path: ./ruleset/category-ads-all.mrs
 
   "category-ai-!cn":
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ai-!cn.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ai-!cn.mrs"
     path: "./ruleset/category-ai-!cn.mrs"
 
   openai:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/openai.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/openai.mrs"
     path: ./ruleset/openai.mrs
 
   bilibili:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bilibili.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/bilibili.mrs"
     path: ./ruleset/bilibili.mrs
 
   geolocation-cn:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-cn.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/geolocation-cn.mrs"
     path: ./ruleset/geolocation-cn.mrs
 
   cn:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cn.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/cn.mrs"
     path: ./ruleset/cn.mrs
 
   youtube:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/youtube.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/youtube.mrs"
     path: ./ruleset/youtube.mrs
 
   netflix:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/netflix.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/netflix.mrs"
     path: ./ruleset/netflix.mrs
 
   hulu:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hulu.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/hulu.mrs"
     path: ./ruleset/hulu.mrs
 
   disney:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/disney.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/disney.mrs"
     path: ./ruleset/disney.mrs
 
   hbo:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hbo.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/hbo.mrs"
     path: ./ruleset/hbo.mrs
 
   amazon:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/amazon.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/amazon.mrs"
     path: ./ruleset/amazon.mrs
 
   bahamut:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bahamut.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/bahamut.mrs"
     path: ./ruleset/bahamut.mrs
 
   spotify:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/spotify.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/spotify.mrs"
     path: ./ruleset/spotify.mrs
 
   tiktok:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tiktok.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/tiktok.mrs"
     path: ./ruleset/tiktok.mrs
 
   biliintl:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/biliintl.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/biliintl.mrs"
     path: ./ruleset/biliintl.mrs
 
   # 日本流媒体 Abema（MetaCubeX 官方）
   abema:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/abema.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/abema.mrs"
     path: ./ruleset/abema.mrs
 
   # 欧洲流媒体 BBC（MetaCubeX 官方）
   bbc:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bbc.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/bbc.mrs"
     path: ./ruleset/bbc.mrs
 
   google:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/google.mrs"
     path: ./ruleset/google.mrs
 
   github:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/github.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/github.mrs"
     path: ./ruleset/github.mrs
 
   gitlab:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/gitlab.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/gitlab.mrs"
     path: ./ruleset/gitlab.mrs
 
   apple:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/apple.mrs"
     path: ./ruleset/apple.mrs
 
   microsoft:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/microsoft.mrs"
     path: ./ruleset/microsoft.mrs
 
   facebook:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/facebook.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/facebook.mrs"
     path: ./ruleset/facebook.mrs
 
   instagram:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/instagram.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/instagram.mrs"
     path: ./ruleset/instagram.mrs
 
   twitter:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/twitter.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/twitter.mrs"
     path: ./ruleset/twitter.mrs
 
   linkedin:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/linkedin.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/linkedin.mrs"
     path: ./ruleset/linkedin.mrs
 
   # 即时通讯补充（MetaCubeX 官方仓库，mrs 格式）
   discord:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/discord.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/discord.mrs"
     path: ./ruleset/discord.mrs
 
   # 社交媒体补充（注意：文件名是 snap.mrs，不是 snapchat.mrs）
   snapchat:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/snap.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/snap.mrs"
     path: ./ruleset/snapchat.mrs
 
   # iCloud 独立规则集（比 apple.mrs 更精准，专门处理 iCloud 服务）
   icloud:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/icloud.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/icloud.mrs"
     path: ./ruleset/icloud.mrs
 
   apple-cn:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple-cn.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/apple-cn.mrs"
     path: ./ruleset/apple-cn.mrs
 
   microsoft-cn:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft@cn.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/microsoft@cn.mrs"
     path: ./ruleset/microsoft-cn.mrs
 
   steam:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam.mrs"
     path: ./ruleset/steam.mrs
 
   epicgames:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/epicgames.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/epicgames.mrs"
     path: ./ruleset/epicgames.mrs
 
   ea:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ea.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/ea.mrs"
     path: ./ruleset/ea.mrs
 
   ubisoft:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ubisoft.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/ubisoft.mrs"
     path: ./ruleset/ubisoft.mrs
 
   blizzard:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/blizzard.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/blizzard.mrs"
     path: ./ruleset/blizzard.mrs
 
   steam-cn:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam@cn.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.mrs"
     path: ./ruleset/steam-cn.mrs
 
   "category-games-cn":
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-games@cn.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-games@cn.mrs"
     path: "./ruleset/category-games-cn.mrs"
 
   paypal:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/paypal.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/paypal.mrs"
     path: ./ruleset/paypal.mrs
 
   aws:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/aws.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/aws.mrs"
     path: ./ruleset/aws.mrs
 
   azure:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/azure.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/azure.mrs"
     path: ./ruleset/azure.mrs
 
   dropbox:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/dropbox.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/dropbox.mrs"
     path: ./ruleset/dropbox.mrs
 
   onedrive:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/onedrive.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/onedrive.mrs"
     path: ./ruleset/onedrive.mrs
 
   "category-scholar-!cn":
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-scholar-!cn.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-scholar-!cn.mrs"
     path: "./ruleset/category-scholar-!cn.mrs"
 
   tracker:
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tracker.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/tracker.mrs"
     path: ./ruleset/tracker.mrs
 
   "geolocation-!cn":
     <<: *DA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/geolocation-!cn.mrs"
     path: "./ruleset/geolocation-!cn.mrs"
 
   # 微信补充规则集（MetaCubeX meta-rules-dat 无独立 wechat.mrs，仅有粗粒度 tencent.mrs；
@@ -592,66 +592,55 @@ rule-providers:
   # ── IP 规则集 ──
   private-ip:
     <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/private.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/private.mrs"
     path: ./ruleset/private-ip.mrs
 
   cn-ip:
     <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cn.mrs"
     path: ./ruleset/cn-ip.mrs
 
-  # IPv6 中国大陆 IP 段（用于 IPv6 流量的国内直连判断）
-  cn-ip6:
-    <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip6/cn.mrs"
-    path: ./ruleset/cn-ip6.mrs
-
-  # IPv6 私有地址段（链路本地、唯一本地地址等）
-  private-ip6:
-    <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip6/private.mrs"
-    path: ./ruleset/private-ip6.mrs
 
   google-ip:
     <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/google.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/google.mrs"
     path: ./ruleset/google-ip.mrs
 
   telegram-ip:
     <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/telegram.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/telegram.mrs"
     path: ./ruleset/telegram-ip.mrs
 
   netflix-ip:
     <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/netflix.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/netflix.mrs"
     path: ./ruleset/netflix-ip.mrs
 
   facebook-ip:
     <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/facebook.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/facebook.mrs"
     path: ./ruleset/facebook-ip.mrs
 
   twitter-ip:
     <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/twitter.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/twitter.mrs"
     path: ./ruleset/twitter-ip.mrs
 
   cloudflare-ip:
     <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudflare.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cloudflare.mrs"
     path: ./ruleset/cloudflare-ip.mrs
 
   # AWS CloudFront CDN IP（MetaCubeX 官方）
   cloudfront-ip:
     <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudfront.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cloudfront.mrs"
     path: ./ruleset/cloudfront-ip.mrs
 
   # Fastly CDN IP（MetaCubeX 官方）
   fastly-ip:
     <<: *IA
-    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/fastly.mrs"
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/fastly.mrs"
     path: ./ruleset/fastly-ip.mrs
 
   # Hagezi 威胁情报（恶意软件/C2/诈骗/矿工脚本），mrs 格式，质量高
@@ -1448,7 +1437,7 @@ sub-rules:
     - RULE-SET,cn-ip,DIRECT,no-resolve
     - GEOIP,CN,DIRECT,no-resolve
     # IPv6 中国大陆 IP 直连
-    - RULE-SET,cn-ip6,DIRECT,no-resolve
+    - RULE-SET,cn-ip,DIRECT,no-resolve
     - IP-CIDR6,fe80::/10,DIRECT,no-resolve     # IPv6 链路本地
     - IP-CIDR6,fc00::/7,DIRECT,no-resolve       # IPv6 ULA（含 fake-ip-range6，由 fake-ip-filter 处理例外）
 
@@ -1470,9 +1459,9 @@ rules:
   - IP-CIDR6,::1/128,DIRECT,no-resolve          # 回环地址（Loopback）
   - IP-CIDR6,ff00::/8,REJECT-DROP,no-resolve     # 组播地址封堵（不应走公网）
   # IPv6 私有 IP 规则集
-  - RULE-SET,private-ip6,DIRECT,no-resolve
+  - RULE-SET,private-ip,DIRECT,no-resolve
   # IPv6 中国大陆 IP 直连
-  - RULE-SET,cn-ip6,DIRECT,no-resolve
+  - RULE-SET,cn-ip,DIRECT,no-resolve
 
   # P2. 银行风控SDK域名（必须最优先，直连保证风控SDK正常工作）
   # 这些是银行/支付App内置的第三方风控SDK，走代理或fake-ip会触发安全警告
@@ -1619,22 +1608,22 @@ rules:
   # P5. DNS 明文泄露封堵（IPv4 + IPv6 双栈）
   # REJECT → REJECT-DROP：静默丢包而非返回 TCP RST/ICMP，避免主动暴露
   # "此处存在拦截行为"的可探测特征，与 P2/P6/P7 的隐匿风格保持一致
-  # cn-ip 和 cn-ip6 双查：境内 DNS 直连允许，境外 DNS 明文全部封堵
-  - AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
-  - AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  # cn-ip 和 cn-ip 双查：境内 DNS 直连允许，境外 DNS 明文全部封堵
+  - AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
 
   # P5.5 ICMP 封堵已删除：Mihomo AND 规则只支持 TCP/UDP
   #       ICMP ping 泄露风险极低，系统层面 strict-route 已缓解
 
   # P5.6 明文协议境外封堵（防恶意软件通过代理外联，IPv4+IPv6 双栈）
   # Telnet:23 / FTP:21 / SMTP:25 / POP3:110 / IMAP:143
-  - AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,110),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
-  - AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,110),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
 
   # P6. STUN/TURN/WebRTC/SSDP/mDNS 端口封堵
   # STUN/TURN 无条件封堵 UDP + TCP 双协议（含国内IP）
@@ -1649,12 +1638,12 @@ rules:
   - AND,((NETWORK,TCP),(DST-PORT,5349-5355)),REJECT-DROP
   - AND,((NETWORK,TCP),(DST-PORT,19302-19305)),REJECT-DROP
   # SSDP/mDNS 仅封堵境外（国内 UPnP/局域网设备发现需要保留，IPv4+IPv6）
-  - AND,((NETWORK,UDP),(DST-PORT,1900),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
-  - AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,1900),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
 
   # P7. QUIC（UDP 443）境内直连 / 境外屏蔽（IPv4+IPv6 双栈）
-  - AND,((NETWORK,UDP),(DST-PORT,443),(OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))),DIRECT
-  - AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip6)))))),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,443),(OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))),DIRECT
+  - AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn-ip),(RULE-SET,cn-ip)))))),REJECT-DROP
 
   # P8. 境外伪装段强制代理
   # 54.223.0.0/16 = AWS 中国区含 FCM(port 5229)，被 cn-ip 误收录
