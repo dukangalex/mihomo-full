@@ -1,0 +1,117 @@
+name: Normalize Official MetaCubeX Rules
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Replace CDN URLs and repair IPv6 rule-set references
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          template = Path("template.yaml")
+          s = template.read_text(encoding="utf-8")
+
+          # All MetaCubeX MRS rule providers use the repository's native GitHub Raw files.
+          s = s.replace(
+              "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/",
+              "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/"
+          )
+
+          # Geo database bundles are not rule-providers, but they are also available
+          # directly from the official repository's release branch.
+          s = s.replace(
+              "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/",
+              "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/"
+          )
+
+          # meta-rules-dat does not expose a geoip6/ directory. Its cn/private MRS
+          # rule sets are the official IP rule sets used by Mihomo for both IP families.
+          s = re.sub(
+              r'\n  # IPv6 中国大陆 IP 段（用于 IPv6 流量的国内直连判断）\n'
+              r'  cn-ip6:\n'
+              r'    <<: \*IA\n'
+              r'    url: "[^"]*/geoip6/cn\.mrs"\n'
+              r'    path: ./ruleset/cn-ip6\.mrs\n\n'
+              r'  # IPv6 私有地址段（链路本地、唯一本地地址等）\n'
+              r'  private-ip6:\n'
+              r'    <<: \*IA\n'
+              r'    url: "[^"]*/geoip6/private\.mrs"\n'
+              r'    path: ./ruleset/private-ip6\.mrs\n',
+              "\n",
+              s,
+              flags=re.S,
+          )
+
+          # Reuse the official cn/private IP rule sets for IPv6 routing as well.
+          s = s.replace("cn-ip6", "cn-ip")
+          s = s.replace("private-ip6", "private-ip")
+
+          # Keep documentation inside the template consistent with the actual source.
+          s = s.replace(
+              "全部 rule-provider 与 geox-url 下载源统一使用 gcore.jsdelivr.net",
+              "全部 MetaCubeX rule-provider 与 geox-url 下载源统一使用官方 GitHub Raw"
+          )
+          s = s.replace(
+              "改用 meta-rules-dat 官方提供的 jsDelivr 镜像（@release 分支，整包文件），与其余规则集统一走同一个已验证可用的 CDN 边缘节点。",
+              "改用 MetaCubeX 官方 GitHub Raw（@release 分支，整包文件）。"
+          )
+
+          template.write_text(s, encoding="utf-8")
+
+          # Keep the policy document aligned with the implementation.
+          doc = Path("docs/IPV6_POLICY.md")
+          if doc.exists():
+              d = doc.read_text(encoding="utf-8")
+              d = d.replace(
+                  "其余 IPv6 相关的 rule-providers（`cn-ip6`、`private-ip6`）和规则可以**原样保留、不用删除**",
+                  "IPv6 使用与 IPv4 相同的官方 `cn-ip` / `private-ip` MRS 规则集，不再维护不存在的 `geoip6/` 规则集"
+              )
+              d = d.replace(
+                  "规则可以**原样保留、不用删除**。客户端没有 IPv6 流量时这些规则不会被匹配到，留着不会造成任何副作用，也符合\"只增强、不削减既有功能\"的原则，以后要重新开启时更省事。",
+                  "规则无需额外维护独立 IPv6 Provider；客户端没有 IPv6 流量时，IPv6 匹配规则自然不会命中。"
+              )
+              doc.write_text(d, encoding="utf-8")
+          PY
+
+      - name: Verify official rule-set URLs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s = Path("template.yaml").read_text(encoding="utf-8")
+          bad = []
+          for url in re.findall(r'url:\s*["\']([^"\']+)["\']', s):
+              if "MetaCubeX/meta-rules-dat" in url and "raw.githubusercontent.com/MetaCubeX/meta-rules-dat/" not in url:
+                  bad.append(url)
+              if "meta-rules-dat" in url and "/geoip6/" in url:
+                  bad.append(url)
+          if bad:
+              raise SystemExit("Invalid MetaCubeX URL(s):\n" + "\n".join(bad))
+          print("MetaCubeX URLs: OK")
+          print("No geoip6 references: OK")
+          PY
+
+      - name: Commit normalization
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add template.yaml docs/IPV6_POLICY.md
+          git commit -m "fix: use native MetaCubeX rules and repair IPv6 rule sets"
+          git push
