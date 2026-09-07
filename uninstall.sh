@@ -6,6 +6,7 @@ set -euo pipefail
 INSTALL_DIR="/opt/mihomo-full"
 BIN_LINK="/usr/local/bin/mihomo-full"
 MF_LINK="/usr/local/bin/mff"
+GO_LINK="/usr/local/bin/go"
 BOT_SERVICE="mihomo-full-bot.service"
 BOT_ENV="${INSTALL_DIR}/telegram-bot.env"
 MARKER="${INSTALL_DIR}/.mihomo-full-managed"
@@ -60,6 +61,21 @@ elif [[ -e "$MF_LINK" ]]; then
   err "拒绝卸载：$MF_LINK 不是符号链接，为防止误删现有 mff 命令而中止。"
 fi
 
+# Installs from before the go->mff rename may still have the legacy `go`
+# entry. Clean it up too, but only when it is verifiably ours — a pre-existing
+# Go toolchain or unrelated command is never touched.
+GO_OWNED=0
+if [[ -L "$GO_LINK" ]]; then
+  go_target="$(readlink -f "$GO_LINK" 2>/dev/null || true)"
+  if [[ "$go_target" == "$INSTALL_DIR/manage.sh" ]]; then
+    GO_OWNED=1
+  else
+    err "拒绝卸载：$GO_LINK 不是指向 Mihomo Full，保留并中止卸载。"
+  fi
+elif [[ -e "$GO_LINK" ]]; then
+  err "拒绝卸载：$GO_LINK 不是符号链接，为防止误删现有 go 命令而中止。"
+fi
+
 echo ""
 echo "Mihomo Full 卸载预览"
 echo "-----------------------------"
@@ -67,6 +83,7 @@ echo "将删除："
 echo "  - $INSTALL_DIR（仅因所有权标记有效）"
 echo "  - $BIN_LINK（仅因已验证指向 Mihomo Full）"
 (( MF_OWNED )) && echo "  - $MF_LINK（仅因已验证指向 Mihomo Full）"
+(( GO_OWNED )) && echo "  - $GO_LINK（仅因已验证指向 Mihomo Full，历史遗留快捷入口）"
 if [[ -e "$SERVICE_FILE" ]]; then echo "  - $BOT_SERVICE（仅因已验证属于本项目）"; fi
 echo ""
 echo "明确不会操作："
@@ -86,6 +103,7 @@ fi
 
 if [[ -L "$BIN_LINK" ]]; then rm -f -- "$BIN_LINK"; fi
 if (( MF_OWNED )); then rm -f -- "$MF_LINK"; fi
+if (( GO_OWNED )); then rm -f -- "$GO_LINK"; fi
 if [[ -d "$INSTALL_DIR" ]]; then rm -rf -- "$INSTALL_DIR"; fi
 
 if [[ -d /etc/v2ray-agent ]]; then

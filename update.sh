@@ -121,6 +121,19 @@ if ! [[ -s "$INSTALL_DIR/output/full-config.yaml" && -s "$INSTALL_DIR/output/exi
 fi
 
 rm -rf -- "$PREVIOUS"
+
+# Non-destructive shortcut migration: installs from before the go->mff rename
+# only have /usr/local/bin/go. Give them mff too without touching go — never
+# overwrite an mff that isn't already ours.
+MF_LINK="/usr/local/bin/mff"
+GO_LINK="/usr/local/bin/go"
+if [[ ! -e "$MF_LINK" && ! -L "$MF_LINK" ]]; then
+  if [[ -L "$GO_LINK" && "$(readlink -f "$GO_LINK" 2>/dev/null || true)" == "$INSTALL_DIR/manage.sh" ]]; then
+    ln -s "${INSTALL_DIR}/manage.sh" "$MF_LINK"
+    info "已新增快捷入口：mff（旧的 go 入口继续保留，两者都可用）"
+  fi
+fi
+
 info "更新成功：$COMMIT"
 echo "管理入口：$INSTALL_DIR/manage.sh"
 echo "固定订阅路径保持不变：$FIXED_FULL_CONFIG_PATH"
