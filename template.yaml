@@ -1428,10 +1428,13 @@ sub-rules:
     - RULE-SET,tracker,DIRECT        # BT Tracker 直连（TCP/UDP 均生效）
 
   DOMESTIC_IP:
-    # 微信服务器 IP 段显式优先（防"无法连接当前WiFi"弹窗）
+    # 微信/腾讯服务器 IP 段：真正的最高优先级声明已经上移到主规则层
+    # P1.5（见上方注释），这里保留同样两条作为冗余安全网——SUB-RULE
+    # 要等域名规则全不命中才会跑到这里，正常情况下 P1.5 早就命中过了，
+    # 这两条实际不会再触发，留着不影响功能，纯粹是万一 P1.5 被后续
+    # 改动误删时的兜底。
     # 101.226.0.0/16：中国电信上海，微信服务器主要分布段
     # 140.207.0.0/16：腾讯云，微信服务器分布段
-    # 均在 cn-ip 已收录，此处显式声明确保第一顺位命中
     - IP-CIDR,101.226.0.0/16,DIRECT,no-resolve
     - IP-CIDR,140.207.0.0/16,DIRECT,no-resolve
     - RULE-SET,cn-ip,DIRECT,no-resolve
@@ -1446,6 +1449,26 @@ rules:
   # P0. TUN 私有 IP 快速通道
   - AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT
 
+  # P0.5. STUN/TURN 端口无条件封堵（必须在任何 IP-CIDR/cn-ip 强制直连之前）
+  # 起因：2026-09 用户用 IPPure WebRTC 泄露测试实测发现，B站/芒果TV/小米WiFi
+  # 三个国内 STUN 服务器泄露了真实住宅 IP（Google/Cloudflare/Twilio 等境外
+  # STUN 服务器均未泄露）。排查发现原因是 P1 的 "RULE-SET,cn-ip,DIRECT"
+  # （IPv6）和 P1.5 的微信/腾讯 IP-CIDR 直连（IPv4，140.207.0.0/16 腾讯云
+  # 恰好是很多国内服务商的常见托管段）都是无条件按目标 IP 匹配、不看端口，
+  # 而原来的 STUN/TURN 端口封堵（P6）排在这些规则之后——只要某个 STUN
+  # 服务器的 IP 恰好落在这些"必须优先直连"的段内，就会在真正走到 P6 之前
+  # 被直连放行，STUN 响应带着真实公网 IP 原样返回，泄露真实位置。
+  # 这里把 P6 的端口规则原样复制一份放到最前面（P6 保留不动，作为冗余），
+  # 确保不管以后 P1~P8 加什么新的"强制直连"规则，STUN/TURN 永远优先被拦，
+  # 符合"宁可断网也不泄露"的总原则——直连便利性任何时候都不能凌驾于
+  # 防泄露之上。
+  - AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,19302-19305)),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,3478-3480)),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,5349-5355)),REJECT-DROP
+  - AND,((NETWORK,TCP),(DST-PORT,19302-19305)),REJECT-DROP
+
   # P1. IPv6 精细化路由（取代原全封堵 ::/0,REJECT-DROP）
   # 原 P1 是 IP-CIDR6,::/0,REJECT-DROP，在 IPv6 关闭时代是正确的"宁可断也不漏"策略。
   # 现在 ipv6=true 全面开启 IPv6，需要精细化路由：
@@ -1453,6 +1476,8 @@ rules:
   #   2) 中国大陆 IPv6 直连
   #   3) 境外 IPv6 走代理（由后续规则和最终 MATCH→漏网之鱼 覆盖）
   # 保留对 STUN/TURN over IPv6 的封堵（IP 泄露防护不因 IPv6 开启而放松）
+  # 该封堵现在由更靠前的 P0.5 端口规则保证，早于下方 cn-ip DIRECT，
+  # 避免 STUN/TURN 目标恰好命中 cn-ip 而被在此处提前放行直连。
   # IPv6 链路本地地址和唯一本地地址直连
   - IP-CIDR6,fe80::/10,DIRECT,no-resolve       # 链路本地（Link-Local）
   - IP-CIDR6,fc00::/7,DIRECT,no-resolve         # 唯一本地地址（ULA）— 排除 fake-ip-range6
@@ -1462,6 +1487,23 @@ rules:
   - RULE-SET,private-ip,DIRECT,no-resolve
   # IPv6 中国大陆 IP 直连
   - RULE-SET,cn-ip,DIRECT,no-resolve
+
+  # P1.5. 微信/腾讯服务器 IP 段最高优先级直连（防"当前WiFi不可用"弹窗）
+  # 背景：微信部分长/短连接使用裸 IP 直连（mmtls 自定义协议，不走标准
+  # TLS SNI，域名层规则完全碰不到），一旦这些连接被误判走代理或超时，
+  # Android/各 ROM 的"智能网络切换"会认为微信在当前 WiFi 下不可用，
+  # 弹窗建议切换到移动数据。下方 DOMESTIC_IP 子规则（P11）里也有这两段
+  # 显式声明，但子规则要等到域名规则全部不命中才会触发，实际顺位在
+  # P8"境外伪装段强制代理"之后——历史上 157.255.0.0/16 就因为同时含有
+  # 微信服务器 IP 又被别的规则强制代理而触发过这个弹窗（见 P8 注释）。
+  # 挪到这里保证：不管以后 P2~P8 加什么新规则，这两段永远第一顺位命中，
+  # 不会再被后续任何强制代理/误判规则抢先命中。
+  # 注意：这条本身也是"无条件按 IP 段直连"，一度导致 STUN/TURN 泄露
+  # （见上方 P0.5 注释）——现在 P0.5 排在更前面、专门拦截 STUN/TURN 端口，
+  # 这两段命中的流量若是 STUN/TURN 会先被 P0.5 拦下，不会到这里。
+  # 101.226.0.0/16：中国电信上海，140.207.0.0/16：腾讯云，均为微信服务器主要分布段。
+  - IP-CIDR,101.226.0.0/16,DIRECT,no-resolve
+  - IP-CIDR,140.207.0.0/16,DIRECT,no-resolve
 
   # P2. 银行风控SDK域名（必须最优先，直连保证风控SDK正常工作）
   # 这些是银行/支付App内置的第三方风控SDK，走代理或fake-ip会触发安全警告
@@ -1627,7 +1669,9 @@ rules:
   - AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP
 
   # P6. STUN/TURN/WebRTC/SSDP/mDNS 端口封堵
-  # STUN/TURN 无条件封堵 UDP + TCP 双协议（含国内IP）
+  # STUN/TURN 部分（下方前 6 条）现在是冗余兜底：真正生效的第一顺位
+  # 拦截已经上移到 P0.5（早于所有 IP-CIDR/cn-ip 强制直连），原因见
+  # P0.5 注释。这里保留不删，多一层保险无害。SSDP/mDNS 仅在此处拦截。
   # 原因：STUN 无论走 UDP 还是 TCP，无论服务器在国内还是国外
   # 均可通过 ICE candidate 探测并暴露设备真实 IP
   # UDP 封堵（主路径，WebRTC 默认走 UDP）
