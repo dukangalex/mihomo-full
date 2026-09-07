@@ -27,7 +27,15 @@ function main(config) {
     { key: "uk", name: "🇬🇧 英国节点", flag: "🇬🇧", jsPattern: "🇬🇧|英国|GB|united\\s*kingdom|london|伦敦", filter: "(?i)(🇬🇧|英国|GB|united\\s*kingdom|london|伦敦)", icon: "" },
     { key: "de", name: "🇩🇪 德国节点", flag: "🇩🇪", jsPattern: "🇩🇪|德国|DE|germany|frankfurt|法兰克福", filter: "(?i)(🇩🇪|德国|DE|germany|frankfurt|法兰克福)", icon: "" },
     { key: "nl", name: "🇳🇱 荷兰节点", flag: "🇳🇱", jsPattern: "🇳🇱|荷兰|NL|nether?lands|amsterdam|阿姆斯特丹", filter: "(?i)(🇳🇱|荷兰|NL|nether?lands|amsterdam|阿姆斯特丹)", icon: "" },
-    { key: "my", name: "🇲🇾 马来西亚节点", flag: "🇲🇾", jsPattern: "🇲🇾|马来西亚|MY|malaysia|kuala\\s*lumpur|吉隆坡", filter: "(?i)(🇲🇾|马来西亚|MY|malaysia|kuala\\s*lumpur|吉隆坡)", icon: "" }
+    { key: "my", name: "🇲🇾 马来西亚节点", flag: "🇲🇾", jsPattern: "🇲🇾|马来西亚|MY|malaysia|kuala\\s*lumpur|吉隆坡", filter: "(?i)(🇲🇾|马来西亚|MY|malaysia|kuala\\s*lumpur|吉隆坡)", icon: "" },
+    { key: "th", name: "🇹🇭 泰国节点", flag: "🇹🇭", jsPattern: "🇹🇭|泰国|TH|thailand|bangkok|曼谷", filter: "(?i)(🇹🇭|泰国|TH|thailand|bangkok|曼谷)", icon: "" },
+    { key: "vn", name: "🇻🇳 越南节点", flag: "🇻🇳", jsPattern: "🇻🇳|越南|VN|vietnam|hanoi|河内|ho\\s*chi\\s*minh|胡志明", filter: "(?i)(🇻🇳|越南|VN|vietnam|hanoi|河内|ho\\s*chi\\s*minh|胡志明)", icon: "" },
+    { key: "ph", name: "🇵🇭 菲律宾节点", flag: "🇵🇭", jsPattern: "🇵🇭|菲律宾|PH|philippines|manila|马尼拉", filter: "(?i)(🇵🇭|菲律宾|PH|philippines|manila|马尼拉)", icon: "" },
+    { key: "id", name: "🇮🇩 印尼节点", flag: "🇮🇩", jsPattern: "🇮🇩|印尼|印度尼西亚|ID|indonesia|jakarta|雅加达", filter: "(?i)(🇮🇩|印尼|印度尼西亚|ID|indonesia|jakarta|雅加达)", icon: "" },
+    { key: "in", name: "🇮🇳 印度节点", flag: "🇮🇳", jsPattern: "🇮🇳|印度|IN|india|mumbai|孟买|delhi|德里", filter: "(?i)(🇮🇳|印度|IN|india|mumbai|孟买|delhi|德里)", icon: "" },
+    { key: "au", name: "🇦🇺 澳大利亚节点", flag: "🇦🇺", jsPattern: "🇦🇺|澳大利亚|澳洲|AU|australia|sydney|悉尼|melbourne|墨尔本", filter: "(?i)(🇦🇺|澳大利亚|澳洲|AU|australia|sydney|悉尼|melbourne|墨尔本)", icon: "" },
+    { key: "fr", name: "🇫🇷 法国节点", flag: "🇫🇷", jsPattern: "🇫🇷|法国|FR|france|paris|巴黎", filter: "(?i)(🇫🇷|法国|FR|france|paris|巴黎)", icon: "" },
+    { key: "ru", name: "🇷🇺 俄罗斯节点", flag: "🇷🇺", jsPattern: "🇷🇺|俄罗斯|RU|russia|moscow|莫斯科", filter: "(?i)(🇷🇺|俄罗斯|RU|russia|moscow|莫斯科)", icon: "" }
   ];
 
   function getMatchedRegions(proxyName) {
