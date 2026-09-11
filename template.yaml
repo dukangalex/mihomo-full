@@ -1733,6 +1733,9 @@ rules:
   # Cloudflare Challenge / Turnstile
   # 防止 challenges.cloudflare.com 被国内规则集误判为直连
   - DOMAIN-SUFFIX,challenges.cloudflare.com,国外服务
+  # Google 人机验证 / reCAPTCHA
+  - DOMAIN-SUFFIX,recaptcha.net,国外服务
+  - DOMAIN,recaptcha.google.com,国外服务
 
   # P9. TCP → 域名子规则
   - SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN
