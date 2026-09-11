@@ -1730,6 +1730,9 @@ rules:
   - DOMAIN-SUFFIX,cloudflarestorage.com,国外服务
   # Paddle 支付链路（被广告规则集误收录，前置保护）
   - DOMAIN-SUFFIX,paddle.com,国外服务
+  # Cloudflare Challenge / Turnstile
+  # 防止 challenges.cloudflare.com 被国内规则集误判为直连
+  - DOMAIN-SUFFIX,challenges.cloudflare.com,国外服务
 
   # P9. TCP → 域名子规则
   - SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN
