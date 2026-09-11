@@ -965,6 +965,8 @@ function main(config) {
   "DOMAIN-SUFFIX,cloudflarestorage.com,🌍 国外服务",
   "DOMAIN-SUFFIX,paddle.com,🌍 国外服务",
   "DOMAIN-SUFFIX,challenges.cloudflare.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,recaptcha.net,🌍 国外服务",
+  "DOMAIN,recaptcha.google.com,🌍 国外服务",
   "SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN",
   "SUB-RULE,(NETWORK,udp),DOMESTIC_DOMAIN",
   "SUB-RULE,(NETWORK,tcp),DOMESTIC_IP",
