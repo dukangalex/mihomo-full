@@ -39,11 +39,6 @@ jobs:
       - name: End-to-end generate.sh regression audit
         run: |
           set -euo pipefail
-          # Exercises the full generate.sh -> tools/audit-generated-config.sh
-          # pipeline against a synthetic v2ray-agent landing node, so that a
-          # template.yaml change which is internally consistent but breaks the
-          # generator or the final-config auditor's string-literal assertions
-          # is caught here instead of only surfacing on a real VPS install/update.
           FAKE_V2RAY_DIR="$RUNNER_TEMP/fake-v2ray/clashMeta"
           mkdir -p "$FAKE_V2RAY_DIR"
           python3 - "$FAKE_V2RAY_DIR/vless_TCP_inbound.yaml" << 'PY'
@@ -67,6 +62,7 @@ jobs:
               f.write("\n".join(lines) + "\n")
           PY
           cp settings.conf settings.conf.ci-backup
+          trap 'mv -f settings.conf.ci-backup settings.conf 2>/dev/null || true' EXIT
           cat > settings.conf << EOF
           AIRPORT_SUB_URL="https://example.invalid/sub/token"
           FIXED_FULL_CONFIG_PATH="/assets/orange-river-forest-cloud-window-simple-market-basic"
@@ -76,11 +72,10 @@ jobs:
           OUTPUT_DIR="$RUNNER_TEMP/mf-output"
           EOF
           bash generate.sh
-          mv settings.conf.ci-backup settings.conf
       - name: Validate generated config against real mihomo core
         run: |
           set -euo pipefail
-          MIHOMO_VERSION="v1.19.30"
+          MIHOMO_VERSION="v1.19.31"
           curl -fsSL -o "$RUNNER_TEMP/mihomo.gz" \
             "https://github.com/MetaCubeX/mihomo/releases/download/${MIHOMO_VERSION}/mihomo-linux-amd64-${MIHOMO_VERSION}.gz"
           gunzip -f "$RUNNER_TEMP/mihomo.gz"
