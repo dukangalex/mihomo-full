@@ -16,8 +16,8 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
           python-version: '3.x'
       - run: pip install pyyaml
@@ -49,10 +49,6 @@ jobs:
               if x in a:
                   raise SystemExit(f'legacy DNS value remains in airport_overwrite.js: {x}')
 
-          # The synchronization workflow itself must never become a second
-          # configuration source. Build forbidden values without embedding
-          # their complete literals in this workflow, so the repository-wide
-          # stale-runtime scanner can still enforce their absence.
           workflow = Path('.github/workflows/one-shot-airport-dns-sync.yml').read_text(encoding='utf-8')
           for x in legacy:
               if x in workflow:
