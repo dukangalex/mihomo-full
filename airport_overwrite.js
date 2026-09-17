@@ -1082,10 +1082,6 @@ function main(config) {
   "auto-redirect": false,
   "strict-route": true,
   "auto-detect-interface": true,
-  "inet4-route-only": false,
-  "inet6-route": [
-    "2000::/4"
-  ],
   "mtu": 1500,
   "gso": true,
   "gso-max-size": 65536,
@@ -1380,8 +1376,6 @@ function main(config) {
     "MATCH,fake-ip"
   ],
   "respect-rules": true,
-  "fast-queries": true,
-  "query-v6": true,
   "default-nameserver": [
     "tls://223.5.5.5",
     "tls://223.6.6.6",
