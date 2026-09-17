@@ -41,7 +41,7 @@ FORBIDDEN_CHAIN_MARKERS = (
 
 
 def js(value) -> str:
-    return json.dumps(value, ensure_ascii=False, indent=2, separators=(", ": "))
+    return json.dumps(value, ensure_ascii=False, indent=2, separators=(",", ": "))
 
 
 def _find_assignment(text: str, marker: str):
