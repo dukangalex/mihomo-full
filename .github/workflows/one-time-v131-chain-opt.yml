@@ -1,0 +1,106 @@
+name: one-time-v131-chain-opt
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  optimize:
+    if: github.actor == 'dukangalex' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 1
+
+      - name: Apply v1.19.31 baseline and chain stability changes
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('template.yaml')
+          s = p.read_text(encoding='utf-8')
+
+          # Formal baseline: Mihomo v1.19.31.
+          s = s.replace('FINAL v6 (IPv6 Dual-Stack)', 'FINAL v7 (Mihomo v1.19.31 · IPv6 Dual-Stack)')
+          s = s.replace('v1.19.30', 'v1.19.31')
+
+          # Provider health-check is the authoritative node health source when
+          # proxy-groups consume nodes through `use:`. Make that explicit and
+          # avoid aggressive/implicit timing defaults.
+          s = s.replace(
+              '''    health-check:\n      enable: true\n      url: https://www.gstatic.com/generate_204  \n      interval: 300\n      expected-status: 204''',
+              '''    health-check:\n      enable: true\n      lazy: true\n      url: https://www.gstatic.com/generate_204\n      interval: 300\n      timeout: 5000\n      expected-status: 204''',
+              1,
+          )
+          s = s.replace(
+              '''    health-check:\n      enable: true\n      url: https://www.gstatic.com/generate_204  \n      interval: 600\n      expected-status: 204''',
+              '''    health-check:\n      enable: true\n      lazy: true\n      url: https://www.gstatic.com/generate_204\n      interval: 600\n      timeout: 8000\n      expected-status: 204''',
+              1,
+          )
+
+          # Reduce chain-selection churn. The front entry is deliberately more
+          # tolerant because changing it also changes the effective path used by
+          # every landing node.
+          s = s.replace('''    interval: 180\n    tolerance: 35\n    lazy: false\n    timeout: 3000\n    max-failed-times: 2\n    empty-fallback: REJECT''',
+                        '''    interval: 300\n    tolerance: 60\n    lazy: true\n    timeout: 5000\n    max-failed-times: 3\n    empty-fallback: REJECT''', 1)
+
+          # Landing selection should follow provider health results and fail closed
+          # if the provider becomes empty. Keep a longer timeout because this check
+          # represents the complete entry -> VPS -> target path.
+          s = s.replace('''    interval: 300\n    tolerance: 35\n    lazy: false\n    timeout: 5000\n    max-failed-times: 2\n\n  - name: "落地负载均衡"''',
+                        '''    interval: 600\n    tolerance: 35\n    lazy: true\n    timeout: 8000\n    max-failed-times: 3\n    empty-fallback: REJECT\n\n  - name: "落地负载均衡"''', 1)
+
+          # Load-balance is a distribution mechanism, not a second independent
+          # health-check loop. Keep it lazy and fail closed when no landing node
+          # is available.
+          s = s.replace('''    interval: 180\n    lazy: false\n    timeout: 5000\n\n  - name: "落地手动选择"''',
+                        '''    interval: 600\n    lazy: true\n    timeout: 8000\n    empty-fallback: REJECT\n\n  - name: "落地手动选择"''', 1)
+
+          # Manual landing selection must never fall back to COMPATIBLE/DIRECT
+          # when its provider is empty.
+          s = s.replace('''    use: [provider_exit]\n\n  - name: "AI服务"''',
+                        '''    use: [provider_exit]\n    empty-fallback: REJECT\n\n  - name: "AI服务"''', 1)
+
+          # Strengthen the documentation around the actual health-check model.
+          marker = '#\n# 全链路 DNS 架构：'
+          note = '''#\n# 链式健康检查模型：\n# provider health-check 是 provider 节点的权威健康/延迟来源。\n# proxy-groups 通过 use: 引入 provider 时，不把 group 的 url 当成另一套\n# 独立的节点测速池；这样可以避免前置/落地多层重复测速造成链路抖动。\n# 前置入口使用更大的 tolerance，因为更换前置会同时改变所有落地节点的\n# 实际路径；落地检查则关注当前前置入口下的完整机场→VPS→目标链路。\n# 所有链式空池统一 REJECT，保持 fail-closed。\n'''
+          if marker in s and '链式健康检查模型：' not in s:
+              s = s.replace(marker, note + marker, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+          common = Path('COMMON_BEHAVIOR.md')
+          c = common.read_text(encoding='utf-8')
+          c = c.replace('- `ipv6: false`', '- `ipv6: true`')
+          if '## Mihomo 内核基线' not in c:
+              c += '''\n\n## Mihomo 内核基线\n\n- 正式基线：**Mihomo v1.19.31**。\n- `template.yaml` 是公共行为唯一权威源；`airport_overwrite.js` 只继承公共行为并保留机场模式专属 UX。\n- v1.19.31 相关的 TUN、IPv6、UDP、VLESS、Hysteria/Hysteria2 行为以该版本实际内核为准，不再以旧版本注释作为兼容基线。\n\n## 链式健康检查原则\n\n- `proxy-providers.health-check` 是通过 `use:` 引入的节点的主要健康/延迟来源。\n- 前置入口与落地出口均使用 `lazy: true`，避免未使用策略组持续制造测速流量。\n- 前置入口使用更大的切换 tolerance，避免入口轻微延迟波动导致整条机场→VPS 链路级联切换。\n- 落地出口使用当前前置入口下的完整链路健康结果。\n- 链式空策略组统一 `empty-fallback: REJECT`，禁止空池回落到兼容性默认行为。\n- 不按协议名称预先排除 VMess、VLESS、SS、Trojan、Hysteria/Hysteria2、TUIC、WireGuard；具体协议稳定性通过 v1.19.31 的实际运行测试判断。\n'''
+          common.write_text(c, encoding='utf-8')
+
+      - name: Regenerate airport overwrite from template
+        run: python3 tools/sync-airport-overwrite.py
+
+      - name: Run repository static audit
+        run: |
+          python3 tools/static-audit.py
+          python3 tools/sync-airport-overwrite.py --check
+
+      - name: Commit optimized configuration and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/one-time-v131-chain-opt.yml
+          git add template.yaml airport_overwrite.js COMMON_BEHAVIOR.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "fix: stabilize v1.19.31 chained proxy selection"
+          git push origin HEAD:main
