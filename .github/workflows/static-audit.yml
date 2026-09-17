@@ -35,6 +35,8 @@ jobs:
           fi
       - name: Verify Airport synchronization
         run: python tools/sync-airport-overwrite.py --check
+      - name: Airport overwrite runtime regression audit
+        run: node tools/test-airport-overwrite.js
       - name: Static behavior audit
         run: python tools/static-audit.py
       - name: Endpoint runtime regression audit
