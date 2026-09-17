@@ -20,6 +20,13 @@ if [[ -f "$EXIT_NODES_FILE" ]]; then
   ok "落地节点数量非零：$EXIT_NODE_COUNT"
 fi
 
+# Public full-config.yaml must never contain the real airport subscription URL,
+# credential-bearing placeholders, or the private settings variable name.
+if grep -qF 'AIRPORT_SUB_URL' "$CONFIG"; then fail "最终公网配置包含机场订阅变量名"; fi
+if grep -qF 'REPLACE_WITH_YOUR_AIRPORT_SUBSCRIPTION_URL' "$CONFIG"; then fail "最终公网配置包含机场订阅占位符"; fi
+grep -qE 'url: "https://[^\"]+/assets/[a-z]+(-[a-z]+){7,15}/source"' "$CONFIG" || fail "前置机场 provider 未指向服务端 /source 代理端点"
+ok "公网配置未直接暴露机场订阅 URL，provider 使用服务端代理端点"
+
 grep -qF 'provider_entry_J:' "$CONFIG" || fail "缺少前置机场 provider"
 grep -qF 'provider_exit:' "$CONFIG" || fail "缺少落地 VPS provider"
 grep -qF 'dialer-proxy: "前置优选入口"' "$CONFIG" || fail "落地 provider 未强制经前置优选入口"
