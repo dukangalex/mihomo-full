@@ -1,0 +1,98 @@
+name: One-shot C/D repair
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ !contains(github.event.head_commit.message, 'fix C/D') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Apply C/D fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              if s.count(old) != 1:
+                  raise SystemExit(f'{path}: expected exactly one occurrence, got {s.count(old)}')
+              p.write_text(s.replace(old, new), encoding='utf-8')
+
+          # C: remove shell composition from delayed/restarting Bot actions.
+          replace_once('telegram-bot/bot.py',
+          '''import subprocess\nfrom datetime import datetime''',
+          '''import subprocess\nimport threading\nfrom datetime import datetime''')
+
+          replace_once('telegram-bot/bot.py',
+          '''def restart_bot():\n    # Restart after the current Telegram update has been acknowledged. A synchronous\n    # restart can terminate this process before the confirmation message is delivered.\n    subprocess.Popen(\n        ["bash", "-lc", "sleep 1; systemctl restart mihomo-full-bot.service"],\n        stdout=subprocess.DEVNULL,\n        stderr=subprocess.DEVNULL,\n        start_new_session=True,\n    )''',
+          '''def _restart_service():\n    subprocess.Popen(\n        ["systemctl", "restart", "mihomo-full-bot.service"],\n        stdout=subprocess.DEVNULL,\n        stderr=subprocess.DEVNULL,\n        start_new_session=True,\n    )\n\n\ndef restart_bot():\n    # Delay the restart without invoking a shell, so the current Telegram update\n    # can be acknowledged before systemd terminates this process.\n    threading.Timer(1.0, _restart_service).start()''')
+
+          replace_once('telegram-bot/bot.py',
+          '''def restart_bot():\n    # Delay the restart without invoking a shell, so the current Telegram update\n    # can be acknowledged before systemd terminates this process.\n    threading.Timer(1.0, _restart_service).start()''',
+          '''def restart_bot():\n    # Delay the restart without invoking a shell, so the current Telegram update\n    # can be acknowledged before systemd terminates this process.\n    t = threading.Timer(1.0, _restart_service)\n    t.daemon = True\n    t.start()''')
+
+          replace_once('telegram-bot/bot.py',
+          '''def vps_report():''',
+          '''def _run_uninstall_script(script, confirmation):\n    p = subprocess.Popen(\n        ["bash", str(script)],\n        cwd=BASE,\n        stdin=subprocess.PIPE,\n        stdout=subprocess.DEVNULL,\n        stderr=subprocess.DEVNULL,\n        start_new_session=True,\n        text=True,\n    )\n    try:\n        p.communicate(confirmation + "\\n", timeout=120)\n    except Exception:\n        try:\n            p.kill()\n        except Exception:\n            pass\n\n\ndef schedule_uninstall(script, confirmation, delay=2.0):\n    t = threading.Timer(delay, _run_uninstall_script, args=(script, confirmation))\n    t.daemon = True\n    t.start()\n\n\ndef vps_report():''')
+
+          replace_once('telegram-bot/bot.py',
+          '''    command = f"sleep 2; printf '%s\\\\n' UNINSTALL_BOT | bash {uninstall_script}"\n    subprocess.Popen(["bash", "-lc", command], cwd=BASE, stdout=subprocess.DEVNULL,\n                     stderr=subprocess.DEVNULL, start_new_session=True)''',
+          '''    schedule_uninstall(uninstall_script, "UNINSTALL_BOT")''')
+
+          replace_once('telegram-bot/bot.py',
+          '''    command = f"sleep 2; printf '%s\\\\n' UNINSTALL | bash {uninstall_script}"\n    subprocess.Popen(["bash", "-lc", command], cwd=BASE, stdout=subprocess.DEVNULL,\n                     stderr=subprocess.DEVNULL, start_new_session=True)''',
+          '''    schedule_uninstall(uninstall_script, "UNINSTALL")''')
+
+          # D: public full-config must reference a server-side fixed proxy endpoint,
+          # never the real airport subscription URL.
+          replace_once('generate.sh',
+          '''replace_literal "$FULL_CONFIG" '__AIRPORT_SUB_URL__' "$AIRPORT_SUB_URL"\nreplace_literal "$FULL_CONFIG" '__EXIT_NODES_URL__' "$EXIT_URL"''',
+          '''AIRPORT_PROXY_URL="https://${DOMAIN}${FIXED_FULL_CONFIG_PATH}/source"\nreplace_literal "$FULL_CONFIG" '__AIRPORT_SUB_URL__' "$AIRPORT_PROXY_URL"\nreplace_literal "$FULL_CONFIG" '__EXIT_NODES_URL__' "$EXIT_URL"\n\n# The real airport URL stays only in settings.conf and the root-readable Nginx\n# configuration. It must never be embedded in the public client configuration.\nif grep -Fq "$AIRPORT_SUB_URL" "$FULL_CONFIG"; then\n  err "真实机场订阅 URL 意外进入公网 full-config.yaml，拒绝发布"\nfi\nif ! grep -Fq "url: \\\"$AIRPORT_PROXY_URL\\\"" "$FULL_CONFIG"; then\n  err "公网 full-config.yaml 未指向服务端机场订阅代理"\nfi''')
+
+          replace_once('generate.sh',
+          '''if [[ -f "$SCRIPT_DIR/tools/audit-generated-config.sh" ]]; then\n  bash "$SCRIPT_DIR/tools/audit-generated-config.sh" "$FULL_CONFIG" || err "最终配置审计失败，拒绝发布配置"\nfi\nchmod 644 "$FULL_CONFIG" "$EXIT_NODES" 2>/dev/null || true''',
+          '''if [[ -f "$SCRIPT_DIR/tools/audit-generated-config.sh" ]]; then\n  bash "$SCRIPT_DIR/tools/audit-generated-config.sh" "$FULL_CONFIG" || err "最终配置审计失败，拒绝发布配置"\nfi\n\n# When generate.sh runs from the live installation, refresh the managed Nginx\n# snippet atomically so Telegram-triggered airport changes also update the\n# server-side proxy without exposing AIRPORT_SUB_URL in the public config.\nNGINX_SNIPPET_FILE="/etc/nginx/snippets/mihomo-full-assets.conf"\nif [[ -f "$NGINX_SNIPPET_FILE" && "$SCRIPT_DIR" == "/opt/mihomo-full" ]]; then\n  CA_BUNDLE=""\n  for candidate in /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt; do\n    if [[ -f "$candidate" ]]; then CA_BUNDLE="$candidate"; break; fi\n  done\n  [[ -n "$CA_BUNDLE" ]] || err "找不到系统 CA bundle，拒绝启用机场 HTTPS 上游代理"\n  NGINX_TMP="${NGINX_SNIPPET_FILE}.tmp"\n  NGINX_AIRPORT_URL="$AIRPORT_SUB_URL" NGINX_CA_BUNDLE="$CA_BUNDLE" NGINX_DOMAIN="$DOMAIN" NGINX_FULL_PATH="$FIXED_FULL_CONFIG_PATH" NGINX_EXIT_PATH="$FIXED_EXIT_NODES_PATH" NGINX_INSTALL_DIR="$SCRIPT_DIR" python3 - "$NGINX_TMP" <<'PY'\nimport os, sys\nfrom pathlib import Path\n\ndef ngx_quote(value):\n    return value.replace("\\\\", "\\\\\\\\").replace('"', '\\\\"').replace('$', '\\\\$')\n\nout = f'''# Managed by mihomo-full — do not edit by hand; re-run install/generate to refresh paths.\n# BEGIN mihomo-full managed assets\nlocation = {os.environ["NGINX_FULL_PATH"]} {{\n    alias {os.environ["NGINX_INSTALL_DIR"]}/output/full-config.yaml;\n    default_type application/octet-stream;\n    add_header Cache-Control "no-cache";\n    add_header Content-Disposition "inline";\n}}\nlocation = {os.environ["NGINX_EXIT_PATH"]} {{\n    alias {os.environ["NGINX_INSTALL_DIR"]}/output/exit-nodes.yaml;\n    default_type application/octet-stream;\n    add_header Cache-Control "no-cache";\n    add_header Content-Disposition "inline";\n}}\nlocation = {os.environ["NGINX_FULL_PATH"]}/source {{\n    proxy_pass "{ngx_quote(os.environ["NGINX_AIRPORT_URL"])}";\n    proxy_ssl_server_name on;\n    proxy_ssl_verify on;\n    proxy_ssl_verify_depth 2;\n    proxy_ssl_trusted_certificate {os.environ["NGINX_CA_BUNDLE"]};\n    proxy_ssl_protocols TLSv1.2 TLSv1.3;\n    proxy_set_header Host $proxy_host;\n    proxy_set_header Connection "";\n    proxy_http_version 1.1;\n    proxy_method GET;\n    proxy_pass_request_body off;\n    proxy_set_header Content-Length "";\n    proxy_buffering off;\n    add_header Cache-Control "no-store" always;\n    add_header Content-Disposition "inline";\n}}\nlocation /assets/ {{\n    return 404;\n}}\n# END mihomo-full managed assets\n'''
+Path(sys.argv[1]).write_text(out, encoding='utf-8')\nos.chmod(sys.argv[1], 0o600)\nPY\n  mv -- "$NGINX_TMP" "$NGINX_SNIPPET_FILE"\nfi\nchmod 644 "$FULL_CONFIG" "$EXIT_NODES" 2>/dev/null || true''')
+
+          replace_once('install.sh',
+          '''location = ${NODES_PATH} {\n    alias ${INSTALL_DIR}/output/exit-nodes.yaml;\n    default_type application/octet-stream;\n    add_header Cache-Control "no-cache";\n    add_header Content-Disposition "inline";\n}\nlocation /assets/ {''',
+          '''location = ${NODES_PATH} {\n    alias ${INSTALL_DIR}/output/exit-nodes.yaml;\n    default_type application/octet-stream;\n    add_header Cache-Control "no-cache";\n    add_header Content-Disposition "inline";\n}\nlocation = ${FULL_PATH}/source {\n    proxy_pass "${AIRPORT_SUB_URL}";\n    proxy_ssl_server_name on;\n    proxy_ssl_verify on;\n    proxy_ssl_verify_depth 2;\n    proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;\n    proxy_ssl_protocols TLSv1.2 TLSv1.3;\n    proxy_set_header Host $proxy_host;\n    proxy_set_header Connection "";\n    proxy_http_version 1.1;\n    proxy_method GET;\n    proxy_pass_request_body off;\n    proxy_set_header Content-Length "";\n    proxy_buffering off;\n    add_header Cache-Control "no-store" always;\n    add_header Content-Disposition "inline";\n}\nlocation /assets/ {''')
+
+          replace_once('install.sh', 'chmod 644 "$SNIPPET_FILE"', 'chmod 600 "$SNIPPET_FILE"')
+
+          replace_once('tools/audit-generated-config.sh',
+          '''grep -qF 'provider_entry_J:' "$CONFIG" || fail "缺少前置机场 provider"''',
+          '''if grep -qF 'AIRPORT_SUB_URL' "$CONFIG" || grep -qF 'REPLACE_WITH_YOUR_AIRPORT_SUBSCRIPTION_URL' "$CONFIG"; then\n  fail "最终公网配置包含机场订阅密钥占位/变量名"\nfi\n\ngrep -qF 'provider_entry_J:' "$CONFIG" || fail "缺少前置机场 provider"''')
+
+          # nginx-example.conf must never contain a real upstream URL; document the\n          # generated fixed source endpoint instead.
+          p = Path('nginx-example.conf')
+          s = p.read_text(encoding='utf-8')
+          old = '''location = /assets/REPLACE_WITH_RANDOM_WORD_PATH_EXIT {\n    alias /opt/mihomo-full/output/exit-nodes.yaml;\n    default_type application/octet-stream;\n    add_header Cache-Control "no-cache";\n    add_header Content-Disposition "inline";\n}\nlocation /assets/ {'''
+          new = '''location = /assets/REPLACE_WITH_RANDOM_WORD_PATH_EXIT {\n    alias /opt/mihomo-full/output/exit-nodes.yaml;\n    default_type application/octet-stream;\n    add_header Cache-Control "no-cache";\n    add_header Content-Disposition "inline";\n}\n\n# The /source endpoint is generated automatically by install.sh.\n# It proxies the private AIRPORT_SUB_URL server-side, so the public\n# full-config.yaml never exposes the real airport subscription URL.\n# Do NOT replace it with the real airport URL in this public example.\n\nlocation = /assets/REPLACE_WITH_RANDOM_WORD_PATH_FULL/source {\n    return 404;\n}\nlocation /assets/ {'''
+          if s.count(old) != 1:
+              raise SystemExit('nginx-example.conf: expected exact asset block not found')
+          p.write_text(s.replace(old, new), encoding='utf-8')
+
+          # Ensure the generated config itself is never world-writable and the audit
+          # can catch accidental raw upstream URLs before publication.
+          print('C/D source edits applied')
+          PY
+
+      - name: Commit and remove one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add generate.sh install.sh nginx-example.conf telegram-bot/bot.py tools/audit-generated-config.sh
+          git rm .github/workflows/one-shot-fix-cd.yml
+          git diff --cached --check
+          git commit -m "fix C/D: harden bot shell execution and hide airport URL"
+          git push
