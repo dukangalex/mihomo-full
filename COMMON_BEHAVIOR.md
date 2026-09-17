@@ -11,7 +11,7 @@
 - `bind-address: 127.0.0.1`
 - `mixed-port: 17890`
 - `log-level: info`
-- `ipv6: false`
+- `ipv6: true`
 - `unified-delay: true`
 - `tcp-concurrent: true`
 - keep-alive 参数
@@ -101,3 +101,19 @@
 5. README / docs
 
 最终以**生成结果**而不是单纯模板文本作为审计对象。
+
+
+## Mihomo 内核基线
+
+- 正式基线：**Mihomo v1.19.31**。
+- `template.yaml` 是公共行为唯一权威源；`airport_overwrite.js` 只继承公共行为并保留机场模式专属 UX。
+- v1.19.31 相关的 TUN、IPv6、UDP、VLESS、Hysteria/Hysteria2 行为以该版本实际内核为准，不再以旧版本注释作为兼容基线。
+
+## 链式健康检查原则
+
+- `proxy-providers.health-check` 是通过 `use:` 引入的节点的主要健康/延迟来源。
+- 前置入口与落地出口均使用 `lazy: true`，避免未使用策略组持续制造测速流量。
+- 前置入口使用更大的切换 tolerance，避免入口轻微延迟波动导致整条机场→VPS 链路级联切换。
+- 落地出口使用当前前置入口下的完整链路健康结果。
+- 链式空策略组统一 `empty-fallback: REJECT`，禁止空池回落到兼容性默认行为。
+- 不按协议名称预先排除 VMess、VLESS、SS、Trojan、Hysteria/Hysteria2、TUIC、WireGuard；具体协议稳定性通过 v1.19.31 的实际运行测试判断。

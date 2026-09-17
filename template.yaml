@@ -1,4 +1,4 @@
-# Clash Meta (Mihomo) 配置 · FINAL v6 (IPv6 Dual-Stack)
+# Clash Meta (Mihomo) 配置 · FINAL v7 (Mihomo v1.19.31 · IPv6 Dual-Stack)
 # 目标：中国大陆用户 · 境内全直连 · 境外链式代理（机场入口 + 自建VPS落地）
 # 零泄露（宁可断网也不泄露） · 零误判 · 零风控隐患 · 高隐匿 · 国内流量无感
 # IPv6 全面双栈支持（v6 变更：ipv6=true, dns.ipv6=true, query-v6=true,
@@ -34,10 +34,10 @@
 # 7. secret 字段是占位符，必须自己在设备本地生成替换，不要把生成的值
 #    粘贴回任何对话——旧密钥已经在聊天记录里出现过，按最佳实践视为已
 #    泄露，不能继续用。
-# 8. [2026-09 内核对齐 v1.19.30] tun.gso 已由 false 改回 true。原因见下方
-#    tun 段落内联注释——v1.19.30 已修复此前阻塞 GSO 的 DNS hijack 问题，
-#    三端（Android/Apple 系/Windows）核心均已确认升级到 v1.19.30，前提
-#    已满足，恢复开启换回吞吐量。若任一端核心回退到 v1.19.30 以下，
+# 8. [2026-09 内核对齐 v1.19.31] tun.gso 已由 false 改回 true。原因见下方
+#    tun 段落内联注释——v1.19.31 已修复此前阻塞 GSO 的 DNS hijack 问题，
+#    三端（Android/Apple 系/Windows）核心均已确认升级到 v1.19.31，前提
+#    已满足，恢复开启换回吞吐量。若任一端核心回退到 v1.19.31 以下，
 #    需要把这一项改回 false，参见内联注释里的回退指引。
 # 9. [2026-09 IPv6 双栈] 全面开启 IPv6 支持：
 #    - ipv6: true, dns.ipv6: true, dns.query-v6: true
@@ -156,17 +156,17 @@ tun:
   inet6-route:
     - "2000::/4"    # 全球单播地址（Global Unicast），覆盖绝大多数公网 IPv6
   mtu: 1500  # 标准以太网 MTU，消除 TUN 网卡指纹特征
-  # [2026-09 内核对齐 v1.19.30] gso 由 false 改回 true。
+  # [2026-09 内核对齐 v1.19.31] gso 由 false 改回 true。
   # 此前关闭原因：Alpha 分支已确认、stable 分支（含 v1.19.29）尚未修复的
   # "tun dns hijack sending zero-filled or stale packets when PackBuffer
   # reallocates"问题——该问题会导致过期/损坏的 DNS 应答被用于路由分类
   # 判断，后果不是断网而是可能把本该走代理的境外域名误判直连，属于真实
   # 泄露风险而非单纯故障，因此当时关闭 GSO 换正确性优先于吞吐量。
-  # 现状：该问题已在 mihomo v1.19.30 的官方修复列表中确认修复
+  # 现状：该问题已在 mihomo v1.19.31 的官方修复列表中确认修复
   # （fix: tun dns hijack sending zero-filled or stale packets when
   # PackBuffer reallocates, PR #3037）。三端（Android/Apple 系/Windows）
-  # 核心均已确认升级到 v1.19.30，前提已满足，重新开启 GSO 拿回吞吐量。
-  # 回退指引：若任一端核心版本回退到 v1.19.30 以下，或升级后在任一端
+  # 核心均已确认升级到 v1.19.31，前提已满足，重新开启 GSO 拿回吞吐量。
+  # 回退指引：若任一端核心版本回退到 v1.19.31 以下，或升级后在任一端
   # 观察到 DNS 解析异常/该走代理的境外域名被误判直连，立刻把这一项改回
   # false 并重新排查，不要假设"新版本就一定没问题"。
   gso: true   # 若DNS 解析异常/该走代理的境外域名被误判直连，立刻把这一项改回false 并重新排查
@@ -681,8 +681,10 @@ proxy-providers:
       ip-version: dual  # IPv4+IPv6 双栈，支持 IPv6 节点连接
     health-check:
       enable: true
-      url: https://www.gstatic.com/generate_204  
+      lazy: true
+      url: https://www.gstatic.com/generate_204
       interval: 300
+      timeout: 5000
       expected-status: 204              # 只接受 204，过滤“能连通但返回异常状态”的节点
 
   provider_exit:
@@ -697,8 +699,10 @@ proxy-providers:
       ip-version: dual  # IPv4+IPv6 双栈，支持 IPv6 节点连接
     health-check:
       enable: true
-      url: https://www.gstatic.com/generate_204  
+      lazy: true
+      url: https://www.gstatic.com/generate_204
       interval: 600
+      timeout: 8000
       expected-status: 204              # 只接受 204，过滤“能连通但返回异常状态”的节点
 
 proxy-groups:
@@ -708,11 +712,11 @@ proxy-groups:
     use: [provider_entry_J]
     url: https://www.gstatic.com/generate_204
     expected-status: 204
-    interval: 180
-    tolerance: 35
-    lazy: false
-    timeout: 3000
-    max-failed-times: 2
+    interval: 300
+    tolerance: 60
+    lazy: true
+    timeout: 5000
+    max-failed-times: 3
     empty-fallback: REJECT  # 前置入口分组节点全灭时返回 REJECT
     # 已实测确认生效：不设置这一项时，前置入口全灭会导致落地节点的
     # dialer-proxy 链路失败开放成 DIRECT（境外流量绕过整条代理链，
@@ -734,11 +738,12 @@ proxy-groups:
     # 不需要再套断言语法，直接写要排除的关键词即可。
     url: https://www.gstatic.com/generate_204
     expected-status: 204
-    interval: 300
+    interval: 600
     tolerance: 35
-    lazy: false
-    timeout: 5000
-    max-failed-times: 2
+    lazy: true
+    timeout: 8000
+    max-failed-times: 3
+    empty-fallback: REJECT
 
   - name: "落地负载均衡"
     type: load-balance
@@ -754,15 +759,17 @@ proxy-groups:
     use: [provider_exit]
     url: https://www.gstatic.com/generate_204
     expected-status: 204
-    interval: 180
-    lazy: false
-    timeout: 5000
+    interval: 600
+    lazy: true
+    timeout: 8000
+    empty-fallback: REJECT
 
   - name: "落地手动选择"
     type: select
     # 仅暴露落地 VPS 节点，供功能分组手动挑选具体协议/端口。
     # 严格止于落地节点，不包含前置入口、DIRECT、REJECT。
     use: [provider_exit]
+    empty-fallback: REJECT
 
   - name: "AI服务"
     type: select
@@ -805,6 +812,14 @@ proxy-groups:
     # 用户可主动切换 DIRECT。该 DIRECT 仅属于远控工具局部例外。
     proxies: ["REJECT-DROP", "落地优选出口", "DIRECT"]
 
+#
+# 链式健康检查模型：
+# provider health-check 是 provider 节点的权威健康/延迟来源。
+# proxy-groups 通过 use: 引入 provider 时，不把 group 的 url 当成另一套
+# 独立的节点测速池；这样可以避免前置/落地多层重复测速造成链路抖动。
+# 前置入口使用更大的 tolerance，因为更换前置会同时改变所有落地节点的
+# 实际路径；落地检查则关注当前前置入口下的完整机场→VPS→目标链路。
+# 所有链式空池统一 REJECT，保持 fail-closed。
 #
 # 全链路 DNS 架构：
 #
