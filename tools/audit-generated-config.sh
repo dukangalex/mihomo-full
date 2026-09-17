@@ -59,17 +59,21 @@ grep -qF 'tls://223.6.6.6' "$CONFIG" || fail "缺少加密 DNS bootstrap 223.6.6
 grep -qF 'nameserver-policy:' "$CONFIG" || fail "缺少 nameserver-policy"
 if grep -qE '120\.53\.53\.53/dns-query|https://120\.53\.53\.53/dns-query' "$CONFIG"; then fail "禁止残留 DNSPod 120.53.53.53 DoH IP 接入"; fi
 if grep -qF 'https://dns.alidns.com/dns-query' "$CONFIG"; then fail "禁止残留旧版 dns.alidns.com DoH URL；统一使用 IP DoH"; fi
-# 说明：template.yaml 的 hosts 段有意固定 dns.alidns.com/doh.pub 到已知 IP，
-# 用于打破"解析 DNS 服务器域名本身需要先有 DNS"的冷启动死锁；这是既有加固
-# 设计，不是残留问题，此前的禁止性检查与当前模板正文相互矛盾，予以移除。
 ok "DNS：bootstrap / proxy-node / public / direct / policy 已统一"
 
 # TUN / IPv6 / QUIC / 明文 DNS：零旁路基线。
 grep -qE '^  strict-route:[[:space:]]*true' "$CONFIG" || fail "TUN strict-route 未开启"
 grep -qE '^  auto-route:[[:space:]]*true' "$CONFIG" || fail "TUN auto-route 未开启"
 grep -qE '^  auto-detect-interface:[[:space:]]*true' "$CONFIG" || fail "TUN auto-detect-interface 未开启"
-grep -qE '^  inet4-route-only:[[:space:]]*false' "$CONFIG" || fail "TUN inet4-route-only 必须为 false"
 grep -qE '^  gso:[[:space:]]*true' "$CONFIG" || fail "TUN gso 必须为 true"
+# Mihomo v1.19.31 已不再接受早期 PATCH 版中使用的 route-only 字段；
+# 这里必须检查“旧字段不存在”，而不是继续要求它存在。
+for stale in 'inet4-route-only' 'inet6-route' 'query-v6' 'fast-queries'; do
+  if grep -qE "(^|[[:space:]])${stale}:" "$CONFIG"; then
+    fail "最终配置仍包含 Mihomo v1.19.31 已移除/不应使用的字段：${stale}"
+  fi
+done
+ok "TUN 字段与 Mihomo v1.19.31 对齐，无历史废弃字段"
 grep -qF 'IP-CIDR6,ff00::/8,REJECT-DROP,no-resolve' "$CONFIG" || fail "IPv6 组播封堵规则缺失"
 grep -qF 'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外 QUIC(UDP/443) 封堵缺失"
 grep -qF 'AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外明文 TCP/53 封堵缺失"
