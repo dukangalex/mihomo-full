@@ -40,15 +40,7 @@ log "提取 v2ray-agent 落地节点（不按协议类型排除节点）..."
 if [[ -d "$V2RAY_AGENT_CLASHMETA_DIR" ]]; then
   find "$V2RAY_AGENT_CLASHMETA_DIR" -type f -print0 2>/dev/null | while IFS= read -r -d '' f; do [[ -s "$f" ]] && cat "$f" >> "$TMP_NODES"; done
 else
-  err "未找到目录 $V2RAY_AGENT_CLASHMETA_DIR。
-
-请先完成 v2ray-agent 节点配置：
-  1) 在 VPS 上运行 v2ray-agent 菜单（常见为 vasma），添加至少一种入站/协议
-  2) 确认已生成 clashMeta 订阅文件：
-       ls -la $V2RAY_AGENT_CLASHMETA_DIR
-  3) 确认目录里有文件后，重新执行本脚本或重新运行一键安装
-
-不要在没有落地节点的情况下继续，否则生成的订阅会没有可用节点。"
+  err "未找到目录 $V2RAY_AGENT_CLASHMETA_DIR。\n\n请先完成 v2ray-agent 节点配置：\n  1) 在 VPS 上运行 v2ray-agent 菜单（常见为 vasma），添加至少一种入站/协议\n  2) 确认已生成 clashMeta 订阅文件：\n       ls -la $V2RAY_AGENT_CLASHMETA_DIR\n  3) 确认目录里有文件后，重新执行本脚本或重新运行一键安装\n\n不要在没有落地节点的情况下继续，否则生成的订阅会没有可用节点。"
 fi
 {
   echo "# auto-generated $(date '+%Y-%m-%d %H:%M:%S')"
@@ -71,21 +63,14 @@ fi
 } > "$EXIT_NODES"
 NODE_COUNT=$(grep -cE "^  - [Nn][Aa][Mm][Ee]:" "$EXIT_NODES" 2>/dev/null || true); NODE_COUNT=${NODE_COUNT:-0}
 if (( NODE_COUNT == 0 )); then
-  err "从 $V2RAY_AGENT_CLASHMETA_DIR 提取到 0 个落地节点，拒绝生成配置。
-
-请先完成 v2ray-agent 节点配置：
-  1) 在 VPS 上运行 v2ray-agent 菜单（常见为 vasma），添加至少一种入站/协议
-  2) 确认目录内容非空：
-       ls -la $V2RAY_AGENT_CLASHMETA_DIR
-  3) 确认能看到节点后，重新执行本脚本或重新运行一键安装
-
-不要在零落地节点的情况下继续，否则生成的订阅导入后策略组里不会有任何可用节点。"
+  err "从 $V2RAY_AGENT_CLASHMETA_DIR 提取到 0 个落地节点，拒绝生成配置。\n\n请先完成 v2ray-agent 节点配置：\n  1) 在 VPS 上运行 v2ray-agent 菜单（常见为 vasma），添加至少一种入站/协议\n  2) 确认目录内容非空：\n       ls -la $V2RAY_AGENT_CLASHMETA_DIR\n  3) 确认能看到节点后，重新执行本脚本或重新运行一键安装\n\n不要在零落地节点的情况下继续，否则生成的订阅导入后策略组里不会有任何可用节点。"
 fi
 log "落地节点数量: $NODE_COUNT（未按协议类型排除）"
 
 log "生成完整配置..."
 FULL_URL="https://${DOMAIN}${FIXED_FULL_CONFIG_PATH}"
 EXIT_URL="https://${DOMAIN}${FIXED_EXIT_NODES_PATH}"
+AIRPORT_PROXY_URL="https://${DOMAIN}${FIXED_FULL_CONFIG_PATH}/source"
 cp "$TEMPLATE" "$FULL_CONFIG"
 
 replace_literal() {
@@ -105,8 +90,17 @@ dst.write_text(s.replace(needle, value), encoding='utf-8')
 PY
   mv "$tmp" "$file"
 }
-replace_literal "$FULL_CONFIG" '__AIRPORT_SUB_URL__' "$AIRPORT_SUB_URL"
+replace_literal "$FULL_CONFIG" '__AIRPORT_SUB_URL__' "$AIRPORT_PROXY_URL"
 replace_literal "$FULL_CONFIG" '__EXIT_NODES_URL__' "$EXIT_URL"
+
+# The real airport URL is a server-side secret. It must never enter the public
+# full-config.yaml. The public client sees only the opaque local /source path.
+if grep -Fq "$AIRPORT_SUB_URL" "$FULL_CONFIG"; then
+  err "真实机场订阅 URL 意外进入公网 full-config.yaml，拒绝发布"
+fi
+if ! grep -Fq "url: \"$AIRPORT_PROXY_URL\"" "$FULL_CONFIG"; then
+  err "公网 full-config.yaml 未指向服务端机场订阅代理"
+fi
 
 apply_ruleset_overrides() {
   local f="$RULES_LOCAL" name url behavior target enabled esc tmp anchor
@@ -150,6 +144,69 @@ if grep -qE '^[[:space:]]*exclude-type:[[:space:]]*vmess[[:space:]]*$' "$FULL_CO
 if [[ -f "$SCRIPT_DIR/tools/audit-generated-config.sh" ]]; then
   bash "$SCRIPT_DIR/tools/audit-generated-config.sh" "$FULL_CONFIG" || err "最终配置审计失败，拒绝发布配置"
 fi
+
+# Existing installations have an Nginx snippet already included by install.sh.
+# Refresh it atomically after every generation so changing AIRPORT_SUB_URL via
+# Telegram also updates the server-side upstream without exposing the URL.
+NGINX_SNIPPET_FILE="/etc/nginx/snippets/mihomo-full-assets.conf"
+if [[ "$SCRIPT_DIR" == "/opt/mihomo-full" && -f "$NGINX_SNIPPET_FILE" ]]; then
+  CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
+  [[ -f "$CA_BUNDLE" ]] || err "找不到系统 CA bundle，拒绝启用机场 HTTPS 上游代理"
+  NGINX_TMP="${NGINX_SNIPPET_FILE}.tmp"
+  AIRPORT_UPSTREAM="$AIRPORT_SUB_URL" CA_BUNDLE="$CA_BUNDLE" FULL_PATH="$FIXED_FULL_CONFIG_PATH" EXIT_PATH="$FIXED_EXIT_NODES_PATH" INSTALL_DIR="$SCRIPT_DIR" python3 - "$NGINX_TMP" <<'PY'
+import os, sys
+from pathlib import Path
+
+def q(v):
+    return v.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$')
+
+a=os.environ['AIRPORT_UPSTREAM']
+out=f'''# Managed by mihomo-full
+# BEGIN mihomo-full managed assets
+location = {os.environ['FULL_PATH']} {{
+    alias {os.environ['INSTALL_DIR']}/output/full-config.yaml;
+    default_type application/octet-stream;
+    add_header Cache-Control "no-cache";
+    add_header Content-Disposition "inline";
+}}
+location = {os.environ['EXIT_PATH']} {{
+    alias {os.environ['INSTALL_DIR']}/output/exit-nodes.yaml;
+    default_type application/octet-stream;
+    add_header Cache-Control "no-cache";
+    add_header Content-Disposition "inline";
+}}
+location = {os.environ['FULL_PATH']}/source {{
+    proxy_pass "{q(a)}";
+    proxy_ssl_server_name on;
+    proxy_ssl_verify on;
+    proxy_ssl_verify_depth 2;
+    proxy_ssl_trusted_certificate {os.environ['CA_BUNDLE']};
+    proxy_ssl_protocols TLSv1.2 TLSv1.3;
+    proxy_set_header Host $proxy_host;
+    proxy_set_header Connection "";
+    proxy_http_version 1.1;
+    proxy_method GET;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_buffering off;
+    add_header Cache-Control "no-store" always;
+    add_header Content-Disposition "inline";
+}}
+location /assets/ {{
+    return 404;
+}}
+# END mihomo-full managed assets
+'''
+Path(sys.argv[1]).write_text(out, encoding='utf-8')
+os.chmod(sys.argv[1], 0o600)
+PY
+  mv -- "$NGINX_TMP" "$NGINX_SNIPPET_FILE"
+  if command -v nginx >/dev/null 2>&1 && ! nginx -t 2>/tmp/mihomo-full-nginx-test.err; then
+    cat /tmp/mihomo-full-nginx-test.err >&2 || true
+    err "Nginx 配置测试失败，拒绝发布新的机场代理上游"
+  fi
+fi
+
 chmod 644 "$FULL_CONFIG" "$EXIT_NODES" 2>/dev/null || true
 echo
 echo "完整配置 : $FULL_CONFIG"
