@@ -16,7 +16,7 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85ab9f55 # v4.4.0
       - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
           python-version: '3.12'
@@ -35,6 +35,8 @@ jobs:
           fi
       - name: Verify Airport synchronization
         run: python tools/sync-airport-overwrite.py --check
+      - name: Airport overwrite runtime regression audit
+        run: node tools/test-airport-overwrite.js
       - name: Static behavior audit
         run: python tools/static-audit.py
       - name: Endpoint runtime regression audit
