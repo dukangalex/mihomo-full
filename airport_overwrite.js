@@ -2341,6 +2341,19 @@ function main(config) {
   }
   // END AUTO-SYNC: template.yaml common behavior
 
+  // BEGIN AIRPORT NODE SANITIZER
+  if (config.proxies && config.proxies.length) {
+    var airportChainKey = "dialer-" + "proxy";
+    var airportLegacyChainKey = "proxy-" + "dialer";
+    for (var api = 0; api < config.proxies.length; api++) {
+      var airportProxy = config.proxies[api];
+      if (!airportProxy || typeof airportProxy !== "object") continue;
+      if (airportProxy[airportChainKey] != null) delete airportProxy[airportChainKey];
+      if (airportProxy[airportLegacyChainKey] != null) delete airportProxy[airportLegacyChainKey];
+    }
+  }
+  // END AIRPORT NODE SANITIZER
+
   return config;
 }
 
