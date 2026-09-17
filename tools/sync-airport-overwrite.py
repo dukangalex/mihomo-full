@@ -162,6 +162,30 @@ def upsert_object(text: str, marker: str, value) -> str:
     return replace_assignment(text, marker, value) if start >= 0 else add_assignment(text, marker, value)
 
 
+def enforce_full_overwrite_contract(text: str) -> str:
+    """Preserve only airport proxies from the input subscription.
+
+    The airport script is intentionally a complete overwrite, not a partial
+    merge. Capture the incoming proxies first, then reset the root config so
+    provider-specific listeners, DNS, groups, rules, and other fields cannot
+    leak into the generated configuration.
+    """
+    anchor = '  var originalProxies = config.proxies || [];'
+    replacement = (
+        '  var sourceConfig = config || {};\n'
+        '  var originalProxies = sourceConfig.proxies || [];\n'
+        '  // Full-overwrite contract: every airport-supplied field except proxies is discarded.\n'
+        '  config = {};'
+    )
+    if replacement in text:
+        return text
+    if anchor not in text:
+        raise RuntimeError("full-overwrite anchor not found: expected config.proxies capture")
+    if '  var sourceConfig = config || {};' in text or '  // Full-overwrite contract:' in text:
+        raise RuntimeError("partial full-overwrite transformation detected")
+    return text.replace(anchor, replacement, 1)
+
+
 def restore_airport_exceptions(text: str) -> str:
     text = re.sub(
         r'^\s*"geosite:category-ads-all":\s*"rcode://name_error",\s*\n',
@@ -212,6 +236,14 @@ def validate_airport(text: str) -> None:
     for marker in required:
         if marker not in text:
             raise RuntimeError(f"post-sync sanity check failed: {marker}")
+    if 'var sourceConfig = config || {};' not in text or 'var originalProxies = sourceConfig.proxies || [];' not in text:
+        raise RuntimeError("airport full-overwrite contract is missing")
+    if text.count('  config = {};') != 1:
+        raise RuntimeError("airport full-overwrite contract must reset config exactly once")
+    reset_at = text.find('  config = {};')
+    proxy_at = text.find('  var originalProxies = sourceConfig.proxies || [];')
+    if reset_at < proxy_at:
+        raise RuntimeError("airport proxies must be captured before config reset")
     if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text:
         raise RuntimeError("airport ad rule is not connected to the ad group")
     ad_block_match = re.search(
@@ -241,7 +273,7 @@ def validate_airport(text: str) -> None:
 
 def transform(template: dict, airport: str) -> str:
     """Pure transformation stage; deliberately contains no file writes."""
-    result = airport
+    result = enforce_full_overwrite_contract(airport)
     for key in COMMON_OBJECTS:
         if key not in template:
             raise RuntimeError(f"template missing required section: {key}")
@@ -275,7 +307,7 @@ def main() -> None:
         if first != original:
             raise RuntimeError("Airport overwrite is out of sync; run the synchronizer without --check")
         print("airport_overwrite.js synchronized")
-        print("idempotence check: PASS; non-chain hard gate: PASS; sync check: PASS")
+        print("idempotence check: PASS; non-chain hard gate: PASS; full-overwrite contract: PASS; sync check: PASS")
         return
 
     if first != original:
@@ -285,7 +317,7 @@ def main() -> None:
         print("airport_overwrite.js synchronized")
     else:
         print("airport_overwrite.js already synchronized")
-    print("idempotence check: PASS; non-chain hard gate: PASS")
+    print("idempotence check: PASS; non-chain hard gate: PASS; full-overwrite contract: PASS")
 
 
 if __name__ == "__main__":
