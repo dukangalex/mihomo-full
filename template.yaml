@@ -1350,6 +1350,11 @@ dns:
     "+.twitter.com":    *FOREIGN
     "+.t.co":           *FOREIGN
     "+.x.com":          *FOREIGN
+    # Cloudflare Challenge / Turnstile、Google reCAPTCHA / 人机验证
+    # DNS 层固定走境外 DoH；与路由层规则形成双层保护，避免国内规则集误判。
+    "+.challenges.cloudflare.com": *FOREIGN
+    "+.recaptcha.net":             *FOREIGN
+    "recaptcha.google.com":        *FOREIGN
     # 境外 AI
     "+.openai.com":          &FOREIGN_AI [https://8.8.8.8/dns-query#RULES, https://1.1.1.1/dns-query#RULES]
     "+.chatgpt.com":         *FOREIGN_AI
