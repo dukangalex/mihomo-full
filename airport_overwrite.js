@@ -182,7 +182,10 @@ function main(config) {
     return out;
   }
 
-  var originalProxies = config.proxies || [];
+  var sourceConfig = config || {};
+  var originalProxies = sourceConfig.proxies || [];
+  // Full-overwrite contract: every airport-supplied field except proxies is discarded.
+  config = {};
 
   // 排除明显非节点的「公告/说明/营销」行（机场订阅常见垃圾项）。
   // 与早期「误杀真实节点」的激进过滤不同：本正则针对群/客服/流量/到期/
