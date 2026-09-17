@@ -1887,6 +1887,18 @@ function main(config) {
       "https://8.8.8.8/dns-query#RULES",
       "https://1.1.1.1/dns-query#RULES"
     ],
+    "+.challenges.cloudflare.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.recaptcha.net": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "recaptcha.google.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
     "+.openai.com": [
       "https://8.8.8.8/dns-query#RULES",
       "https://1.1.1.1/dns-query#RULES"
@@ -2356,4 +2368,3 @@ function main(config) {
 
   return config;
 }
-
