@@ -281,12 +281,29 @@ location = ${NODES_PATH} {
     add_header Cache-Control "no-cache";
     add_header Content-Disposition "inline";
 }
+location = ${FULL_PATH}/source {
+    proxy_pass "${AIRPORT_SUB_URL}";
+    proxy_ssl_server_name on;
+    proxy_ssl_verify on;
+    proxy_ssl_verify_depth 2;
+    proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+    proxy_ssl_protocols TLSv1.2 TLSv1.3;
+    proxy_set_header Host \$proxy_host;
+    proxy_set_header Connection "";
+    proxy_http_version 1.1;
+    proxy_method GET;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_buffering off;
+    add_header Cache-Control "no-store" always;
+    add_header Content-Disposition "inline";
+}
 location /assets/ {
     return 404;
 }
 ${END_MARK}
 EOF
-chmod 644 "$SNIPPET_FILE"
+chmod 600 "$SNIPPET_FILE"
 info "已写入 Nginx 片段：$SNIPPET_FILE"
 
 if [[ -z "$MATCH_CONF" ]]; then
