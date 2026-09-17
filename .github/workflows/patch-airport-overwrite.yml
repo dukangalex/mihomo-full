@@ -18,27 +18,21 @@ jobs:
           fetch-depth: 0
 
       - name: Patch airport overwrite
-        shell: python
         run: |
+          python3 - <<'PY'
           from pathlib import Path
           p = Path('airport_overwrite.js')
           s = p.read_text(encoding='utf-8')
 
-          # 1. Full-overwrite contract: only proxies are trusted from the airport input.
           old = '  var originalProxies = config.proxies || [];'
-          new = '''  var sourceConfig = config || {};
-  var originalProxies = sourceConfig.proxies || [];
-  // Full-overwrite contract: every airport-supplied field except proxies is discarded.
-  config = {};'''
+          new = '  var sourceConfig = config || {};\n  var originalProxies = sourceConfig.proxies || [];\n  // Full-overwrite contract: every airport-supplied field except proxies is discarded.\n  config = {};'
           if old not in s:
-              raise SystemExit('missing full-overwrite anchor')
+              raise SystemExit('full-overwrite anchor not found')
           s = s.replace(old, new, 1)
 
-          # 2. Structural validation only. Node names must never decide whether a node survives.
           start = s.index('  // 排除明显非节点的「公告/说明/营销」行')
           end = s.index('  // 不做字段级去重：过滤后的节点全部保留。', start)
-          replacement = '''  // Structural proxy validation only. Display names are never used to reject nodes.
-  // This prevents legitimate nodes containing words such as 机场/订阅/官网 from being deleted.
+          structural = '''  // Structural proxy validation only. Display names never decide whether a node survives.
   function isUsableProxy(proxy) {
     if (!proxy || typeof proxy !== "object") return false;
     var type = String(proxy.type != null ? proxy.type : "").toLowerCase();
@@ -48,7 +42,6 @@ jobs:
     var server = String(proxy.server != null ? proxy.server : proxy.address != null ? proxy.address : "").replace(/^\\s+|\\s+$/g, "");
     var port = proxy.port != null ? String(proxy.port) : "";
     if (!server) return false;
-    // WireGuard definitions may not expose the same port shape as other proxies.
     if (!port && type !== "wireguard") return false;
     return true;
   }
@@ -56,39 +49,15 @@ jobs:
   var filteredRaw = originalProxies.filter(isUsableProxy);
 
 '''
-          s = s[:start] + replacement + s[end:]
+          s = s[:start] + structural + s[end:]
 
-          # 3. Never restore unvalidated source proxies after filtering.
-          old = '  config.proxies = normalizedProxies.length > 0 ? normalizedProxies : originalProxies;'
-          if old not in s:
-              raise SystemExit('missing proxy fallback anchor')
-          s = s.replace(old, '  config.proxies = normalizedProxies;', 1)
+          s = s.replace('  config.proxies = normalizedProxies.length > 0 ? normalizedProxies : originalProxies;', '  config.proxies = normalizedProxies;', 1)
+          s = s.replace('    if (finalName === n.name) {\n      normalizedProxies.push(n);\n    } else {', '    if (finalName === n.name) {\n      if (n["dialer-proxy"] != null) delete n["dialer-proxy"];\n      normalizedProxies.push(n);\n    } else {', 1)
+          s = s.replace('      n2.name = finalName;\n      normalizedProxies.push(n2);', '      n2.name = finalName;\n      if (n2["dialer-proxy"] != null) delete n2["dialer-proxy"];\n      normalizedProxies.push(n2);', 1)
 
-          # 4. Airport mode must not inherit chain dialers.
-          old = '''    if (finalName === n.name) {
-      normalizedProxies.push(n);
-    } else {'''
-          new = '''    if (finalName === n.name) {
-      if (n["dialer-proxy"] != null) delete n["dialer-proxy"];
-      normalizedProxies.push(n);
-    } else {'''
-          if old not in s:
-              raise SystemExit('missing normalized proxy anchor')
-          s = s.replace(old, new, 1)
-          old = '''      n2.name = finalName;
-      normalizedProxies.push(n2);'''
-          new = '''      n2.name = finalName;
-      if (n2["dialer-proxy"] != null) delete n2["dialer-proxy"];
-      normalizedProxies.push(n2);'''
-          if old not in s:
-              raise SystemExit('missing duplicate proxy anchor')
-          s = s.replace(old, new, 1)
-
-          # 5. Replace region trio (url-test + load-balance + select) with url-test + select.
           start = s.index('  // 每个地区拆成三层：')
           end = s.index('  var regionGroups = [];', start)
-          replacement = '''  // Each region has only two layers: select -> url-test.
-  // Avoid load-balance/sticky-sessions because it creates a second dynamic state machine.
+          pair = '''  // Each region: select -> url-test. No load-balance/sticky-sessions layer.
   function buildRegionPair(name, matchField) {
     var autoName = "" + name + "-自动选择";
     var common = { "include-all": true, "include-all-proxies": true, url: "https://www.gstatic.com/generate_204", interval: 300, timeout: 5000, "expected-status": 204, icon: "", hidden: true, lazy: true, "empty-fallback": "REJECT" };
@@ -100,61 +69,76 @@ jobs:
   }
 
 '''
-          s = s[:start] + replacement + s[end:]
-          s = s.replace('buildRegionTrio(r.name, { filter: r.filter })', 'buildRegionPair(r.name, { filter: r.filter })', 1)
-          s = s.replace('buildRegionTrio(OTHER_REGION_NAME, { "exclude-filter": "(?i)(" + allRegionKeywords + ")" })', 'buildRegionPair(OTHER_REGION_NAME, { "exclude-filter": "(?i)(" + allRegionKeywords + ")" })', 1)
+          s = s[:start] + pair + s[end:]
+          s = s.replace('buildRegionTrio(r.name, { filter: r.filter })', 'buildRegionPair(r.name, { filter: r.filter })')
+          s = s.replace('buildRegionTrio(OTHER_REGION_NAME, { "exclude-filter": "(?i)(" + allRegionKeywords + ")" })', 'buildRegionPair(OTHER_REGION_NAME, { "exclude-filter": "(?i)(" + allRegionKeywords + ")" })')
 
-          # 6. Top-level selector also uses one url-test state machine.
-          old = '''  var AUTO_NAME = "♻️ 自动选择";
+          old_top = '''  var AUTO_NAME = "♻️ 自动选择";
   var LB_NAME = "⚖️ 负载均衡";
   var SELECT_NAME = "🔰 节点选择";
   var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, timeout: 3000, "expected-status": 204, "max-failed-times": 2, icon: "" };
   var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "" };
   var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames), icon: "" };'''
-          new = '''  var AUTO_NAME = "♻️ 自动选择";
+          new_top = '''  var AUTO_NAME = "♻️ 自动选择";
   var SELECT_NAME = "🔰 节点选择";
   var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "include-all-proxies": true, url: "https://www.gstatic.com/generate_204", interval: 300, tolerance: 80, timeout: 5000, "expected-status": 204, "max-failed-times": 5, lazy: true, "empty-fallback": "REJECT", icon: "" };
   var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME].concat(regionNames), icon: "" };'''
-          if old not in s:
-              raise SystemExit('missing top group anchor')
-          s = s.replace(old, new, 1)
+          if old_top not in s:
+              raise SystemExit('top group anchor not found')
+          s = s.replace(old_top, new_top, 1)
 
-          # 7. No DIRECT or COMPATIBLE fallback in user-selectable proxy groups.
-          s = s.replace('proxies: ["REJECT-DROP", "REJECT", "DIRECT"]', 'proxies: ["REJECT-DROP", "REJECT"]')
-          s = s.replace('proxies: ["REJECT-DROP", "🌍 国外服务", "DIRECT"]', 'proxies: ["REJECT-DROP", "🌍 国外服务"]')
+          s = s.replace('["REJECT-DROP", "REJECT", "DIRECT"]', '["REJECT-DROP", "REJECT"]')
+          s = s.replace('["REJECT-DROP", "🌍 国外服务", "DIRECT"]', '["REJECT-DROP", "🌍 国外服务"]')
           s = s.replace('[selectGroup, autoGroup, lbGroup, adBlockGroup', '[selectGroup, autoGroup, adBlockGroup')
 
-          # 8. Use hostname-based DoH endpoints with coherent TLS/SNI.
           s = s.replace('https://223.5.5.5/dns-query', 'https://dns.alidns.com/dns-query')
           s = s.replace('https://8.8.8.8/dns-query#RULES', 'https://dns.google/dns-query#RULES')
           s = s.replace('https://1.1.1.1/dns-query#RULES', 'https://cloudflare-dns.com/dns-query#RULES')
           s = s.replace('https://8.8.8.8/dns-query', 'https://dns.google/dns-query')
           s = s.replace('https://1.1.1.1/dns-query', 'https://cloudflare-dns.com/dns-query')
 
-          # 9. Use the project's CDN mirror for GeoX assets.
           s = s.replace('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geoip.dat', 'https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat')
           s = s.replace('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geosite.dat', 'https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat')
           s = s.replace('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geoip.metadb', 'https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb')
           s = s.replace('https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/GeoLite2-ASN.mmdb', 'https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb')
 
-          # 10. Make the overwrite invariant explicit in the final return path.
-          marker = '  // END AUTO-SYNC: template.yaml common behavior\n  return config;'
-          if marker in s:
-              replacement = '''  // END AUTO-SYNC: template.yaml common behavior
-  // Empty/invalid subscriptions fail closed; never restore airport-supplied groups or rules.
-  if (!config.proxies || !config.proxies.length) {
-    config["proxy-groups"] = [];
+          s = s.replace('  // 公共同步只覆盖安全底层配置；机场原有策略组及其名称/节点选择逻辑不再被改写。', '  // Airport mode is a complete generated configuration; source policy groups are never trusted.')
+          s = s.replace('  // 机场模式明确保留：广告拦截 DIRECT、远控工具 DIRECT。', '  // DIRECT is available only as a rule target, never as a generic UI choice.')
+
+          marker = '  // END AUTO-SYNC: template.yaml common behavior\n\n  return config;'
+          if marker not in s:
+              raise SystemExit('final sync marker not found')
+          final = '''  // END AUTO-SYNC: template.yaml common behavior
+
+  // Final airport-only invariants.
+  if (config.proxies && config.proxies.length) {
+    for (var pi = 0; pi < config.proxies.length; pi++) {
+      if (config.proxies[pi] && config.proxies[pi]["dialer-proxy"] != null) delete config.proxies[pi]["dialer-proxy"];
+    }
+  }
+  if (config["proxy-groups"]) {
+    for (var gi = 0; gi < config["proxy-groups"].length; gi++) {
+      var g = config["proxy-groups"][gi];
+      if (g && (g.type === "url-test" || g.type === "fallback")) g["empty-fallback"] = "REJECT";
+    }
   }
   return config;'''
-              s = s.replace(marker, replacement, 1)
+          s = s.replace(marker, final, 1)
 
           p.write_text(s, encoding='utf-8')
+          print('airport_overwrite.js hardening transformation complete')
+          PY
+
       - name: Syntax check
         run: node --check airport_overwrite.js
+
+      - name: Remove temporary workflow
+        run: rm -f .github/workflows/patch-airport-overwrite.yml
+
       - name: Commit patched file
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add airport_overwrite.js
+          git add airport_overwrite.js .github/workflows/patch-airport-overwrite.yml
           git commit -m 'fix: harden airport overwrite stability' || exit 0
           git push
