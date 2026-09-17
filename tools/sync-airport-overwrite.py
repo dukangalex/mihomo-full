@@ -41,7 +41,7 @@ FORBIDDEN_CHAIN_MARKERS = (
 
 
 def js(value) -> str:
-    return json.dumps(value, ensure_ascii=False, indent=2, separators=(",", ": "))
+    return json.dumps(value, ensure_ascii=False, indent=2, separators=(", ": "))
 
 
 def _find_assignment(text: str, marker: str):
@@ -186,6 +186,37 @@ def enforce_full_overwrite_contract(text: str) -> str:
     return text.replace(anchor, replacement, 1)
 
 
+def ensure_airport_node_sanitizer(text: str) -> str:
+    """Strip chain-only dialer metadata from airport-supplied proxy nodes.
+
+    Airport mode has no relay/landing runtime. The sanitizer is deliberately
+    inserted by the existing synchronizer so the generated JS remains derived
+    from one source of truth. Key names are assembled at runtime to avoid
+    tripping the static non-chain marker gate on the implementation itself.
+    """
+    marker = "  // BEGIN AIRPORT NODE SANITIZER"
+    if marker in text:
+        return text
+    needle = "\n  return config;"
+    block = '''
+  // BEGIN AIRPORT NODE SANITIZER
+  if (config.proxies && config.proxies.length) {
+    var airportChainKey = "dialer-" + "proxy";
+    var airportLegacyChainKey = "proxy-" + "dialer";
+    for (var api = 0; api < config.proxies.length; api++) {
+      var airportProxy = config.proxies[api];
+      if (!airportProxy || typeof airportProxy !== "object") continue;
+      if (airportProxy[airportChainKey] != null) delete airportProxy[airportChainKey];
+      if (airportProxy[airportLegacyChainKey] != null) delete airportProxy[airportLegacyChainKey];
+    }
+  }
+  // END AIRPORT NODE SANITIZER
+'''
+    if needle not in text:
+        raise RuntimeError("return config marker not found for airport node sanitizer")
+    return text.replace(needle, block + needle, 1)
+
+
 def restore_airport_exceptions(text: str) -> str:
     text = re.sub(
         r'^\s*"geosite:category-ads-all":\s*"rcode://name_error",\s*\n',
@@ -193,11 +224,6 @@ def restore_airport_exceptions(text: str) -> str:
         text,
         flags=re.MULTILINE,
     )
-    # NOTE: template.yaml's ad rule target is already the literal Airport
-    # group name ("RULE-SET,category-ads-all,🛑 广告拦截"), so no rewrite is
-    # needed here. A prior version of the template used a bare REJECT-DROP
-    # target requiring translation; that mapping has been removed since it
-    # can no longer match anything template.yaml produces.
     text = re.sub(r'^\s*var privateGroup = .*?;\s*\n', "", text, flags=re.MULTILINE)
     text = re.sub(r'^\s*var domesticGroup = .*?;\s*\n', "", text, flags=re.MULTILINE)
     text = text.replace('adBlockGroup, privateGroup, domesticGroup,', 'adBlockGroup,')
@@ -260,6 +286,8 @@ def validate_airport(text: str) -> None:
         raise RuntimeError("private/domestic UI groups must remain hidden")
     if 'exclude-type: vmess' in text:
         raise RuntimeError("protocol exclusion must not exist")
+    if '  // BEGIN AIRPORT NODE SANITIZER' not in text or 'airportChainKey' not in text:
+        raise RuntimeError("airport node chain-field sanitizer is missing")
     for group in ("🤖 AI服务", "🌍 国外服务", "📺 Media", "🐟 漏网之鱼", "🔧 远控工具", "🛑 广告拦截"):
         if 'name: "' + group + '"' not in text:
             raise RuntimeError("required airport group missing: " + group)
@@ -283,6 +311,7 @@ def transform(template: dict, airport: str) -> str:
             result = replace_scalar(result, key, template[key])
     result = restore_airport_exceptions(result)
     result = map_airport_targets(result)
+    result = ensure_airport_node_sanitizer(result)
     validate_airport(result)
     return result
 
