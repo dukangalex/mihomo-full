@@ -1,1 +1,2 @@
+# Keep the Bot runtime pinned to the tested stable major/minor baseline.
 python-telegram-bot==22.8
