@@ -1,7 +1,7 @@
 # Clash Meta (Mihomo) 配置 · FINAL v7 (Mihomo v1.19.31 · IPv6 Dual-Stack)
 # 目标：中国大陆用户 · 境内全直连 · 境外链式代理（机场入口 + 自建VPS落地）
 # 零泄露（宁可断网也不泄露） · 零误判 · 零风控隐患 · 高隐匿 · 国内流量无感
-# IPv6 全面双栈支持（v6 变更：ipv6=true, dns.ipv6=true, query-v6=true,
+# IPv6 全面双栈支持（v6 变更：ipv6=true, dns.ipv6=true,
 #   fake-ip-range6, proxy-providers ip-version=dual,
 #   P1 由全封堵改为精细化 IPv6 路由，新增 cn-ip/private-ip 规则集）
 #
@@ -40,7 +40,7 @@
 #    已满足，恢复开启换回吞吐量。若任一端核心回退到 v1.19.31 以下，
 #    需要把这一项改回 false，参见内联注释里的回退指引。
 # 9. [2026-09 IPv6 双栈] 全面开启 IPv6 支持：
-#    - ipv6: true, dns.ipv6: true, dns.query-v6: true
+#    - ipv6: true, dns.ipv6: true
 #    - 新增 fake-ip-range6: fc00::/18（IPv6 fake-ip 地址池）
 #    - proxy-providers ip-version 从 ipv4-only 改为 dual
 #    - P1 规则由 IP-CIDR6,::/0,REJECT-DROP（全封堵）改为精细化路由：
@@ -64,8 +64,8 @@ bind-address: "127.0.0.1"
 mixed-port: 17890  # 非默认端口，防止本地恶意应用定位
 log-level: info  # 日志量最大，换取以后排查问题的能力（权衡：会留存更多本地日志细节）
 # ipv6 开启：全面支持 IPv6 双栈。
-# 配套变更：dns.ipv6=true, dns.query-v6=true, fake-ip-range6,
-# TUN inet4-route-only=false（已改），proxy-providers ip-version=dual,
+# 配套变更：dns.ipv6=true, fake-ip-range6,
+# TUN auto-route=true + strict-route=true，proxy-providers ip-version=dual,
 # P1 规则由全封堵改为精细化 IPv6 路由（私有 IP 直连、CN IP 直连、其余走代理）。
 # 落地 VPS 没有 IPv6 出口≠应该关闭这里的 IPv6 支持：两者是独立的维度，
 # 判断依据、利弊和开关步骤见 docs/IPV6_POLICY.md。
@@ -146,15 +146,6 @@ tun:
   auto-redirect: false
   strict-route: true           # 严格路由：防止流量绕过 TUN
   auto-detect-interface: true
-  # inet4-route-only 改为 false：TUN 同时接管 IPv4 和 IPv6 路由。
-  # 原 true 时只接管 IPv4，IPv6 流量会绕过 TUN 绕过规则，是泄露隐患。
-  # 现在全面支持 IPv6，TUN 需要接管 IPv6 路由，P1 的 IPv6 规则才能生效。
-  inet4-route-only: false
-  # inet6-route：显式声明 IPv6 路由接管范围。
-  # 默认 ::/0 即全部 IPv6 路由，与 inet4-route-only=false 配合，
-  # 确保 IPv6 流量全部经过 TUN，由 rules 层精细化路由。
-  inet6-route:
-    - "2000::/4"    # 全球单播地址（Global Unicast），覆盖绝大多数公网 IPv6
   mtu: 1500  # 标准以太网 MTU，消除 TUN 网卡指纹特征
   # [2026-09 内核对齐 v1.19.31] gso 由 false 改回 true。
   # 此前关闭原因：Alpha 分支已确认、stable 分支（含 v1.19.29）尚未修复的
@@ -1186,8 +1177,6 @@ dns:
     - MATCH,fake-ip
 
   respect-rules: true
-  fast-queries: true
-  query-v6: true
 
   default-nameserver:
     - tls://223.5.5.5
