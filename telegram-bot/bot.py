@@ -7,6 +7,7 @@ persistent tracker; no independent proxy configuration is maintained.
 import os
 import re
 import subprocess
+import threading
 from datetime import datetime
 from pathlib import Path
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -125,15 +126,45 @@ def update_private_env(values):
     tmp.replace(env_file)
 
 
-def restart_bot():
-    # Restart after the current Telegram update has been acknowledged. A synchronous
-    # restart can terminate this process before the confirmation message is delivered.
+def _restart_service():
     subprocess.Popen(
-        ["bash", "-lc", "sleep 1; systemctl restart mihomo-full-bot.service"],
+        ["systemctl", "restart", "mihomo-full-bot.service"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
+
+
+def restart_bot():
+    # Delay without a shell so the current Telegram update can be acknowledged.
+    t = threading.Timer(1.0, _restart_service)
+    t.daemon = True
+    t.start()
+
+
+def _run_uninstall_script(script, confirmation):
+    p = subprocess.Popen(
+        ["bash", str(script)],
+        cwd=BASE,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+        text=True,
+    )
+    try:
+        p.communicate(confirmation + "\n", timeout=120)
+    except Exception:
+        try:
+            p.kill()
+        except Exception:
+            pass
+
+
+def schedule_uninstall(script, confirmation, delay=2.0):
+    t = threading.Timer(delay, _run_uninstall_script, args=(script, confirmation))
+    t.daemon = True
+    t.start()
 
 
 async def start(update, context):
@@ -223,9 +254,7 @@ async def bot_uninstall_final(update, context):
         return
     await q.answer()
     uninstall_script = BASE / "telegram-bot" / "uninstall-bot.sh"
-    command = f"sleep 2; printf '%s\\n' UNINSTALL_BOT | bash {uninstall_script}"
-    subprocess.Popen(["bash", "-lc", command], cwd=BASE, stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL, start_new_session=True)
+    schedule_uninstall(uninstall_script, "UNINSTALL_BOT")
     context.user_data.clear()
     await q.edit_message_text(
         "🤖 已开始卸载 Telegram Bot。\n\n"
@@ -243,9 +272,7 @@ async def uninstall_final(update, context):
     # UNINSTALL confirmation. Run it detached so the Bot can acknowledge the request
     # before systemd stops the Bot service itself.
     uninstall_script = BASE / "uninstall.sh"
-    command = f"sleep 2; printf '%s\\n' UNINSTALL | bash {uninstall_script}"
-    subprocess.Popen(["bash", "-lc", command], cwd=BASE, stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL, start_new_session=True)
+    schedule_uninstall(uninstall_script, "UNINSTALL")
     context.user_data.clear()
     await q.edit_message_text(
         "🗑 已开始执行 Mihomo Full 安全卸载。\n\n"
@@ -387,7 +414,7 @@ app.add_handler(CallbackQueryHandler(uninstall_final, pattern="^confirm:uninstal
 app.add_handler(CallbackQueryHandler(bot_uninstall_final, pattern="^confirm:bot_uninstall_final$"))
 app.add_handler(CallbackQueryHandler(confirm_mutation, pattern="^confirm_rule$"))
 app.add_handler(CallbackQueryHandler(rule_behavior, pattern="^rule_behavior:(domain|ipcidr)$"))
-app.add_handler(CallbackQueryHandler(cancel, pattern="^cancel$"))
+app.add_handler(CallbackQueryHandler(cancel, pattern="^cancel$") )
 app.add_handler(CallbackQueryHandler(rule_flow, pattern="^rule_(add|disable|restore)$"))
 app.add_handler(CallbackQueryHandler(home, pattern="^home$"))
 app.add_handler(CallbackQueryHandler(button))
