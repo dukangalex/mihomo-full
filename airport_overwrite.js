@@ -313,6 +313,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ads-all.mrs",
     "path": "./ruleset/category-ads-all.mrs"
   },
@@ -321,6 +322,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ai-!cn.mrs",
     "path": "./ruleset/category-ai-!cn.mrs"
   },
@@ -329,6 +331,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/openai.mrs",
     "path": "./ruleset/openai.mrs"
   },
@@ -337,6 +340,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bilibili.mrs",
     "path": "./ruleset/bilibili.mrs"
   },
@@ -345,6 +349,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-cn.mrs",
     "path": "./ruleset/geolocation-cn.mrs"
   },
@@ -353,6 +358,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cn.mrs",
     "path": "./ruleset/cn.mrs"
   },
@@ -361,6 +367,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/youtube.mrs",
     "path": "./ruleset/youtube.mrs"
   },
@@ -369,6 +376,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/netflix.mrs",
     "path": "./ruleset/netflix.mrs"
   },
@@ -377,6 +385,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hulu.mrs",
     "path": "./ruleset/hulu.mrs"
   },
@@ -385,6 +394,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/disney.mrs",
     "path": "./ruleset/disney.mrs"
   },
@@ -393,6 +403,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hbo.mrs",
     "path": "./ruleset/hbo.mrs"
   },
@@ -401,6 +412,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/amazon.mrs",
     "path": "./ruleset/amazon.mrs"
   },
@@ -409,6 +421,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bahamut.mrs",
     "path": "./ruleset/bahamut.mrs"
   },
@@ -417,6 +430,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/spotify.mrs",
     "path": "./ruleset/spotify.mrs"
   },
@@ -425,6 +439,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tiktok.mrs",
     "path": "./ruleset/tiktok.mrs"
   },
@@ -433,6 +448,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/biliintl.mrs",
     "path": "./ruleset/biliintl.mrs"
   },
@@ -441,6 +457,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/abema.mrs",
     "path": "./ruleset/abema.mrs"
   },
@@ -449,6 +466,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bbc.mrs",
     "path": "./ruleset/bbc.mrs"
   },
@@ -457,6 +475,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google.mrs",
     "path": "./ruleset/google.mrs"
   },
@@ -465,6 +484,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/github.mrs",
     "path": "./ruleset/github.mrs"
   },
@@ -473,6 +493,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/gitlab.mrs",
     "path": "./ruleset/gitlab.mrs"
   },
@@ -481,6 +502,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple.mrs",
     "path": "./ruleset/apple.mrs"
   },
@@ -489,6 +511,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft.mrs",
     "path": "./ruleset/microsoft.mrs"
   },
@@ -497,6 +520,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/facebook.mrs",
     "path": "./ruleset/facebook.mrs"
   },
@@ -505,6 +529,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/instagram.mrs",
     "path": "./ruleset/instagram.mrs"
   },
@@ -513,6 +538,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/twitter.mrs",
     "path": "./ruleset/twitter.mrs"
   },
@@ -521,6 +547,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/linkedin.mrs",
     "path": "./ruleset/linkedin.mrs"
   },
@@ -529,6 +556,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/discord.mrs",
     "path": "./ruleset/discord.mrs"
   },
@@ -537,6 +565,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/snap.mrs",
     "path": "./ruleset/snapchat.mrs"
   },
@@ -545,6 +574,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/icloud.mrs",
     "path": "./ruleset/icloud.mrs"
   },
@@ -553,6 +583,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple-cn.mrs",
     "path": "./ruleset/apple-cn.mrs"
   },
@@ -561,6 +592,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft@cn.mrs",
     "path": "./ruleset/microsoft-cn.mrs"
   },
@@ -569,6 +601,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam.mrs",
     "path": "./ruleset/steam.mrs"
   },
@@ -577,6 +610,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/epicgames.mrs",
     "path": "./ruleset/epicgames.mrs"
   },
@@ -585,6 +619,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ea.mrs",
     "path": "./ruleset/ea.mrs"
   },
@@ -593,6 +628,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ubisoft.mrs",
     "path": "./ruleset/ubisoft.mrs"
   },
@@ -601,6 +637,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/blizzard.mrs",
     "path": "./ruleset/blizzard.mrs"
   },
@@ -609,6 +646,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam@cn.mrs",
     "path": "./ruleset/steam-cn.mrs"
   },
@@ -617,6 +655,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-games@cn.mrs",
     "path": "./ruleset/category-games-cn.mrs"
   },
@@ -625,6 +664,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/paypal.mrs",
     "path": "./ruleset/paypal.mrs"
   },
@@ -633,6 +673,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/aws.mrs",
     "path": "./ruleset/aws.mrs"
   },
@@ -641,6 +682,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/azure.mrs",
     "path": "./ruleset/azure.mrs"
   },
@@ -649,6 +691,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/dropbox.mrs",
     "path": "./ruleset/dropbox.mrs"
   },
@@ -657,6 +700,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/onedrive.mrs",
     "path": "./ruleset/onedrive.mrs"
   },
@@ -665,6 +709,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-scholar-!cn.mrs",
     "path": "./ruleset/category-scholar-!cn.mrs"
   },
@@ -673,6 +718,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tracker.mrs",
     "path": "./ruleset/tracker.mrs"
   },
@@ -681,6 +727,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.mrs",
     "path": "./ruleset/geolocation-!cn.mrs"
   },
@@ -697,6 +744,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/private.mrs",
     "path": "./ruleset/private-ip.mrs"
   },
@@ -705,6 +753,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs",
     "path": "./ruleset/cn-ip.mrs"
   },
@@ -713,6 +762,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/google.mrs",
     "path": "./ruleset/google-ip.mrs"
   },
@@ -721,6 +771,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/telegram.mrs",
     "path": "./ruleset/telegram-ip.mrs"
   },
@@ -729,6 +780,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/netflix.mrs",
     "path": "./ruleset/netflix-ip.mrs"
   },
@@ -737,6 +789,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/facebook.mrs",
     "path": "./ruleset/facebook-ip.mrs"
   },
@@ -745,6 +798,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/twitter.mrs",
     "path": "./ruleset/twitter-ip.mrs"
   },
@@ -753,6 +807,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudflare.mrs",
     "path": "./ruleset/cloudflare-ip.mrs"
   },
@@ -761,6 +816,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudfront.mrs",
     "path": "./ruleset/cloudfront-ip.mrs"
   },
@@ -769,6 +825,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
+    "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/fastly.mrs",
     "path": "./ruleset/fastly-ip.mrs"
   },
