@@ -58,8 +58,12 @@ jobs:
 
           a=files['tools/static-audit.py']
           oldmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "AI服务", "🌍 国外服务": "国外服务", "📺 Media": "流媒体", "🐟 漏网之鱼": "漏网之鱼", "🔧 远控工具": "远控工具"}'
-          newmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "AI服务", "🌍 国外服务": "国外服务", "📺 Media": "流媒体", "🐟 漏网之鱼": "漏网之鱼", "🔧 远控工具": "远控工具", "💬 AI 服务": "AI服务", "🌐 非中国": "国外服务", "🎬 流媒体": "流媒体"}'
+          newmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "@AI", "AI服务": "@AI", "💬 AI 服务": "@AI", "🌍 国外服务": "@NONCN", "国外服务": "@NONCN", "🌐 非中国": "@NONCN", "📺 Media": "@STREAM", "流媒体": "@STREAM", "🎬 流媒体": "@STREAM", "🐟 漏网之鱼": "@FALLBACK", "🔧 远控工具": "@REMOTE", "远控工具": "@REMOTE", "📺 YouTube": "@YOUTUBE", "📹 油管视频": "@YOUTUBE", "🔍 Google": "@GOOGLE", "🔍 谷歌服务": "@GOOGLE", "📲 Telegram": "@TELEGRAM", "📲 电报消息": "@TELEGRAM", "🪟 Microsoft": "@MICROSOFT", "Ⓜ️ 微软服务": "@MICROSOFT", "🍎 Apple": "@APPLE", "🍏 苹果服务": "@APPLE", "🎮 Steam": "@STEAM", "🎮 游戏平台": "@STEAM", "📱 TikTok": "@SOCIAL", "🐦 Twitter": "@SOCIAL", "🌐 社交媒体": "@SOCIAL", "🎵 Spotify": "@STREAM"}'
           if oldmap in a: a=a.replace(oldmap,newmap,1)
+          oldcmp='if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != template.get("rules"):'
+          newcmp='if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != canonicalize_airport_rules(template.get("rules")):'
+          if oldcmp not in a: raise SystemExit('rule comparison anchor not found')
+          a=a.replace(oldcmp,newcmp,1)
           files['tools/static-audit.py']=a
 
           t=files['template.yaml']
