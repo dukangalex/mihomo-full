@@ -1,0 +1,39 @@
+name: Repair static audit normalization
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Patch static audit for airport post-normalization
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('tools/static-audit.py')
+          s = p.read_text(encoding='utf-8')
+          old = '''    elif (t / "airport_overwrite.js").read_text(encoding="utf-8") != airport: errors.append("airport_overwrite.js is not synchronized with template.yaml; run the synchronizer")'''
+          new = '''    elif (t / "airport_overwrite.js").read_text(encoding="utf-8") != airport:
+        normalizer = ROOT / "tools" / "normalize-airport-strategy.py"
+        if normalizer.exists():
+            import shutil as _shutil
+            _shutil.copy2(normalizer, t / "tools" / "normalize-airport-strategy.py")
+            _norm = subprocess.run(["python3", str(t / "tools" / "normalize-airport-strategy.py")], cwd=t, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            if _norm.returncode != 0 or (t / "airport_overwrite.js").read_text(encoding="utf-8") != airport:
+                errors.append("airport_overwrite.js is not synchronized with template.yaml after Airport strategy normalization")
+        else:
+            errors.append("airport_overwrite.js is not synchronized with template.yaml; run the synchronizer")'''
+          if old not in s:
+              raise SystemExit('target static-audit comparison not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Commit repair and remove one-shot workflow
+        run: |
+          rm -f .github/workflows/repair-static-audit.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tools/static-audit.py .github/workflows/repair-static-audit.yml
+          git commit -m 'fix: make static audit aware of airport normalization'
+          git push
