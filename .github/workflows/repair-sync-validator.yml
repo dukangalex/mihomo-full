@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate and repair current airport synchronizer
+      - name: Repair synchronizer ordering deterministically
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -25,35 +25,38 @@ jobs:
           p = Path('tools/sync-airport-overwrite.py')
           s = p.read_text(encoding='utf-8')
 
-          old = (
-              "    for group in required_groups:\n"
-              "        if 'name: \"' + group + '\"' not in text: raise RuntimeError(\"required airport group missing: \" + group)\n"
-          )
-          new = (
-              "    for group in required_groups:\n"
-              "        yaml_name = 'name: \"' + group + '\"'\n"
-              "        json_name = '\"name\": \"' + group + '\"'\n"
-              "        if yaml_name not in text and json_name not in text:\n"
-              "            raise RuntimeError(\"required airport group missing: \" + group)\n"
-          )
+          old = '''    result=restore_airport_exceptions(result)
+              result=apply_airport_strategy_groups(result)
+              result=upsert_object(result, "rules", template["rules"])
+              result=map_airport_targets(result)
+          '''
+          new = '''    result=restore_airport_exceptions(result)
+              result=upsert_object(result, "rules", template["rules"])
+              result=apply_airport_strategy_groups(result)
+              result=map_airport_targets(result)
+              result=result.replace("DOMAIN-SUFFIX,claude.ai,💬 AI 服务", "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI")
+          '''
 
-          if old in s:
-              s = s.replace(old, new, 1)
-              p.write_text(s, encoding='utf-8')
+          if old not in s:
+              old = '''    result=restore_airport_exceptions(result)
+              result=apply_airport_strategy_groups(result)
+              result=upsert_object(result, "rules", template["rules"])
+              result=map_airport_targets(result)
+          '''
+          if old not in s:
+              raise SystemExit('expected synchronizer transform ordering not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
           PY
 
           python -m py_compile tools/sync-airport-overwrite.py
           git diff --check
 
-          if git diff --quiet -- tools/sync-airport-overwrite.py; then
-            exit 0
-          fi
-
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add tools/sync-airport-overwrite.py
-          git commit -m 'fix: keep current airport synchronization logic'
-          git push
+          git diff --cached --quiet || git commit -m 'fix: repair Claude rule synchronization order'
+          git push || true
 
       - name: Trigger real synchronization
         env:
