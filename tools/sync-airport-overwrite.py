@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Synchronize template public behavior into the non-chain Airport overwrite.
-
-The template is authoritative for common Mihomo behavior. Airport-specific node
-handling and UX remain local to airport_overwrite.js. The synchronizer is
-idempotent: applying the transformation repeatedly must produce identical text.
-
-This file is the repository's existing synchronization mechanism; keep generated
-airport_overwrite.js derived from it rather than maintaining a second sync path.
-"""
+"""Synchronize template public behavior into the non-chain Airport overwrite."""
 from __future__ import annotations
 
 import argparse
@@ -28,15 +20,7 @@ COMMON_SCALARS = (
     "global-ua", "geodata-mode", "geodata-loader", "geo-auto-update", "geo-update-interval",
     "profile", "ntp", "experimental", "external-controller-cors", "geox-url",
 )
-
-FORBIDDEN_CHAIN_MARKERS = (
-    "EXIT_NODES",
-    "EXIT_URL",
-    "落地优选出口",
-    "fallback.*落地",
-    "dialer-proxy",
-    "proxy-dialer",
-)
+FORBIDDEN_CHAIN_MARKERS = ("EXIT_NODES", "EXIT_URL", "落地优选出口", "fallback.*落地", "dialer-proxy", "proxy-dialer")
 
 
 def js(value) -> str:
@@ -44,9 +28,8 @@ def js(value) -> str:
 
 
 def _find_assignment(text: str, marker: str):
-    patterns = [f'config["{marker}"] =', f"config.{marker} ="]
     found = []
-    for pattern in patterns:
+    for pattern in (f'config["{marker}"] =', f"config.{marker} ="):
         i = text.find(pattern)
         if i >= 0:
             found.append((i, pattern))
@@ -59,38 +42,27 @@ def replace_assignment(text: str, marker: str, value) -> str:
         raise RuntimeError(f"assignment not found: {marker}")
     eq = text.find("=", start, start + len(prefix) + 3)
     i = eq + 1
-    while i < len(text) and text[i].isspace():
-        i += 1
+    while i < len(text) and text[i].isspace(): i += 1
     if i >= len(text) or text[i] not in "[{":
         raise RuntimeError(f"assignment is not object/array: {marker}")
     opening = text[i]
     closing = "]" if opening == "[" else "}"
-    depth = 0
-    quote = None
-    escape = False
-    j = i
+    depth = 0; quote = None; escape = False; j = i
     while j < len(text):
         c = text[j]
         if quote:
-            if escape:
-                escape = False
-            elif c == "\\":
-                escape = True
-            elif c == quote:
-                quote = None
+            if escape: escape = False
+            elif c == "\\": escape = True
+            elif c == quote: quote = None
         else:
-            if c in "'\"`":
-                quote = c
-            elif c == opening:
-                depth += 1
+            if c in "'\"`": quote = c
+            elif c == opening: depth += 1
             elif c == closing:
                 depth -= 1
                 if depth == 0:
                     j += 1
-                    while j < len(text) and text[j].isspace():
-                        j += 1
-                    if j < len(text) and text[j] == ";":
-                        j += 1
+                    while j < len(text) and text[j].isspace(): j += 1
+                    if j < len(text) and text[j] == ";": j += 1
                     break
         j += 1
     else:
@@ -103,49 +75,35 @@ def replace_scalar(text: str, marker: str, value) -> str:
     value_js = js(value)
     if start < 0:
         needle = "\n  return config;"
-        if needle not in text:
-            raise RuntimeError("return config marker not found")
+        if needle not in text: raise RuntimeError("return config marker not found")
         return text.replace(needle, f'\n  config["{marker}"] = {value_js};\n' + needle, 1)
-    eq = text.find("=", start, start + len(prefix) + 3)
-    i = eq + 1
-    while i < len(text) and text[i].isspace():
-        i += 1
-    if i >= len(text):
-        raise RuntimeError(f"invalid assignment: {marker}")
-    if text[i] in "[{":
-        return replace_assignment(text, marker, value)
+    eq = text.find("=", start, start + len(prefix) + 3); i = eq + 1
+    while i < len(text) and text[i].isspace(): i += 1
+    if i >= len(text): raise RuntimeError(f"invalid assignment: {marker}")
+    if text[i] in "[{": return replace_assignment(text, marker, value)
     if text[i] in "'\"`":
-        quote = text[i]
-        j = i + 1
-        escape = False
+        quote = text[i]; j = i + 1; escape = False
         while j < len(text):
             ch = text[j]
-            if escape:
-                escape = False
-            elif ch == "\\":
-                escape = True
+            if escape: escape = False
+            elif ch == "\\": escape = True
             elif ch == quote:
                 j += 1
-                while j < len(text) and text[j].isspace():
-                    j += 1
-                if j < len(text) and text[j] == ";":
-                    j += 1
+                while j < len(text) and text[j].isspace(): j += 1
+                if j < len(text) and text[j] == ";": j += 1
                 break
             j += 1
-        else:
-            raise RuntimeError(f"unterminated string assignment: {marker}")
+        else: raise RuntimeError(f"unterminated string assignment: {marker}")
     else:
         j = text.find(";", i)
-        if j < 0:
-            raise RuntimeError(f"unterminated scalar assignment: {marker}")
+        if j < 0: raise RuntimeError(f"unterminated scalar assignment: {marker}")
         j += 1
     return text[:start] + f'config["{marker}"] = {value_js};' + text[j:]
 
 
 def add_assignment(text: str, marker: str, value) -> str:
     needle = "\n  return config;"
-    if needle not in text:
-        raise RuntimeError("return config marker not found")
+    if needle not in text: raise RuntimeError("return config marker not found")
     return text.replace(needle, f'\n  config["{marker}"] = {js(value)};\n' + needle, 1)
 
 
@@ -156,16 +114,12 @@ def upsert_object(text: str, marker: str, value) -> str:
 
 def enforce_full_overwrite_contract(text: str) -> str:
     anchor = '  var originalProxies = config.proxies || [];'
-    replacement = (
-        '  var sourceConfig = config || {};\n'
-        '  var originalProxies = sourceConfig.proxies || [];\n'
-        '  // Full-overwrite contract: every airport-supplied field except proxies is discarded.\n'
-        '  config = {};'
-    )
-    if replacement in text:
-        return text
-    if anchor not in text:
-        raise RuntimeError("full-overwrite anchor not found: expected config.proxies capture")
+    replacement = ('  var sourceConfig = config || {};\n'
+                   '  var originalProxies = sourceConfig.proxies || [];\n'
+                   '  // Full-overwrite contract: every airport-supplied field except proxies is discarded.\n'
+                   '  config = {};')
+    if replacement in text: return text
+    if anchor not in text: raise RuntimeError("full-overwrite anchor not found: expected config.proxies capture")
     if '  var sourceConfig = config || {};' in text or '  // Full-overwrite contract:' in text:
         raise RuntimeError("partial full-overwrite transformation detected")
     return text.replace(anchor, replacement, 1)
@@ -173,8 +127,7 @@ def enforce_full_overwrite_contract(text: str) -> str:
 
 def ensure_airport_node_sanitizer(text: str) -> str:
     marker = "  // BEGIN AIRPORT NODE SANITIZER"
-    if marker in text:
-        return text
+    if marker in text: return text
     needle = "\n  return config;"
     block = '''
   // BEGIN AIRPORT NODE SANITIZER
@@ -190,8 +143,7 @@ def ensure_airport_node_sanitizer(text: str) -> str:
   }
   // END AIRPORT NODE SANITIZER
 '''
-    if needle not in text:
-        raise RuntimeError("return config marker not found for airport node sanitizer")
+    if needle not in text: raise RuntimeError("return config marker not found for airport node sanitizer")
     return text.replace(needle, block + needle, 1)
 
 
@@ -199,20 +151,16 @@ def restore_airport_exceptions(text: str) -> str:
     text = re.sub(r'^\s*"geosite:category-ads-all":\s*"rcode://name_error",\s*\n', "", text, flags=re.MULTILINE)
     text = re.sub(r'^\s*var privateGroup = .*?;\s*\n', "", text, flags=re.MULTILINE)
     text = re.sub(r'^\s*var domesticGroup = .*?;\s*\n', "", text, flags=re.MULTILINE)
-    text = text.replace('adBlockGroup, privateGroup, domesticGroup,', 'adBlockGroup,')
     return text
 
 
 def apply_airport_strategy_groups(text: str) -> str:
     """Replace only the Airport UI strategy layer; preserve all mature security rules."""
     start = text.find('  var AUTO_NAME = "♻️ 自动选择";')
-    end_marker = '  var ruleProviderCommonDomain ='
-    end = text.find(end_marker, start)
-    if start < 0 or end < 0:
-        raise RuntimeError("airport strategy-group block not found")
+    end = text.find('  var ruleProviderCommonDomain =', start)
+    if start < 0 or end < 0: raise RuntimeError("airport strategy-group block not found")
     block = '''  var AUTO_NAME = "⚡ 自动选择";
   var SELECT_NAME = "🚀 节点选择";
-
   var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, icon: "" };
   var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "" };
   var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
@@ -234,47 +182,30 @@ def apply_airport_strategy_groups(text: str) -> str:
   var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-
   config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, bilibiliGroup, youtubeGroup, googleGroup, privateGroup, domesticGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup];
 
 '''
     text = text[:start] + block + text[end:]
     target_map = {
-        "🤖 AI服务": "💬 AI 服务",
-        "🌍 国外服务": "🌐 非中国",
-        "📺 Media": "🎬 流媒体",
-        "🐟 漏网之鱼": "🐟 漏网之鱼",
-        "🔧 远控工具": "🌐 非中国",
-        "📺 YouTube": "📹 油管视频",
-        "🔍 Google": "🔍 谷歌服务",
-        "📲 Telegram": "📲 电报消息",
-        "🪟 Microsoft": "Ⓜ️ 微软服务",
-        "🍎 Apple": "🍏 苹果服务",
-        "🎮 Steam": "🎮 游戏平台",
-        "📱 TikTok": "🌐 社交媒体",
-        "🐦 Twitter": "🌐 社交媒体",
-        "🎵 Spotify": "🎬 流媒体",
+        "AI服务": "💬 AI 服务", "国外服务": "🌐 非中国", "流媒体": "🎬 流媒体", "漏网之鱼": "🐟 漏网之鱼",
+        "远控工具": "🌐 非中国", "📺 YouTube": "📹 油管视频", "🔍 Google": "🔍 谷歌服务",
+        "📲 Telegram": "📲 电报消息", "🪟 Microsoft": "Ⓜ️ 微软服务", "🍎 Apple": "🍏 苹果服务",
+        "🎮 Steam": "🎮 游戏平台", "📱 TikTok": "🌐 社交媒体", "🐦 Twitter": "🌐 社交媒体", "🎵 Spotify": "🎬 流媒体",
     }
     for src, dst in target_map.items():
         text = text.replace("," + src + ",", "," + dst + ",")
         text = text.replace("," + src + ",no-resolve", "," + dst + ",no-resolve")
-    # Exact service rules requested by the Airport profile.
-    marker = '  "DOMAIN-SUFFIX,a-cdn.anthropic.com,💬 AI 服务",'
-    if marker not in text:
-        text = text.replace('  "DOMAIN-SUFFIX,a-cdn.anthropic.com,💬 AI 服务",', marker)
+    old_claude_anchor = '  "DOMAIN-SUFFIX,a-cdn.anthropic.com,🤖 AI服务",'
+    new_claude_anchor = '  "DOMAIN-SUFFIX,a-cdn.anthropic.com,💬 AI 服务",'
+    text = text.replace(old_claude_anchor, new_claude_anchor)
     if '  "DOMAIN-SUFFIX,claude.ai,💬 AI 服务",' not in text:
-        text = text.replace(marker, marker + '\n  "DOMAIN-SUFFIX,claude.ai,💬 AI 服务",')
+        if new_claude_anchor not in text: raise RuntimeError("Claude anchor missing")
+        text = text.replace(new_claude_anchor, new_claude_anchor + '\n  "DOMAIN-SUFFIX,claude.ai,💬 AI 服务",', 1)
     return text
 
 
 def map_airport_targets(text: str) -> str:
-    mappings = {
-        "AI服务": "💬 AI 服务",
-        "国外服务": "🌐 非中国",
-        "流媒体": "🎬 流媒体",
-        "漏网之鱼": "🐟 漏网之鱼",
-        "远控工具": "🌐 非中国",
-    }
+    mappings = {"AI服务": "💬 AI 服务", "国外服务": "🌐 非中国", "流媒体": "🎬 流媒体", "漏网之鱼": "🐟 漏网之鱼", "远控工具": "🌐 非中国"}
     for src, dst in mappings.items():
         text = re.sub(r"," + re.escape(src) + r'(?=")', "," + dst, text)
         text = text.replace("," + src + ",no-resolve", "," + dst + ",no-resolve")
@@ -283,63 +214,37 @@ def map_airport_targets(text: str) -> str:
 
 def assert_no_chain_features(text: str) -> None:
     for marker in FORBIDDEN_CHAIN_MARKERS:
-        if re.search(marker, text, flags=re.IGNORECASE):
-            raise RuntimeError("forbidden chain-mode feature remains in Airport overwrite: " + marker)
+        if re.search(marker, text, flags=re.IGNORECASE): raise RuntimeError("forbidden chain-mode feature remains in Airport overwrite: " + marker)
     for group in ("落地优选出口", "前置机场", "VPS落地", "EXIT_NODES"):
-        if group in text:
-            raise RuntimeError("forbidden chain-mode group remains in Airport overwrite: " + group)
+        if group in text: raise RuntimeError("forbidden chain-mode group remains in Airport overwrite: " + group)
 
 
 def validate_airport(text: str) -> None:
-    required = (
-        'config["rule-providers"]', 'config["rules"]', 'config["sub-rules"]',
-        'config["tun"]', 'config["dns"]', 'config["sniffer"]',
-        'config["global-ua"]', 'config["geox-url"]',
-    )
+    required = ('config["rule-providers"]', 'config["rules"]', 'config["sub-rules"]', 'config["tun"]', 'config["dns"]', 'config["sniffer"]', 'config["global-ua"]', 'config["geox-url"]')
     for marker in required:
-        if marker not in text:
-            raise RuntimeError(f"post-sync sanity check failed: {marker}")
-    if 'var sourceConfig = config || {};' not in text or 'var originalProxies = sourceConfig.proxies || [];' not in text:
-        raise RuntimeError("airport full-overwrite contract is missing")
-    if text.count('  config = {};') != 1:
-        raise RuntimeError("airport full-overwrite contract must reset config exactly once")
-    reset_at = text.find('  config = {};')
-    proxy_at = text.find('  var originalProxies = sourceConfig.proxies || [];')
-    if reset_at < proxy_at:
-        raise RuntimeError("airport proxies must be captured before config reset")
-    if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text:
-        raise RuntimeError("airport ad rule is not connected to the ad group")
-    if '"DOMAIN-SUFFIX,claude.ai,💬 AI 服务"' not in text:
-        raise RuntimeError("Claude.ai rule is missing")
-    required_groups = (
-        "🚀 节点选择", "⚡ 自动选择", "🛑 广告拦截", "💬 AI 服务", "📺 哔哩哔哩",
-        "📹 油管视频", "🔍 谷歌服务", "🏠 私有网络", "🔒 国内服务", "📲 电报消息",
-        "🐱 Github", "Ⓜ️ 微软服务", "🍏 苹果服务", "🌐 社交媒体", "🎬 流媒体",
-        "🎮 游戏平台", "📚 教育资源", "💰 金融服务", "☁️ 云服务", "🌐 非中国", "🐟 漏网之鱼",
-    )
+        if marker not in text: raise RuntimeError(f"post-sync sanity check failed: {marker}")
+    if 'var sourceConfig = config || {};' not in text or 'var originalProxies = sourceConfig.proxies || [];' not in text: raise RuntimeError("airport full-overwrite contract is missing")
+    if text.count('  config = {};') != 1: raise RuntimeError("airport full-overwrite contract must reset config exactly once")
+    if text.find('  config = {};') < text.find('  var originalProxies = sourceConfig.proxies || []'): raise RuntimeError("airport proxies must be captured before config reset")
+    if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text: raise RuntimeError("airport ad rule is not connected to the ad group")
+    if '"DOMAIN-SUFFIX,claude.ai,💬 AI 服务"' not in text: raise RuntimeError("Claude.ai rule is missing")
+    required_groups = ("🚀 节点选择", "⚡ 自动选择", "🛑 广告拦截", "💬 AI 服务", "📺 哔哩哔哩", "📹 油管视频", "🔍 谷歌服务", "🏠 私有网络", "🔒 国内服务", "📲 电报消息", "🐱 Github", "Ⓜ️ 微软服务", "🍏 苹果服务", "🌐 社交媒体", "🎬 流媒体", "🎮 游戏平台", "📚 教育资源", "💰 金融服务", "☁️ 云服务", "🌐 非中国", "🐟 漏网之鱼")
     for group in required_groups:
-        if 'name: "' + group + '"' not in text:
-            raise RuntimeError("required airport group missing: " + group)
-    if 'name: "🔰 节点选择"' in text or 'name: "🤖 AI服务"' in text or 'name: "🌍 国外服务"' in text:
-        raise RuntimeError("legacy airport strategy groups remain")
-    if 'exclude-type: vmess' in text:
-        raise RuntimeError("protocol exclusion must not exist")
-    if '  // BEGIN AIRPORT NODE SANITIZER' not in text or 'airportChainKey' not in text:
-        raise RuntimeError("airport node chain-field sanitizer is missing")
-    if '"geosite:category-ads-all": "rcode://name_error"' in text:
-        raise RuntimeError("ad DNS NXDOMAIN would defeat DIRECT")
+        if 'name: "' + group + '"' not in text: raise RuntimeError("required airport group missing: " + group)
+    if 'name: "🔰 节点选择"' in text or 'name: "🤖 AI服务"' in text or 'name: "🌍 国外服务"' in text: raise RuntimeError("legacy airport strategy groups remain")
+    if 'exclude-type: vmess' in text: raise RuntimeError("protocol exclusion must not exist")
+    if '  // BEGIN AIRPORT NODE SANITIZER' not in text or 'airportChainKey' not in text: raise RuntimeError("airport node chain-field sanitizer is missing")
+    if '"geosite:category-ads-all": "rcode://name_error"' in text: raise RuntimeError("ad DNS NXDOMAIN would defeat DIRECT")
     assert_no_chain_features(text)
 
 
 def transform(template: dict, airport: str) -> str:
     result = enforce_full_overwrite_contract(airport)
     for key in COMMON_OBJECTS:
-        if key not in template:
-            raise RuntimeError(f"template missing required section: {key}")
+        if key not in template: raise RuntimeError(f"template missing required section: {key}")
         result = upsert_object(result, key, template[key])
     for key in COMMON_SCALARS:
-        if key in template:
-            result = replace_scalar(result, key, template[key])
+        if key in template: result = replace_scalar(result, key, template[key])
     result = restore_airport_exceptions(result)
     result = apply_airport_strategy_groups(result)
     result = map_airport_targets(result)
@@ -360,21 +265,16 @@ def main() -> None:
     original = AIRPORT.read_text(encoding="utf-8")
     first = transform(template, original)
     second = transform(template, first)
-    if first != second:
-        raise RuntimeError("Airport synchronization is not idempotent: second pass changes the output")
+    if first != second: raise RuntimeError("Airport synchronization is not idempotent: second pass changes the output")
     if args.check:
-        if first != original:
-            raise RuntimeError("Airport overwrite is out of sync; run the synchronizer without --check")
+        if first != original: raise RuntimeError("Airport overwrite is out of sync; run the synchronizer without --check")
         print("airport_overwrite.js synchronized")
         print("idempotence check: PASS; non-chain hard gate: PASS; full-overwrite contract: PASS; strategy-group contract: PASS; sync check: PASS")
         return
     if first != original:
-        tmp = AIRPORT.with_suffix(AIRPORT.suffix + ".tmp")
-        tmp.write_text(first, encoding="utf-8")
-        tmp.replace(AIRPORT)
+        tmp = AIRPORT.with_suffix(AIRPORT.suffix + ".tmp"); tmp.write_text(first, encoding="utf-8"); tmp.replace(AIRPORT)
         print("airport_overwrite.js synchronized")
-    else:
-        print("airport_overwrite.js already synchronized")
+    else: print("airport_overwrite.js already synchronized")
     print("idempotence check: PASS; non-chain hard gate: PASS; full-overwrite contract: PASS; strategy-group contract: PASS")
 
 
