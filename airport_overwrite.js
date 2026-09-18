@@ -274,32 +274,36 @@ function main(config) {
   if (hasOtherRegionNodes) regionNames.push(OTHER_REGION_NAME);
   var regionNamesNoHK = regionNames.filter(function(n) { return n !== "🇭🇰 香港节点" && n !== "🇹🇼 台湾节点"; });
 
-  var AUTO_NAME = "♻️ 自动选择";
-  var LB_NAME = "⚖️ 负载均衡";
-  var SELECT_NAME = "🔰 节点选择";
+  var AUTO_NAME = "⚡ 自动选择";
+  var SELECT_NAME = "🚀 节点选择";
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, icon: "" };
+  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "" };
 
-  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, timeout: 3000, "expected-status": 204, "max-failed-times": 2, icon: "" };
-  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "" };
-  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames), icon: "" };
-  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", "DIRECT"], icon: "" };
-  var aiGroup = { name: "🤖 AI服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNamesNoHK), icon: "" };
-  var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNamesNoHK), icon: "" };
-  var mediaGroup = { name: "📺 Media", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  var youtubeGroup = { name: "📺 YouTube", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  var googleGroup = { name: "🔍 Google", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  var telegramGroup = { name: "📲 Telegram", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  var microsoftGroup = { name: "🪟 Microsoft", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  var appleGroup = { name: "🍎 Apple", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  var steamGroup = { name: "🎮 Steam", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  var tiktokGroup = { name: "📱 TikTok", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  var twitterGroup = { name: "🐦 Twitter", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  var spotifyGroup = { name: "🎵 Spotify", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  var globalServiceGroup = { name: "🌍 国外服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
-  // 直接在客户端里把这个分组切成 DIRECT 即可，不需要再回来改脚本
-  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "🌍 国外服务", "DIRECT"], icon: "" };
-
-  config["proxy-groups"] = [selectGroup, autoGroup, lbGroup, adBlockGroup, aiGroup, claudeGroup, mediaGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, steamGroup, tiktokGroup, twitterGroup, spotifyGroup, globalServiceGroup, fallbackGroup, remoteToolGroup].concat(regionGroups);
+  // Airport service groups: no DIRECT in non-China traffic groups.
+  // Each group exposes: total-node auto selection -> detected region groups -> node selection.
+  var serviceProxies = [AUTO_NAME].concat(regionNames).concat([SELECT_NAME]);
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
+  var aiGroup = { name: "💬 AI 服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var privateNetworkGroup = { name: "🏠 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
+  var domesticServiceGroup = { name: "🔒 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };
+  var telegramGroup = { name: "📲 电报消息", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var githubGroup = { name: "🐱 Github", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var microsoftGroup = { name: "Ⓜ️ 微软服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var appleGroup = { name: "🍏 苹果服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var socialGroup = { name: "🌐 社交媒体", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var streamingGroup = { name: "🎬 流媒体", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var gamesGroup = { name: "🎮 游戏平台", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var educationGroup = { name: "📚 教育资源", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var financeGroup = { name: "💰 金融服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, claudeGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup].concat(regionGroups);
 
   var ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
   var ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
@@ -859,6 +863,7 @@ function main(config) {
 
   config["rules"] = [
   "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI",
+  "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI",
   "AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT",
   "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP",
@@ -963,22 +968,22 @@ function main(config) {
   "DOMAIN-SUFFIX,pddpic.com,DIRECT",
   "DOMAIN-SUFFIX,samsunghealth.com,DIRECT",
   "DOMAIN,connectivitycheck.gstatic.com,DIRECT",
-  "DOMAIN,userlocation.googleapis.com,🌍 国外服务",
-  "DOMAIN,voilatile-pa.googleapis.com,🌍 国外服务",
-  "DOMAIN,geller-pa.googleapis.com,🌍 国外服务",
-  "DOMAIN,mobilemaps-pa-gz.googleapis.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,app-measurement.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,firebaselogging.googleapis.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,in.appcenter.ms,🌍 国外服务",
-  "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,connect.facebook.net,🌍 国外服务",
-  "DOMAIN-SUFFIX,a-cdn.anthropic.com,🤖 AI服务",
-  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,🤖 AI服务",
-  "DOMAIN-SUFFIX,bing.com,🌍 国外服务",
+  "DOMAIN,userlocation.googleapis.com,🌐 非中国",
+  "DOMAIN,voilatile-pa.googleapis.com,🌐 非中国",
+  "DOMAIN,geller-pa.googleapis.com,🌐 非中国",
+  "DOMAIN,mobilemaps-pa-gz.googleapis.com,🌐 非中国",
+  "DOMAIN-SUFFIX,app-measurement.com,🌐 非中国",
+  "DOMAIN-SUFFIX,firebaselogging.googleapis.com,🌐 非中国",
+  "DOMAIN-SUFFIX,in.appcenter.ms,🌐 非中国",
+  "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,🌐 非中国",
+  "DOMAIN-SUFFIX,connect.facebook.net,🌐 非中国",
+  "DOMAIN-SUFFIX,a-cdn.anthropic.com,💬 AI 服务",
+  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,💬 AI 服务",
+  "DOMAIN-SUFFIX,bing.com,🌐 非中国",
   "DOMAIN-SUFFIX,samsungosp.com,DIRECT",
-  "DOMAIN-SUFFIX,crashlytics.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,firebase.io,🌍 国外服务",
-  "DOMAIN,browser-intake-us5-datadoghq.com,🌍 国外服务",
+  "DOMAIN-SUFFIX,crashlytics.com,🌐 非中国",
+  "DOMAIN-SUFFIX,firebase.io,🌐 非中国",
+  "DOMAIN,browser-intake-us5-datadoghq.com,🌐 非中国",
   "RULE-SET,sukka-phishing,REJECT-DROP",
   "RULE-SET,category-ads-all,🛑 广告拦截",
   "DOMAIN,galaxystore.ad-survey.com,REJECT",
@@ -1008,42 +1013,42 @@ function main(config) {
   "AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,443),(RULE-SET,cn-ip)),DIRECT",
   "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "IP-CIDR,54.223.0.0/16,🌍 国外服务,no-resolve",
-  "IP-CIDR,52.80.168.0/24,🌍 国外服务,no-resolve",
-  "DOMAIN-SUFFIX,browserleaks.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,browserleaks.org,🌍 国外服务",
-  "DOMAIN-SUFFIX,ipleak.net,🌍 国外服务",
-  "DOMAIN-SUFFIX,dnsleaktest.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,dnsleak.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,whoer.net,🌍 国外服务",
-  "DOMAIN-SUFFIX,whatismyipaddress.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,ipinfo.io,🌍 国外服务",
-  "DOMAIN-SUFFIX,ip-api.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,myip.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,ifconfig.me,🌍 国外服务",
-  "DOMAIN-SUFFIX,ifconfig.co,🌍 国外服务",
-  "DOMAIN-SUFFIX,ipecho.net,🌍 国外服务",
-  "DOMAIN-SUFFIX,ip.sb,🌍 国外服务",
-  "DOMAIN-SUFFIX,ipleak.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,dnsleaktest.org,🌍 国外服务",
-  "DOMAIN-SUFFIX,browserleaks.info,🌍 国外服务",
-  "DOMAIN-SUFFIX,whatismyip.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,ipify.org,🌍 国外服务",
-  "DOMAIN-SUFFIX,api.ipify.org,🌍 国外服务",
-  "DOMAIN-SUFFIX,ipapi.co,🌍 国外服务",
-  "DOMAIN-SUFFIX,ipwho.is,🌍 国外服务",
-  "DOMAIN-SUFFIX,ident.me,🌍 国外服务",
-  "DOMAIN-SUFFIX,cloudflarestorage.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,paddle.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,challenges.cloudflare.com,🌍 国外服务",
-  "DOMAIN-SUFFIX,recaptcha.net,🌍 国外服务",
-  "DOMAIN,recaptcha.google.com,🌍 国外服务",
+  "IP-CIDR,54.223.0.0/16,🌐 非中国,no-resolve",
+  "IP-CIDR,52.80.168.0/24,🌐 非中国,no-resolve",
+  "DOMAIN-SUFFIX,browserleaks.com,🌐 非中国",
+  "DOMAIN-SUFFIX,browserleaks.org,🌐 非中国",
+  "DOMAIN-SUFFIX,ipleak.net,🌐 非中国",
+  "DOMAIN-SUFFIX,dnsleaktest.com,🌐 非中国",
+  "DOMAIN-SUFFIX,dnsleak.com,🌐 非中国",
+  "DOMAIN-SUFFIX,whoer.net,🌐 非中国",
+  "DOMAIN-SUFFIX,whatismyipaddress.com,🌐 非中国",
+  "DOMAIN-SUFFIX,ipinfo.io,🌐 非中国",
+  "DOMAIN-SUFFIX,ip-api.com,🌐 非中国",
+  "DOMAIN-SUFFIX,myip.com,🌐 非中国",
+  "DOMAIN-SUFFIX,ifconfig.me,🌐 非中国",
+  "DOMAIN-SUFFIX,ifconfig.co,🌐 非中国",
+  "DOMAIN-SUFFIX,ipecho.net,🌐 非中国",
+  "DOMAIN-SUFFIX,ip.sb,🌐 非中国",
+  "DOMAIN-SUFFIX,ipleak.com,🌐 非中国",
+  "DOMAIN-SUFFIX,dnsleaktest.org,🌐 非中国",
+  "DOMAIN-SUFFIX,browserleaks.info,🌐 非中国",
+  "DOMAIN-SUFFIX,whatismyip.com,🌐 非中国",
+  "DOMAIN-SUFFIX,ipify.org,🌐 非中国",
+  "DOMAIN-SUFFIX,api.ipify.org,🌐 非中国",
+  "DOMAIN-SUFFIX,ipapi.co,🌐 非中国",
+  "DOMAIN-SUFFIX,ipwho.is,🌐 非中国",
+  "DOMAIN-SUFFIX,ident.me,🌐 非中国",
+  "DOMAIN-SUFFIX,cloudflarestorage.com,🌐 非中国",
+  "DOMAIN-SUFFIX,paddle.com,🌐 非中国",
+  "DOMAIN-SUFFIX,challenges.cloudflare.com,🌐 非中国",
+  "DOMAIN-SUFFIX,recaptcha.net,🌐 非中国",
+  "DOMAIN,recaptcha.google.com,🌐 非中国",
   "SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN",
   "SUB-RULE,(NETWORK,udp),DOMESTIC_DOMAIN",
   "SUB-RULE,(NETWORK,tcp),DOMESTIC_IP",
   "SUB-RULE,(NETWORK,udp),DOMESTIC_IP",
-  "PROCESS-NAME-WILDCARD,*revanced*,🌍 国外服务",
-  "PROCESS-NAME-WILDCARD,*youtube*,🌍 国外服务",
+  "PROCESS-NAME-WILDCARD,*revanced*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*youtube*,🌐 非中国",
   "PROCESS-NAME-WILDCARD,*com.android.bank*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.icbc*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.ccb*,DIRECT",
@@ -1082,67 +1087,67 @@ function main(config) {
   "PROCESS-NAME-WILDCARD,*com.czbank*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.bjrcb*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.android.mobilebank*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*AnyDesk*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*ToDesk*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*TeamViewer*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*RustDesk*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*rustdesk*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*tailscale*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*tailscaled*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*zerotier*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*ngrok*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*frpc*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*frps*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*cloudflared*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*natapp*,🔧 远控工具",
-  "PROCESS-NAME-WILDCARD,*nblink*,🔧 远控工具",
-  "RULE-SET,icloud,🌍 国外服务",
-  "RULE-SET,apple,🌍 国外服务",
-  "RULE-SET,microsoft,🌍 国外服务",
-  "RULE-SET,openai,🤖 AI服务",
-  "RULE-SET,category-ai-!cn,🤖 AI服务",
-  "RULE-SET,netflix,📺 Media",
-  "RULE-SET,netflix-ip,📺 Media,no-resolve",
-  "RULE-SET,hulu,📺 Media",
-  "RULE-SET,disney,📺 Media",
-  "RULE-SET,hbo,📺 Media",
-  "RULE-SET,amazon,📺 Media",
-  "RULE-SET,bahamut,📺 Media",
-  "RULE-SET,youtube,📺 Media",
-  "RULE-SET,tiktok,📺 Media",
-  "RULE-SET,biliintl,📺 Media",
-  "RULE-SET,abema,📺 Media",
-  "RULE-SET,bbc,📺 Media",
-  "RULE-SET,spotify,📺 Media",
-  "RULE-SET,google,🌍 国外服务",
-  "RULE-SET,google-ip,🌍 国外服务,no-resolve",
-  "RULE-SET,github,🌍 国外服务",
-  "RULE-SET,gitlab,🌍 国外服务",
-  "RULE-SET,facebook,🌍 国外服务",
-  "RULE-SET,instagram,🌍 国外服务",
-  "RULE-SET,twitter,🌍 国外服务",
-  "RULE-SET,twitter-ip,🌍 国外服务,no-resolve",
-  "RULE-SET,linkedin,🌍 国外服务",
-  "RULE-SET,discord,🌍 国外服务",
-  "RULE-SET,snapchat,🌍 国外服务",
-  "RULE-SET,telegram-ip,🌍 国外服务,no-resolve",
-  "RULE-SET,facebook-ip,🌍 国外服务,no-resolve",
-  "RULE-SET,cloudflare-ip,🌍 国外服务,no-resolve",
-  "RULE-SET,cloudfront-ip,🌍 国外服务,no-resolve",
-  "RULE-SET,fastly-ip,🌍 国外服务,no-resolve",
-  "RULE-SET,steam,🌍 国外服务",
-  "RULE-SET,epicgames,🌍 国外服务",
-  "RULE-SET,ea,🌍 国外服务",
-  "RULE-SET,ubisoft,🌍 国外服务",
-  "RULE-SET,blizzard,🌍 国外服务",
-  "RULE-SET,paypal,🌍 国外服务",
-  "RULE-SET,aws,🌍 国外服务",
-  "RULE-SET,azure,🌍 国外服务",
-  "RULE-SET,dropbox,🌍 国外服务",
-  "RULE-SET,onedrive,🌍 国外服务",
-  "RULE-SET,cryptocurrency,🌍 国外服务",
-  "RULE-SET,category-scholar-!cn,🌍 国外服务",
-  "RULE-SET,geolocation-!cn,🌍 国外服务",
+  "PROCESS-NAME-WILDCARD,*AnyDesk*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*ToDesk*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*TeamViewer*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*RustDesk*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*rustdesk*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*tailscale*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*tailscaled*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*zerotier*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*ngrok*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*frpc*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*frps*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*cloudflared*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*natapp*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*nblink*,🌐 非中国",
+  "RULE-SET,icloud,🌐 非中国",
+  "RULE-SET,apple,🌐 非中国",
+  "RULE-SET,microsoft,🌐 非中国",
+  "RULE-SET,openai,💬 AI 服务",
+  "RULE-SET,category-ai-!cn,💬 AI 服务",
+  "RULE-SET,netflix,🎬 流媒体",
+  "RULE-SET,netflix-ip,🎬 流媒体,no-resolve",
+  "RULE-SET,hulu,🎬 流媒体",
+  "RULE-SET,disney,🎬 流媒体",
+  "RULE-SET,hbo,🎬 流媒体",
+  "RULE-SET,amazon,🎬 流媒体",
+  "RULE-SET,bahamut,🎬 流媒体",
+  "RULE-SET,youtube,🎬 流媒体",
+  "RULE-SET,tiktok,🎬 流媒体",
+  "RULE-SET,biliintl,🎬 流媒体",
+  "RULE-SET,abema,🎬 流媒体",
+  "RULE-SET,bbc,🎬 流媒体",
+  "RULE-SET,spotify,🎬 流媒体",
+  "RULE-SET,google,🌐 非中国",
+  "RULE-SET,google-ip,🌐 非中国,no-resolve",
+  "RULE-SET,github,🌐 非中国",
+  "RULE-SET,gitlab,🌐 非中国",
+  "RULE-SET,facebook,🌐 非中国",
+  "RULE-SET,instagram,🌐 非中国",
+  "RULE-SET,twitter,🌐 非中国",
+  "RULE-SET,twitter-ip,🌐 非中国,no-resolve",
+  "RULE-SET,linkedin,🌐 非中国",
+  "RULE-SET,discord,🌐 非中国",
+  "RULE-SET,snapchat,🌐 非中国",
+  "RULE-SET,telegram-ip,🌐 非中国,no-resolve",
+  "RULE-SET,facebook-ip,🌐 非中国,no-resolve",
+  "RULE-SET,cloudflare-ip,🌐 非中国,no-resolve",
+  "RULE-SET,cloudfront-ip,🌐 非中国,no-resolve",
+  "RULE-SET,fastly-ip,🌐 非中国,no-resolve",
+  "RULE-SET,steam,🌐 非中国",
+  "RULE-SET,epicgames,🌐 非中国",
+  "RULE-SET,ea,🌐 非中国",
+  "RULE-SET,ubisoft,🌐 非中国",
+  "RULE-SET,blizzard,🌐 非中国",
+  "RULE-SET,paypal,🌐 非中国",
+  "RULE-SET,aws,🌐 非中国",
+  "RULE-SET,azure,🌐 非中国",
+  "RULE-SET,dropbox,🌐 非中国",
+  "RULE-SET,onedrive,🌐 非中国",
+  "RULE-SET,cryptocurrency,🌐 非中国",
+  "RULE-SET,category-scholar-!cn,🌐 非中国",
+  "RULE-SET,geolocation-!cn,🌐 非中国",
   "MATCH,🐟 漏网之鱼"
 ];
 
