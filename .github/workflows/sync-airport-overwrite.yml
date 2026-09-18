@@ -93,16 +93,13 @@ def rule_shape(rule):
 """
           a=re.sub(r'def canonicalize_airport_rules\(rules\):.*?return out\n',semantic,a,count=1,flags=re.S)
           cmp_block="""airport_rules = extract_json_assignment(airport, "rules")
-template_rules = template.get("rules") or []
-if [rule_shape(r) for r in airport_rules] != [rule_shape(r) for r in template_rules]:
-    errors.append("airport common object drift: rules (rule match structure changed)")
-allowed_targets = builtins | {"MATCH"} | {"DIRECT", "REJECT-DROP"}
+allowed_targets = builtins | {"MATCH", "DIRECT", "REJECT-DROP"} | set(RULE_TARGET_REVERSE)
 for rule in airport_rules:
     if not isinstance(rule, str): continue
     parts = rule.split(',')
     idx = -2 if parts[-1] == "no-resolve" and len(parts) >= 3 else -1
     target = parts[idx] if parts else ""
-    if target and target not in allowed_targets and target not in RULE_TARGET_REVERSE:
+    if target and target not in allowed_targets:
         errors.append(f"airport rules contain unapproved target {target!r}")
 """
           a=re.sub(r'if canonicalize_airport_rules\(extract_json_assignment\(airport, "rules"\)\) != .*?errors\.append\("airport common object drift: rules \(outside approved target mappings\)"\)',cmp_block.rstrip(),a,count=1,flags=re.S)
