@@ -6,6 +6,7 @@ on:
       - 'airport_overwrite.js'
       - 'tools/sync-airport-overwrite.py'
       - 'tools/static-audit.py'
+      - 'tools/test-airport-overwrite.js'
       - '.airport-sync-trigger'
   workflow_dispatch:
 permissions:
@@ -26,6 +27,8 @@ jobs:
         run: python tools/sync-airport-overwrite.py
       - name: Validate JavaScript syntax
         run: node --check airport_overwrite.js
+      - name: Run airport regression test
+        run: node tools/test-airport-overwrite.js
       - name: Run static repository audit
         run: python tools/static-audit.py
       - name: Commit generated synchronization
