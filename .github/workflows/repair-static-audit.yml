@@ -1,5 +1,8 @@
 name: Repair static audit normalization
 on:
+  push:
+    paths:
+      - '.github/workflows/repair-static-audit.yml'
   workflow_dispatch:
 permissions:
   contents: write
