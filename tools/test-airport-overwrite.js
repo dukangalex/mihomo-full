@@ -63,10 +63,16 @@ for (const name of requiredGroups) {
 if (!output.rules.some(rule => rule === "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI")) fail("Claude.ai is not routed to the dedicated Claude AI group");
 if (groups.some(g => g && ["🔰 节点选择", "🤖 AI服务", "🌍 国外服务"].includes(g.name))) fail("legacy strategy group remains");
 
-const genericChoiceGroups = groups.filter(g => g && g.type === "select" && Array.isArray(g.proxies) && g.proxies.includes("DIRECT"));
-const allowedDirectGroups = new Set(["🛑 广告拦截", "🔧 远控工具", "💬 AI 服务", "🤖 Claude AI", "📺 哔哩哔哩", "📹 油管视频", "🔍 谷歌服务", "📲 电报消息", "🐱 Github", "Ⓜ️ 微软服务", "🍏 苹果服务", "🌐 社交媒体", "🎬 流媒体", "🎮 游戏平台", "📚 教育资源", "💰 金融服务", "☁️ 云服务", "🌐 非中国", "🐟 漏网之鱼"]);
-for (const group of genericChoiceGroups) {
-  if (!allowedDirectGroups.has(group.name)) fail(`unexpected DIRECT exposure in strategy group: ${group.name}`);
+const directExpectedGroups = new Set([
+  "🚀 节点选择", "🛑 广告拦截", "💬 AI 服务", "🤖 Claude AI", "📺 哔哩哔哩", "📹 油管视频",
+  "🔍 谷歌服务", "🏠 私有网络", "🔒 国内服务", "📲 电报消息", "🐱 Github", "Ⓜ️ 微软服务",
+  "🍏 苹果服务", "🌐 社交媒体", "🎬 流媒体", "🎮 游戏平台", "📚 教育资源", "💰 金融服务",
+  "☁️ 云服务", "🌐 非中国", "🐟 漏网之鱼", "🔧 远控工具"
+]);
+for (const group of groups) {
+  if (group && group.type === "select" && directExpectedGroups.has(group.name)) {
+    if (!Array.isArray(group.proxies) || !group.proxies.includes("DIRECT")) fail(`DIRECT exception missing from airport strategy group: ${group.name}`);
+  }
 }
 
 ok("full-overwrite input isolation");
