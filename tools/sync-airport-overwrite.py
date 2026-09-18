@@ -98,7 +98,20 @@ def ensure_airport_node_sanitizer(text):
     marker="  // BEGIN AIRPORT NODE SANITIZER"
     if marker in text: return text
     needle="\n  return config;"
-    block='''\n  // BEGIN AIRPORT NODE SANITIZER\n  if (config.proxies && config.proxies.length) {\n    var airportChainKey = "dialer-" + "proxy";\n    var airportLegacyChainKey = "proxy-" + "dialer";\n    for (var api = 0; api < config.proxies.length; api++) {\n      var airportProxy = config.proxies[api];\n      if (!airportProxy || typeof airportProxy !== "object") continue;\n      if (airportProxy[airportChainKey] != null) delete airportProxy[airportChainKey];\n      if (airportProxy[airportLegacyChainKey] != null) delete airportProxy[airportLegacyChainKey];\n    }\n  }\n  // END AIRPORT NODE SANITIZER\n'''
+    block='''
+  // BEGIN AIRPORT NODE SANITIZER
+  if (config.proxies && config.proxies.length) {
+    var airportChainKey = "dialer-" + "proxy";
+    var airportLegacyChainKey = "proxy-" + "dialer";
+    for (var api = 0; api < config.proxies.length; api++) {
+      var airportProxy = config.proxies[api];
+      if (!airportProxy || typeof airportProxy !== "object") continue;
+      if (airportProxy[airportChainKey] != null) delete airportProxy[airportChainKey];
+      if (airportProxy[airportLegacyChainKey] != null) delete airportProxy[airportLegacyChainKey];
+    }
+  }
+  // END AIRPORT NODE SANITIZER
+'''
     if needle not in text: raise RuntimeError("return config marker not found for airport node sanitizer")
     return text.replace(needle,block+needle,1)
 
@@ -112,16 +125,42 @@ def apply_airport_strategy_groups(text):
     start=text.find('  var AUTO_NAME = "♻️ 自动选择";')
     end=text.find('  var ruleProviderCommonDomain =',start)
     if start<0 or end<0: raise RuntimeError("airport strategy-group block not found")
-    block='''  var AUTO_NAME = "⚡ 自动选择";\n  var SELECT_NAME = "🚀 节点选择";\n  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, icon: "" };\n  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "" };\n  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };\n  var aiGroup = { name: "💬 AI 服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var privateGroup = { name: "🏠 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };\n  var domesticGroup = { name: "🔒 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };\n  var telegramGroup = { name: "📲 电报消息", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var githubGroup = { name: "🐱 Github", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var microsoftGroup = { name: "Ⓜ️ 微软服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var appleGroup = { name: "🍏 苹果服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var socialGroup = { name: "🌐 社交媒体", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var streamingGroup = { name: "🎬 流媒体", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var gamesGroup = { name: "🎮 游戏平台", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var educationGroup = { name: "📚 教育资源", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var financeGroup = { name: "💰 金融服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, bilibiliGroup, youtubeGroup, googleGroup, privateGroup, domesticGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup];\n\n'''
+    block='''  var AUTO_NAME = "⚡ 自动选择";
+  var SELECT_NAME = "🚀 节点选择";
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, icon: "" };
+  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "" };
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
+  var aiGroup = { name: "💬 AI 服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var privateGroup = { name: "🏠 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
+  var domesticGroup = { name: "🔒 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
+  var telegramGroup = { name: "📲 电报消息", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var githubGroup = { name: "🐱 Github", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var microsoftGroup = { name: "Ⓜ️ 微软服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var appleGroup = { name: "🍏 苹果服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var socialGroup = { name: "🌐 社交媒体", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var streamingGroup = { name: "🎬 流媒体", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var gamesGroup = { name: "🎮 游戏平台", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var educationGroup = { name: "📚 教育资源", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var financeGroup = { name: "💰 金融服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, bilibiliGroup, youtubeGroup, googleGroup, privateGroup, domesticGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup];
+
+'''
     text=text[:start]+block+text[end:]
     target_map={"AI服务":"💬 AI 服务","国外服务":"🌐 非中国","流媒体":"🎬 流媒体","漏网之鱼":"🐟 漏网之鱼","远控工具":"🌐 非中国","📺 YouTube":"📹 油管视频","🔍 Google":"🔍 谷歌服务","📲 Telegram":"📲 电报消息","🪟 Microsoft":"Ⓜ️ 微软服务","🍎 Apple":"🍏 苹果服务","🎮 Steam":"🎮 游戏平台","📱 TikTok":"🌐 社交媒体","🐦 Twitter":"🌐 社交媒体","🎵 Spotify":"🎬 流媒体"}
     for src,dst in target_map.items():
         text=text.replace(","+src+",",","+dst+",").replace(","+src+",no-resolve",","+dst+",no-resolve")
     claude='  "DOMAIN-SUFFIX,claude.ai,💬 AI 服务",'
     if claude not in text:
-        match='  "MATCH,🐟 漏网之鱼"'
-        if match not in text: raise RuntimeError("Airport MATCH rule anchor missing")
-        text=text.replace(match,claude+'\n'+match,1)
+        match=re.search(r'(?m)^(\s*)"MATCH,',text)
+        if not match: raise RuntimeError("Airport MATCH rule anchor missing")
+        indent=match.group(1)
+        text=text[:match.start()]+indent+claude+"\n"+text[match.start():]
     return text
 
 def map_airport_targets(text):
