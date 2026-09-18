@@ -26,6 +26,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           files={p:Path(p).read_text(encoding='utf-8') for p in ['tools/sync-airport-overwrite.py','tools/static-audit.py','template.yaml']}
           s=files['tools/sync-airport-overwrite.py']
           old="    for group in required_groups:\n        yaml_name = 'name: \"' + group + '\"'\n        json_name = '\"name\": \"' + group + '\"'\n        if yaml_name not in text and json_name not in text:\n            raise RuntimeError(\"required airport group missing: \" + group)\n"
@@ -33,8 +34,7 @@ jobs:
           if old in s:s=s.replace(old,new,1)
           old2="    start=text.find('  var AUTO_NAME = \"♻️ 自动选择\";')\n"
           new2="    start=text.find('  var AUTO_NAME = \"♻️ 自动选择\";')\n    if start < 0:\n        start=text.find('  var AUTO_NAME = \"⚡ 自动选择\";')\n"
-          if old2 not in s: raise SystemExit('strategy-group anchor not found')
-          s=s.replace(old2,new2,1)
+          if old2 in s:s=s.replace(old2,new2,1)
           s=s.replace('var privateGroup = { name: "🏠 私有网络"','var privateNetworkGroup = { name: "🏠 私有网络"',1)
           s=s.replace('var domesticGroup = { name: "🔒 国内服务"','var domesticServiceGroup = { name: "🔒 国内服务"',1)
           anchor='  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n'
@@ -44,17 +44,40 @@ jobs:
           s=s.replace('"远控工具":"🌐 非中国"','"远控工具":"🔧 远控工具"',1)
           oldorder='    result=apply_airport_strategy_groups(result)\n    result=map_airport_targets(result)\n'
           neworder='    result=apply_airport_strategy_groups(result)\n    result=upsert_object(result, "rules", template["rules"])\n    result=map_airport_targets(result)\n'
-          if oldorder not in s: raise SystemExit('transform order anchor not found')
-          s=s.replace(oldorder,neworder,1)
+          if oldorder in s:s=s.replace(oldorder,neworder,1)
           files['tools/sync-airport-overwrite.py']=s
           a=files['tools/static-audit.py']
-          oldmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "AI服务", "🌍 国外服务": "国外服务", "📺 Media": "流媒体", "🐟 漏网之鱼": "漏网之鱼", "🔧 远控工具": "远控工具"}'
-          newmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "@AI", "AI服务": "@AI", "💬 AI 服务": "@AI", "🌍 国外服务": "@NONCN", "国外服务": "@NONCN", "🌐 非中国": "@NONCN", "📺 Media": "@STREAM", "流媒体": "@STREAM", "🎬 流媒体": "@STREAM", "🐟 漏网之鱼": "@FALLBACK", "🔧 远控工具": "@REMOTE", "远控工具": "@REMOTE", "📺 YouTube": "@YOUTUBE", "📹 油管视频": "@YOUTUBE", "🔍 Google": "@GOOGLE", "🔍 谷歌服务": "@GOOGLE", "📲 Telegram": "@TELEGRAM", "📲 电报消息": "@TELEGRAM", "🪟 Microsoft": "@MICROSOFT", "Ⓜ️ 微软服务": "@MICROSOFT", "🍎 Apple": "@APPLE", "🍏 苹果服务": "@APPLE", "🎮 Steam": "@STEAM", "🎮 游戏平台": "@STEAM", "📱 TikTok": "@SOCIAL", "🐦 Twitter": "@SOCIAL", "🌐 社交媒体": "@SOCIAL", "🎵 Spotify": "@STREAM"}'
-          if oldmap in a:a=a.replace(oldmap,newmap,1)
-          oldcmp='if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != template.get("rules"):'
+          mapping={
+            '🤖 AI服务':'@AI','AI服务':'@AI','💬 AI 服务':'@AI',
+            '🌍 国外服务':'@NONCN','国外服务':'@NONCN','🌐 非中国':'@NONCN',
+            '📺 Media':'@STREAM','流媒体':'@STREAM','🎬 流媒体':'@STREAM',
+            '🐟 漏网之鱼':'@FALLBACK','漏网之鱼':'@FALLBACK',
+            '🔧 远控工具':'@REMOTE','远控工具':'@REMOTE',
+            '🛑 广告拦截':'@AD','广告拦截':'@AD',
+            '🏠 私有网络':'@PRIVATE','私有网络':'@PRIVATE',
+            '🔒 国内服务':'@DOMESTIC','国内服务':'@DOMESTIC',
+            '📺 哔哩哔哩':'@BILIBILI','哔哩哔哩':'@BILIBILI','Bilibili':'@BILIBILI',
+            '📹 油管视频':'@YOUTUBE','📺 YouTube':'@YOUTUBE','油管视频':'@YOUTUBE','YouTube':'@YOUTUBE',
+            '🔍 谷歌服务':'@GOOGLE','🔍 Google':'@GOOGLE','谷歌服务':'@GOOGLE','Google':'@GOOGLE',
+            '🐱 Github':'@GITHUB','Github':'@GITHUB','GitHub':'@GITHUB',
+            '📲 电报消息':'@TELEGRAM','📲 Telegram':'@TELEGRAM','Telegram':'@TELEGRAM',
+            'Ⓜ️ 微软服务':'@MICROSOFT','🪟 Microsoft':'@MICROSOFT','微软服务':'@MICROSOFT','Microsoft':'@MICROSOFT',
+            '🍏 苹果服务':'@APPLE','🍎 Apple':'@APPLE','苹果服务':'@APPLE','Apple':'@APPLE',
+            '🌐 社交媒体':'@SOCIAL','📱 TikTok':'@SOCIAL','🐦 Twitter':'@SOCIAL','社交媒体':'@SOCIAL',
+            '🎬 流媒体':'@STREAM','🎵 Spotify':'@STREAM','Spotify':'@STREAM','奈飞视频':'@STREAM','Netflix':'@STREAM',
+            '🎮 游戏平台':'@GAMES','🎮 Steam':'@GAMES','游戏平台':'@GAMES','Steam':'@GAMES',
+            '📚 教育资源':'@EDUCATION','教育资源':'@EDUCATION',
+            '💰 金融服务':'@FINANCE','金融服务':'@FINANCE',
+            '☁️ 云服务':'@CLOUD','云服务':'@CLOUD',
+          }
+          literal='RULE_TARGET_REVERSE = '+repr(mapping).replace("'",'\"')
+          a=re.sub(r'^RULE_TARGET_REVERSE = .*$',literal,a,count=1,flags=re.MULTILINE)
+          oldcmp='if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != template.get("rules"): '
+          oldcmp=oldcmp.rstrip()
           newcmp='if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != canonicalize_airport_rules(template.get("rules")):'
-          if oldcmp not in a: raise SystemExit('rule comparison anchor not found')
           a=a.replace(oldcmp,newcmp,1)
+          if 'canonicalize_airport_rules(template.get("rules"))' not in a:
+              a=a.replace('if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != template.get("rules"):',newcmp,1)
           files['tools/static-audit.py']=a
           t=files['template.yaml']
           if 'DOMAIN-SUFFIX,claude.ai,AI服务' not in t:t=t.replace('\nrules:\n','\nrules:\n  - DOMAIN-SUFFIX,claude.ai,AI服务\n',1)
