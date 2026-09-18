@@ -22,7 +22,7 @@ jobs:
           python-version: '3.12'
       - name: Install YAML parser
         run: python -m pip install --disable-pip-version-check --no-input pyyaml
-      - name: Harden and diagnose airport synchronization
+      - name: Harden airport synchronization in working tree
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -33,6 +33,7 @@ jobs:
           if old in s:s=s.replace(old,new,1)
           old2="    start=text.find('  var AUTO_NAME = \"♻️ 自动选择\";')\n"
           new2="    start=text.find('  var AUTO_NAME = \"♻️ 自动选择\";')\n    if start < 0:\n        start=text.find('  var AUTO_NAME = \"⚡ 自动选择\";')\n"
+          if old2 not in s: raise SystemExit('strategy-group anchor not found')
           s=s.replace(old2,new2,1)
           s=s.replace('var privateGroup = { name: "🏠 私有网络"','var privateNetworkGroup = { name: "🏠 私有网络"',1)
           s=s.replace('var domesticGroup = { name: "🔒 国内服务"','var domesticServiceGroup = { name: "🔒 国内服务"',1)
@@ -41,14 +42,18 @@ jobs:
           if remote not in s:s=s.replace(anchor,anchor+remote,1)
           s=s.replace('privateGroup, domesticGroup, telegramGroup','privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup',1)
           s=s.replace('"远控工具":"🌐 非中国"','"远控工具":"🔧 远控工具"',1)
+          oldorder='    result=apply_airport_strategy_groups(result)\n    result=map_airport_targets(result)\n'
+          neworder='    result=apply_airport_strategy_groups(result)\n    result=upsert_object(result, "rules", template["rules"])\n    result=map_airport_targets(result)\n'
+          if oldorder not in s: raise SystemExit('transform order anchor not found')
+          s=s.replace(oldorder,neworder,1)
           files['tools/sync-airport-overwrite.py']=s
           a=files['tools/static-audit.py']
           oldmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "AI服务", "🌍 国外服务": "国外服务", "📺 Media": "流媒体", "🐟 漏网之鱼": "漏网之鱼", "🔧 远控工具": "远控工具"}'
           newmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "@AI", "AI服务": "@AI", "💬 AI 服务": "@AI", "🌍 国外服务": "@NONCN", "国外服务": "@NONCN", "🌐 非中国": "@NONCN", "📺 Media": "@STREAM", "流媒体": "@STREAM", "🎬 流媒体": "@STREAM", "🐟 漏网之鱼": "@FALLBACK", "🔧 远控工具": "@REMOTE", "远控工具": "@REMOTE", "📺 YouTube": "@YOUTUBE", "📹 油管视频": "@YOUTUBE", "🔍 Google": "@GOOGLE", "🔍 谷歌服务": "@GOOGLE", "📲 Telegram": "@TELEGRAM", "📲 电报消息": "@TELEGRAM", "🪟 Microsoft": "@MICROSOFT", "Ⓜ️ 微软服务": "@MICROSOFT", "🍎 Apple": "@APPLE", "🍏 苹果服务": "@APPLE", "🎮 Steam": "@STEAM", "🎮 游戏平台": "@STEAM", "📱 TikTok": "@SOCIAL", "🐦 Twitter": "@SOCIAL", "🌐 社交媒体": "@SOCIAL", "🎵 Spotify": "@STREAM"}'
           if oldmap in a:a=a.replace(oldmap,newmap,1)
-          oldcmp='if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != template.get("rules"): '
-          if oldcmp not in a: oldcmp='if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != template.get("rules"):'
-          newcmp='actual_rules=canonicalize_airport_rules(extract_json_assignment(airport, "rules")); expected_rules=canonicalize_airport_rules(template.get("rules"));\n    if actual_rules != expected_rules:\n        print("RULE_DIFF_BEGIN")\n        from itertools import zip_longest\n        for idx,(aa,ee) in enumerate(zip_longest(actual_rules,expected_rules,fillvalue="<MISSING>")):\n            if aa != ee: print(idx, "AIRPORT=", aa, "TEMPLATE=", ee)\n        print("RULE_DIFF_END")\n        errors.append("airport common object drift: rules (outside approved target mappings)")'
+          oldcmp='if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != template.get("rules"):'
+          newcmp='if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != canonicalize_airport_rules(template.get("rules")):'
+          if oldcmp not in a: raise SystemExit('rule comparison anchor not found')
           a=a.replace(oldcmp,newcmp,1)
           files['tools/static-audit.py']=a
           t=files['template.yaml']
