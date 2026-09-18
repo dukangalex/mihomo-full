@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
       - name: Restore and repair validator
         run: |
           git checkout fcdfa547c8557f03bb18781966c3b69f985a98df -- tools/sync-airport-overwrite.py
@@ -19,7 +21,8 @@ jobs:
           p=Path('tools/sync-airport-overwrite.py')
           s=p.read_text(encoding='utf-8')
           old='''    for group in required_groups:\n        if 'name: "'+group+'"' not in text: raise RuntimeError("required airport group missing: "+group)\n'''
-          new='''    for group in required_groups:\n        yaml_name = 'name: "' + group + '"'
+          new='''    for group in required_groups:
+        yaml_name = 'name: "' + group + '"'
         json_name = '"name": "' + group + '"'
         if yaml_name not in text and json_name not in text:
             raise RuntimeError("required airport group missing: " + group)
