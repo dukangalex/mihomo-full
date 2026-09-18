@@ -279,6 +279,7 @@ function main(config) {
   var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "" };
   var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
   var aiGroup = { name: "💬 AI 服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
@@ -297,7 +298,7 @@ function main(config) {
   var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup];
+  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, claudeGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup];
 
   var ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
   var ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
@@ -856,7 +857,8 @@ function main(config) {
   }
 
   config["rules"] = [
-  "DOMAIN-SUFFIX,claude.ai,💬 AI 服务",
+  "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI",
+  "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI",
   "AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT",
   "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP",
