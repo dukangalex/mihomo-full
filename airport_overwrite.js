@@ -277,28 +277,32 @@ function main(config) {
   var SELECT_NAME = "🚀 节点选择";
   var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, icon: "" };
   var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "" };
+
+  // Airport service groups: no DIRECT in non-China traffic groups.
+  // Each group exposes: total-node auto selection -> detected region groups -> node selection.
+  var serviceProxies = [AUTO_NAME].concat(regionNames).concat([SELECT_NAME]);
   var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
-  var aiGroup = { name: "💬 AI 服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };
+  var aiGroup = { name: "💬 AI 服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
   var privateNetworkGroup = { name: "🏠 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
   var domesticServiceGroup = { name: "🔒 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
-  var telegramGroup = { name: "📲 电报消息", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var githubGroup = { name: "🐱 Github", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var microsoftGroup = { name: "Ⓜ️ 微软服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var appleGroup = { name: "🍏 苹果服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var socialGroup = { name: "🌐 社交媒体", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var streamingGroup = { name: "🎬 流媒体", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var gamesGroup = { name: "🎮 游戏平台", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var educationGroup = { name: "📚 教育资源", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var financeGroup = { name: "💰 金融服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, claudeGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup];
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };
+  var telegramGroup = { name: "📲 电报消息", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var githubGroup = { name: "🐱 Github", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var microsoftGroup = { name: "Ⓜ️ 微软服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var appleGroup = { name: "🍏 苹果服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var socialGroup = { name: "🌐 社交媒体", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var streamingGroup = { name: "🎬 流媒体", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var gamesGroup = { name: "🎮 游戏平台", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var educationGroup = { name: "📚 教育资源", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var financeGroup = { name: "💰 金融服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: serviceProxies.slice(), icon: "" };
+  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, claudeGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup].concat(regionGroups);
 
   var ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
   var ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
