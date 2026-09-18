@@ -9,7 +9,7 @@ on:
       - 'template.yaml'
       - 'airport_overwrite.js'
       - 'tools/sync-airport-overwrite.py'
-      - '.github/workflows/sync-airport-overwrite.yml'
+      - '.airport-sync-trigger'
   workflow_dispatch:
 
 permissions:
