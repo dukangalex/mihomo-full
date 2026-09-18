@@ -324,8 +324,8 @@ sniffer:
     - "+.chsi.com.cn"
 
 rule-anchor:
-  domain: &DA {type: http, format: mrs, behavior: domain, interval: 604800}
-  ipcidr: &IA {type: http, format: mrs, behavior: ipcidr, interval: 604800}
+  domain: &DA {type: http, format: mrs, behavior: domain, interval: 604800, proxy: DIRECT}
+  ipcidr: &IA {type: http, format: mrs, behavior: ipcidr, interval: 604800, proxy: DIRECT}
 
 rule-providers:
 
@@ -664,6 +664,7 @@ proxy-providers:
   provider_entry_J:
     type: http
     url: "__AIRPORT_SUB_URL__"  #前置入口订阅
+    proxy: DIRECT
     interval: 3600
     path: ./proxy_providers/entry_J.yaml
     override:
@@ -681,6 +682,7 @@ proxy-providers:
   provider_exit:
     type: http
     url: "__EXIT_NODES_URL__"  #落地出口订阅
+    proxy: DIRECT
     interval: 3600
     path: ./proxy_providers/exit.yaml
     override:
@@ -1205,7 +1207,7 @@ dns:
     # IPv6 DoH 直连解析器
     - https://[2606:4700:4700::1111]/dns-query
 
-  direct-nameserver-follow-policy: true
+  direct-nameserver-follow-policy: false
 
   nameserver-policy:
 
