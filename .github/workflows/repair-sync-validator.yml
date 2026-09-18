@@ -1,11 +1,14 @@
 name: Repair airport sync validator
+
 on:
   push:
     paths:
       - '.github/workflows/repair-sync-validator.yml'
+
 permissions:
   contents: write
   actions: write
+
 jobs:
   repair:
     runs-on: ubuntu-latest
@@ -13,30 +16,45 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
+
       - name: Validate and repair current airport synchronizer
         run: |
           python - <<'PY'
           from pathlib import Path
-          p=Path('tools/sync-airport-overwrite.py')
-          s=p.read_text(encoding='utf-8')
-          old='''    for group in required_groups:\n        if 'name: "'+group+'"' not in text: raise RuntimeError("required airport group missing: "+group)\n'''
-          new='''    for group in required_groups:\n        yaml_name = 'name: "' + group + '"'
-        json_name = '"name": "' + group + '"'
-        if yaml_name not in text and json_name not in text:
-            raise RuntimeError("required airport group missing: " + group)
-'''
+
+          p = Path('tools/sync-airport-overwrite.py')
+          s = p.read_text(encoding='utf-8')
+
+          old = (
+              "    for group in required_groups:\n"
+              "        if 'name: \"' + group + '\"' not in text: raise RuntimeError(\"required airport group missing: \" + group)\n"
+          )
+          new = (
+              "    for group in required_groups:\n"
+              "        yaml_name = 'name: \"' + group + '\"'\n"
+              "        json_name = '\"name\": \"' + group + '\"'\n"
+              "        if yaml_name not in text and json_name not in text:\n"
+              "            raise RuntimeError(\"required airport group missing: \" + group)\n"
+          )
+
           if old in s:
-              s=s.replace(old,new,1)
-          p.write_text(s,encoding='utf-8')
+              s = s.replace(old, new, 1)
+              p.write_text(s, encoding='utf-8')
           PY
+
           python -m py_compile tools/sync-airport-overwrite.py
           git diff --check
-          if git diff --quiet -- tools/sync-airport-overwrite.py; then exit 0; fi
+
+          if git diff --quiet -- tools/sync-airport-overwrite.py; then
+            exit 0
+          fi
+
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add tools/sync-airport-overwrite.py
           git commit -m 'fix: keep current airport synchronization logic'
           git push
+
       - name: Trigger real synchronization
         env:
           GH_TOKEN: ${{ github.token }}
