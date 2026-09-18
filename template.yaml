@@ -1456,6 +1456,7 @@ sub-rules:
     - IP-CIDR6,fc00::/7,DIRECT,no-resolve       # IPv6 ULA（含 fake-ip-range6，由 fake-ip-filter 处理例外）
 
 rules:
+  - DOMAIN-SUFFIX,claude.ai,AI服务
 
   # P0. TUN 私有 IP 快速通道
   - AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT

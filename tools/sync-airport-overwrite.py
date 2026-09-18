@@ -123,6 +123,8 @@ def restore_airport_exceptions(text):
 
 def apply_airport_strategy_groups(text):
     start=text.find('  var AUTO_NAME = "♻️ 自动选择";')
+    if start < 0:
+        start=text.find('  var AUTO_NAME = "⚡ 自动选择";')
     end=text.find('  var ruleProviderCommonDomain =',start)
     if start<0 or end<0: raise RuntimeError("airport strategy-group block not found")
     block='''  var AUTO_NAME = "⚡ 自动选择";
@@ -134,8 +136,9 @@ def apply_airport_strategy_groups(text):
   var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  var privateGroup = { name: "🏠 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
-  var domesticGroup = { name: "🔒 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };
+  var privateNetworkGroup = { name: "🏠 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
+  var domesticServiceGroup = { name: "🔒 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
   var telegramGroup = { name: "📲 电报消息", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var githubGroup = { name: "🐱 Github", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var microsoftGroup = { name: "Ⓜ️ 微软服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
@@ -148,11 +151,11 @@ def apply_airport_strategy_groups(text):
   var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, bilibiliGroup, youtubeGroup, googleGroup, privateGroup, domesticGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup];
+  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup];
 
 '''
     text=text[:start]+block+text[end:]
-    target_map={"AI服务":"💬 AI 服务","国外服务":"🌐 非中国","流媒体":"🎬 流媒体","漏网之鱼":"🐟 漏网之鱼","远控工具":"🌐 非中国","📺 YouTube":"📹 油管视频","🔍 Google":"🔍 谷歌服务","📲 Telegram":"📲 电报消息","🪟 Microsoft":"Ⓜ️ 微软服务","🍎 Apple":"🍏 苹果服务","🎮 Steam":"🎮 游戏平台","📱 TikTok":"🌐 社交媒体","🐦 Twitter":"🌐 社交媒体","🎵 Spotify":"🎬 流媒体"}
+    target_map={"AI服务":"💬 AI 服务","国外服务":"🌐 非中国","流媒体":"🎬 流媒体","漏网之鱼":"🐟 漏网之鱼","远控工具":"🔧 远控工具","📺 YouTube":"📹 油管视频","🔍 Google":"🔍 谷歌服务","📲 Telegram":"📲 电报消息","🪟 Microsoft":"Ⓜ️ 微软服务","🍎 Apple":"🍏 苹果服务","🎮 Steam":"🎮 游戏平台","📱 TikTok":"🌐 社交媒体","🐦 Twitter":"🌐 社交媒体","🎵 Spotify":"🎬 流媒体"}
     for src,dst in target_map.items():
         text=text.replace(","+src+",",","+dst+",").replace(","+src+",no-resolve",","+dst+",no-resolve")
     claude='  "DOMAIN-SUFFIX,claude.ai,💬 AI 服务",'
@@ -187,9 +190,7 @@ def validate_airport(text):
     if '"DOMAIN-SUFFIX,claude.ai,💬 AI 服务"' not in text: raise RuntimeError("Claude.ai rule is missing")
     required_groups=("🚀 节点选择","⚡ 自动选择","🛑 广告拦截","💬 AI 服务","📺 哔哩哔哩","📹 油管视频","🔍 谷歌服务","🏠 私有网络","🔒 国内服务","📲 电报消息","🐱 Github","Ⓜ️ 微软服务","🍏 苹果服务","🌐 社交媒体","🎬 流媒体","🎮 游戏平台","📚 教育资源","💰 金融服务","☁️ 云服务","🌐 非中国","🐟 漏网之鱼")
     for group in required_groups:
-        yaml_name = 'name: "' + group + '"'
-        json_name = '"name": "' + group + '"'
-        if yaml_name not in text and json_name not in text:
+        if ('"' + group + '"') not in text and ("'" + group + "'") not in text:
             raise RuntimeError("required airport group missing: " + group)
     if 'name: "🔰 节点选择"' in text or 'name: "🤖 AI服务"' in text or 'name: "🌍 国外服务"' in text: raise RuntimeError("legacy airport strategy groups remain")
     if 'exclude-type: vmess' in text: raise RuntimeError("protocol exclusion must not exist")
@@ -206,6 +207,7 @@ def transform(template,airport):
         if key in template: result=replace_scalar(result,key,template[key])
     result=restore_airport_exceptions(result)
     result=apply_airport_strategy_groups(result)
+    result=upsert_object(result, "rules", template["rules"])
     result=map_airport_targets(result)
     result=ensure_airport_node_sanitizer(result)
     validate_airport(result)
