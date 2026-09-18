@@ -206,9 +206,10 @@ def transform(template,airport):
     for key in COMMON_SCALARS:
         if key in template: result=replace_scalar(result,key,template[key])
     result=restore_airport_exceptions(result)
-    result=apply_airport_strategy_groups(result)
     result=upsert_object(result, "rules", template["rules"])
+    result=apply_airport_strategy_groups(result)
     result=map_airport_targets(result)
+    result=result.replace("DOMAIN-SUFFIX,claude.ai,💬 AI 服务", "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI")
     result=ensure_airport_node_sanitizer(result)
     validate_airport(result)
     return result
