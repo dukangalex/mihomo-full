@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Run the repository static audit with the Airport post-sync normalization contract."""
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import tempfile
@@ -15,7 +14,7 @@ def main() -> int:
         shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns(".git", "__pycache__"))
         audit = work / "tools" / "static-audit.py"
         source = audit.read_text(encoding="utf-8")
-        pattern = r'(?m)^\s*elif \(t / "airport_overwrite\\.js"\)\.read_text\(encoding="utf-8"\) != airport: errors\.append\("airport_overwrite\\.js is not synchronized with template\\.yaml; run the synchronizer"\)'
+        old = '    elif (t / "airport_overwrite.js").read_text(encoding="utf-8") != airport: errors.append("airport_overwrite.js is not synchronized with template.yaml; run the synchronizer")'
         replacement = '''    elif (t / "airport_overwrite.js").read_text(encoding="utf-8") != airport:
         normalizer = ROOT / "tools" / "normalize-airport-strategy.py"
         if normalizer.exists():
@@ -26,10 +25,9 @@ def main() -> int:
                 errors.append("airport_overwrite.js is not synchronized with template.yaml after Airport strategy normalization")
         else:
             errors.append("airport_overwrite.js is not synchronized with template.yaml; run the synchronizer")'''
-        patched, count = re.subn(pattern, replacement, source, count=1)
-        if count != 1:
-            raise SystemExit(f"static-audit synchronization check anchor not found (matches={count})")
-        audit.write_text(patched, encoding="utf-8")
+        if old not in source:
+            raise SystemExit("static-audit synchronization check anchor not found")
+        audit.write_text(source.replace(old, replacement, 1), encoding="utf-8")
         proc = subprocess.run(["python3", str(audit)], cwd=work, text=True)
         return proc.returncode
 
