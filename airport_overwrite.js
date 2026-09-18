@@ -790,6 +790,14 @@ function main(config) {
   }
 };
 
+  // Cold-start bootstrap: rule providers must not depend on proxy nodes that are
+  // themselves unavailable until the subscription has finished loading.
+  for (var providerName in config["rule-providers"]) {
+    if (Object.prototype.hasOwnProperty.call(config["rule-providers"], providerName)) {
+      config["rule-providers"][providerName].proxy = "DIRECT";
+    }
+  }
+
   config["rules"] = [
   "AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT",
   "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
@@ -1401,7 +1409,7 @@ function main(config) {
     "https://223.5.5.5/dns-query",
     "https://[2606:4700:4700::1111]/dns-query"
   ],
-  "direct-nameserver-follow-policy": true,
+  "direct-nameserver-follow-policy": false,
   "nameserver-policy": {
     "rule-set:cn": [
       "https://doh.pub/dns-query",
