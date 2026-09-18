@@ -33,16 +33,8 @@ jobs:
           from pathlib import Path
           p=Path('tools/sync-airport-overwrite.py')
           s=p.read_text(encoding='utf-8')
-          old='''    for group in required_groups:
-        yaml_name = 'name: "' + group + '"'
-        json_name = '"name": "' + group + '"'
-        if yaml_name not in text and json_name not in text:
-            raise RuntimeError("required airport group missing: " + group)
-'''
-          new='''    for group in required_groups:
-        if ('"' + group + '"') not in text and ("'" + group + "'") not in text:
-            raise RuntimeError("required airport group missing: " + group)
-'''
+          old="    for group in required_groups:\n        yaml_name = 'name: \"' + group + '\"'\n        json_name = '\"name\": \"' + group + '\"'\n        if yaml_name not in text and json_name not in text:\n            raise RuntimeError(\"required airport group missing: \" + group)\n"
+          new="    for group in required_groups:\n        if ('\"' + group + '\"') not in text and (\"'\" + group + \"'\") not in text:\n            raise RuntimeError(\"required airport group missing: \" + group)\n"
           if old not in s:
               raise SystemExit('validator block not found')
           p.write_text(s.replace(old,new,1),encoding='utf-8')
