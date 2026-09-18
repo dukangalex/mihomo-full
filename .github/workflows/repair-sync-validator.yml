@@ -14,20 +14,20 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
           p=Path('tools/sync-airport-overwrite.py')
-          s=p.read_text(encoding='utf-8')
-          pattern=r'    for group in required_groups:\n.*?    if \'name: \\\"🔰 节点选择\\\"\' in text'
-          replacement='''    for group in required_groups:
-              yaml_name = 'name: "' + group + '"'
-              json_name = '"name": "' + group + '"'
-              if yaml_name not in text and json_name not in text:
-                  raise RuntimeError("required airport group missing: " + group)
-          if 'name: "🔰 节点选择"' in text'''
-          s2,n=re.subn(pattern,replacement,s,count=1,flags=re.S)
-          if n!=1:
-              raise SystemExit('validator block not found')
-          p.write_text(s2,encoding='utf-8')
+          lines=p.read_text(encoding='utf-8').splitlines()
+          out=[]
+          for line in lines:
+              if "required airport group missing" in line and "name:" in line:
+                  out.extend([
+                    "        yaml_name = 'name: \"' + group + '\"'",
+                    "        json_name = '\"name\": \"' + group + '\"'",
+                    "        if yaml_name not in text and json_name not in text:",
+                    "            raise RuntimeError(\"required airport group missing: \" + group)",
+                  ])
+              else:
+                  out.append(line)
+          p.write_text('\\n'.join(out)+'\\n',encoding='utf-8')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
