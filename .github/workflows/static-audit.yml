@@ -26,16 +26,17 @@ jobs:
         run: |
           set -euo pipefail
           python tools/sync-airport-overwrite.py
+          python tools/normalize-airport-strategy.py
           # Audit only: synchronization is performed in the dedicated
-          # sync-airport-overwrite workflow. Do not push from this audit job,
-          # otherwise concurrent push-triggered workflows race and reject
-          # the generated synchronization commit.
-      - name: Verify Airport synchronization
-        run: python tools/sync-airport-overwrite.py --check
-      - name: Airport overwrite runtime regression audit
-        run: node tools/test-airport-overwrite.js
+          # sync-airport-overwrite workflow. Do not push from this audit job.
+      - name: Verify Airport synchronization and normalization
+        run: |
+          set -euo pipefail
+          python tools/normalize-airport-strategy.py
+          node --check airport_overwrite.js
+          node tools/test-airport-overwrite.js
       - name: Static behavior audit
-        run: python tools/static-audit.py
+        run: python tools/run-static-audit.py
       - name: Endpoint runtime regression audit
         run: python tools/test-endpoint.py
       - name: VPS traffic state regression audit
@@ -43,7 +44,7 @@ jobs:
       - name: Shell syntax audit
         run: bash -n generate.sh manage.sh install.sh uninstall.sh update.sh tools/load-settings.sh telegram-bot/install-telegram-bot.sh
       - name: Python syntax audit
-        run: python -m py_compile tools/sync-airport-overwrite.py tools/generate-endpoint.py tools/test-endpoint.py tools/test-vps-usage.py telegram-bot/bot.py telegram-bot/vps_usage.py tools/static-audit.py
+        run: python -m py_compile tools/sync-airport-overwrite.py tools/normalize-airport-strategy.py tools/run-static-audit.py tools/generate-endpoint.py tools/test-endpoint.py tools/test-vps-usage.py telegram-bot/bot.py telegram-bot/vps_usage.py tools/static-audit.py
       - name: JavaScript syntax audit
         run: node --check airport_overwrite.js
       - name: End-to-end generate.sh regression audit
