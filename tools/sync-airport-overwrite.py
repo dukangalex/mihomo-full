@@ -34,6 +34,7 @@ def apply_airport_strategy_groups(text):
   var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "" };
   var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
   var aiGroup = { name: "💬 AI 服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
+  var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
@@ -52,7 +53,7 @@ def apply_airport_strategy_groups(text):
   var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
-  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup];
+  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, claudeGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup];
 
 '''
     text=text[:start]+block+text[end:]
@@ -82,8 +83,8 @@ def validate_airport(text):
     if text.count('  config = {};')!=1: raise RuntimeError("airport full-overwrite contract must reset config exactly once")
     if text.find('  config = {};')<text.find('  var originalProxies = sourceConfig.proxies || []'): raise RuntimeError("airport proxies must be captured before config reset")
     if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text: raise RuntimeError("airport ad rule is not connected to the ad group")
-    if '"DOMAIN-SUFFIX,claude.ai,💬 AI 服务"' not in text: raise RuntimeError("Claude.ai rule is missing")
-    required_groups=("🚀 节点选择","⚡ 自动选择","🛑 广告拦截","💬 AI 服务","📺 哔哩哔哩","📹 油管视频","🔍 谷歌服务","🏠 私有网络","🔒 国内服务","📲 电报消息","🐱 Github","Ⓜ️ 微软服务","🍏 苹果服务","🌐 社交媒体","🎬 流媒体","🎮 游戏平台","📚 教育资源","💰 金融服务","☁️ 云服务","🌐 非中国","🐟 漏网之鱼")
+    if '"DOMAIN-SUFFIX,claude.ai,🤖 Claude AI"' not in text: raise RuntimeError("Claude.ai rule is missing")
+    required_groups=("🚀 节点选择","⚡ 自动选择","🛑 广告拦截","💬 AI 服务","🤖 Claude AI","📺 哔哩哔哩","📹 油管视频","🔍 谷歌服务","🏠 私有网络","🔒 国内服务","📲 电报消息","🐱 Github","Ⓜ️ 微软服务","🍏 苹果服务","🌐 社交媒体","🎬 流媒体","🎮 游戏平台","📚 教育资源","💰 金融服务","☁️ 云服务","🌐 非中国","🐟 漏网之鱼")
     declared_groups = set(re.findall(r'var\s+\w+Group\s*=\s*\{\s*name:\s*"([^"]+)"', text))
     missing_groups = [group for group in required_groups if group not in declared_groups]
     if missing_groups:
@@ -108,27 +109,3 @@ def transform(template,airport):
     result=upsert_object(result, "rules", template["rules"])
     claude_rule = '  "DOMAIN-SUFFIX,claude.ai,💬 AI 服务",'
     if claude_rule not in result:
-        rules_anchor = '  config["rules"] = ['
-        if rules_anchor not in result:
-            raise RuntimeError("Airport rules anchor missing")
-        result = result.replace(rules_anchor, rules_anchor + "\n" + claude_rule, 1)
-    result=map_airport_targets(result)
-    result=ensure_airport_node_sanitizer(result)
-    validate_airport(result)
-    return result
-
-def parse_args():
-    parser=argparse.ArgumentParser(description="Synchronize template public behavior into airport_overwrite.js")
-    parser.add_argument("--check",action="store_true",help="validate synchronization without writing the file")
-    return parser.parse_args()
-
-def main():
-    args=parse_args(); template=yaml.safe_load(TEMPLATE.read_text(encoding="utf-8")); original=AIRPORT.read_text(encoding="utf-8")
-    first=transform(template,original); second=transform(template,first)
-    if first!=second: raise RuntimeError("Airport synchronization is not idempotent: second pass changes the output")
-    if args.check:
-        if first!=original: raise RuntimeError("Airport overwrite is out of sync; run the synchronizer without --check")
-        print("airport_overwrite.js synchronized")
-        print("idempotence check: PASS; non-chain hard gate: PASS; full-overwrite contract: PASS; strategy-group contract: PASS; sync check: PASS"); return
-    if first!=original:
-        tmp=AIRPORT.with_suffix(AIRPORT.suffix+".tmp"); tmp.write_text(first,encoding="utf-8"); tmp.replace(AIRPORT); print("airport_overwrite.js synchronized")
