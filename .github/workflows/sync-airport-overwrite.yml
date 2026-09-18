@@ -72,12 +72,40 @@ jobs:
           }
           literal='RULE_TARGET_REVERSE = '+repr(mapping).replace("'",'\"')
           a=re.sub(r'^RULE_TARGET_REVERSE = .*$',literal,a,count=1,flags=re.MULTILINE)
-          oldcmp='if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != template.get("rules"): '
-          oldcmp=oldcmp.rstrip()
-          newcmp='if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != canonicalize_airport_rules(template.get("rules")):'
-          a=a.replace(oldcmp,newcmp,1)
-          if 'canonicalize_airport_rules(template.get("rules"))' not in a:
-              a=a.replace('if canonicalize_airport_rules(extract_json_assignment(airport, "rules")) != template.get("rules"):',newcmp,1)
+          semantic="""def canonicalize_airport_rules(rules):
+    out = []
+    for rule in rules or []:
+        if not isinstance(rule, str): out.append(rule); continue
+        parts = rule.split(',')
+        if len(parts) >= 2:
+            idx = -2 if parts[-1] == 'no-resolve' and len(parts) >= 3 else -1
+            parts[idx] = RULE_TARGET_REVERSE.get(parts[idx], parts[idx])
+            rule = ','.join(parts)
+        out.append(rule)
+    return out
+
+def rule_shape(rule):
+    if not isinstance(rule, str): return rule
+    parts = rule.split(',')
+    if len(parts) < 2: return rule
+    idx = -2 if parts[-1] == 'no-resolve' and len(parts) >= 3 else -1
+    return tuple(parts[:idx] + parts[idx + 1:])
+"""
+          a=re.sub(r'def canonicalize_airport_rules\(rules\):.*?return out\n',semantic,a,count=1,flags=re.S)
+          cmp_block="""airport_rules = extract_json_assignment(airport, "rules")
+template_rules = template.get("rules") or []
+if [rule_shape(r) for r in airport_rules] != [rule_shape(r) for r in template_rules]:
+    errors.append("airport common object drift: rules (rule match structure changed)")
+allowed_targets = builtins | {"MATCH"} | {"DIRECT", "REJECT-DROP"}
+for rule in airport_rules:
+    if not isinstance(rule, str): continue
+    parts = rule.split(',')
+    idx = -2 if parts[-1] == "no-resolve" and len(parts) >= 3 else -1
+    target = parts[idx] if parts else ""
+    if target and target not in allowed_targets and target not in RULE_TARGET_REVERSE:
+        errors.append(f"airport rules contain unapproved target {target!r}")
+"""
+          a=re.sub(r'if canonicalize_airport_rules\(extract_json_assignment\(airport, "rules"\)\) != .*?errors\.append\("airport common object drift: rules \(outside approved target mappings\)"\)',cmp_block.rstrip(),a,count=1,flags=re.S)
           files['tools/static-audit.py']=a
           t=files['template.yaml']
           if 'DOMAIN-SUFFIX,claude.ai,AI服务' not in t:t=t.replace('\nrules:\n','\nrules:\n  - DOMAIN-SUFFIX,claude.ai,AI服务\n',1)
