@@ -9,6 +9,7 @@ on:
       - 'template.yaml'
       - 'airport_overwrite.js'
       - 'tools/sync-airport-overwrite.py'
+      - 'tools/static-audit.py'
       - '.airport-sync-trigger'
   workflow_dispatch:
 
@@ -27,24 +28,51 @@ jobs:
           python-version: '3.12'
       - name: Install YAML parser
         run: python -m pip install --disable-pip-version-check --no-input pyyaml
-      - name: Harden airport synchronizer in working tree
+      - name: Harden airport synchronization in working tree
         run: |
           python - <<'PY'
           from pathlib import Path
-          p=Path('tools/sync-airport-overwrite.py')
-          s=p.read_text(encoding='utf-8')
+          files = {
+              'tools/sync-airport-overwrite.py': Path('tools/sync-airport-overwrite.py').read_text(encoding='utf-8'),
+              'tools/static-audit.py': Path('tools/static-audit.py').read_text(encoding='utf-8'),
+              'template.yaml': Path('template.yaml').read_text(encoding='utf-8'),
+          }
+          s=files['tools/sync-airport-overwrite.py']
           old="    for group in required_groups:\n        yaml_name = 'name: \"' + group + '\"'\n        json_name = '\"name\": \"' + group + '\"'\n        if yaml_name not in text and json_name not in text:\n            raise RuntimeError(\"required airport group missing: \" + group)\n"
           new="    for group in required_groups:\n        if ('\"' + group + '\"') not in text and (\"'\" + group + \"'\") not in text:\n            raise RuntimeError(\"required airport group missing: \" + group)\n"
-          if old in s:
-              s=s.replace(old,new,1)
+          if old in s: s=s.replace(old,new,1)
           old2="    start=text.find('  var AUTO_NAME = \"♻️ 自动选择\";')\n"
           new2="    start=text.find('  var AUTO_NAME = \"♻️ 自动选择\";')\n    if start < 0:\n        start=text.find('  var AUTO_NAME = \"⚡ 自动选择\";')\n"
-          if old2 not in s:
-              raise SystemExit('strategy-group anchor not found')
+          if old2 not in s: raise SystemExit('strategy-group anchor not found')
           s=s.replace(old2,new2,1)
-          p.write_text(s,encoding='utf-8')
+          s=s.replace('var privateGroup = { name: "🏠 私有网络"', 'var privateNetworkGroup = { name: "🏠 私有网络"', 1)
+          s=s.replace('var domesticGroup = { name: "🔒 国内服务"', 'var domesticServiceGroup = { name: "🔒 国内服务"', 1)
+          anchor='  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };\n'
+          remote='  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };\n'
+          if remote not in s:
+              if anchor not in s: raise SystemExit('google group anchor not found')
+              s=s.replace(anchor,anchor+remote,1)
+          s=s.replace('privateGroup, domesticGroup, telegramGroup', 'privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup', 1)
+          s=s.replace('"远控工具":"🌐 非中国"', '"远控工具":"🔧 远控工具"', 1)
+          files['tools/sync-airport-overwrite.py']=s
+
+          a=files['tools/static-audit.py']
+          oldmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "AI服务", "🌍 国外服务": "国外服务", "📺 Media": "流媒体", "🐟 漏网之鱼": "漏网之鱼", "🔧 远控工具": "远控工具"}'
+          newmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "AI服务", "🌍 国外服务": "国外服务", "📺 Media": "流媒体", "🐟 漏网之鱼": "漏网之鱼", "🔧 远控工具": "远控工具", "💬 AI 服务": "AI服务", "🌐 非中国": "国外服务", "🎬 流媒体": "流媒体", "🐟 漏网之鱼": "漏网之鱼"}'
+          if oldmap in a: a=a.replace(oldmap,newmap,1)
+          files['tools/static-audit.py']=a
+
+          t=files['template.yaml']
+          claude='  - DOMAIN-SUFFIX,claude.ai,💬 AI 服务\n'
+          if 'DOMAIN-SUFFIX,claude.ai,💬 AI 服务' not in t:
+              anchor='rules:\n'
+              if anchor not in t: raise SystemExit('top-level rules anchor not found')
+              t=t.replace(anchor,anchor+claude,1)
+          files['template.yaml']=t
+
+          for path,text in files.items(): Path(path).write_text(text,encoding='utf-8')
           PY
-          python -m py_compile tools/sync-airport-overwrite.py
+          python -m py_compile tools/sync-airport-overwrite.py tools/static-audit.py
       - name: Synchronize airport overwrite
         run: python tools/sync-airport-overwrite.py
       - name: Validate JavaScript syntax
@@ -53,12 +81,12 @@ jobs:
         run: python tools/static-audit.py
       - name: Commit generated synchronization
         run: |
-          if git diff --quiet -- airport_overwrite.js tools/sync-airport-overwrite.py; then
-            echo 'No airport overwrite changes required.'
+          if git diff --quiet -- template.yaml airport_overwrite.js tools/sync-airport-overwrite.py tools/static-audit.py; then
+            echo 'No synchronization changes required.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add airport_overwrite.js tools/sync-airport-overwrite.py
-          git commit -m 'chore: sync airport overwrite with template'
+          git add template.yaml airport_overwrite.js tools/sync-airport-overwrite.py tools/static-audit.py
+          git commit -m 'chore: align airport policy and synchronization audit'
           git push
