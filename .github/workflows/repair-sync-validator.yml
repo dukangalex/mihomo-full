@@ -11,30 +11,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Repair validator
+      - name: Restore and repair validator
         run: |
+          git checkout fcdfa547c8557f03bb18781966c3b69f985a98df -- tools/sync-airport-overwrite.py
           python - <<'PY'
           from pathlib import Path
           p=Path('tools/sync-airport-overwrite.py')
-          lines=p.read_text(encoding='utf-8').splitlines()
-          out=[]
-          for line in lines:
-              if "required airport group missing" in line and "name:" in line:
-                  out.extend([
-                    "        yaml_name = 'name: \"' + group + '\"'",
-                    "        json_name = '\"name\": \"' + group + '\"'",
-                    "        if yaml_name not in text and json_name not in text:",
-                    "            raise RuntimeError(\"required airport group missing: \" + group)",
-                  ])
-              else:
-                  out.append(line)
-          p.write_text('\\n'.join(out)+'\\n',encoding='utf-8')
+          s=p.read_text(encoding='utf-8')
+          old='''    for group in required_groups:\n        if 'name: "'+group+'"' not in text: raise RuntimeError("required airport group missing: "+group)\n'''
+          new='''    for group in required_groups:\n        yaml_name = 'name: "' + group + '"'
+        json_name = '"name": "' + group + '"'
+        if yaml_name not in text and json_name not in text:
+            raise RuntimeError("required airport group missing: " + group)
+'''
+          if old not in s:
+              raise SystemExit('validator target not found')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
           PY
+          python -m py_compile tools/sync-airport-overwrite.py
+          git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add tools/sync-airport-overwrite.py
-          git commit -m 'fix: accept generated strategy group syntax' || true
-          git push || true
+          git commit -m 'fix: accept generated strategy group syntax'
+          git push
       - name: Trigger real synchronization
         env:
           GH_TOKEN: ${{ github.token }}
