@@ -84,7 +84,7 @@ def validate_airport(text):
     if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text: raise RuntimeError("airport ad rule is not connected to the ad group")
     if '"DOMAIN-SUFFIX,claude.ai,💬 AI 服务"' not in text: raise RuntimeError("Claude.ai rule is missing")
     required_groups=("🚀 节点选择","⚡ 自动选择","🛑 广告拦截","💬 AI 服务","📺 哔哩哔哩","📹 油管视频","🔍 谷歌服务","🏠 私有网络","🔒 国内服务","📲 电报消息","🐱 Github","Ⓜ️ 微软服务","🍏 苹果服务","🌐 社交媒体","🎬 流媒体","🎮 游戏平台","📚 教育资源","💰 金融服务","☁️ 云服务","🌐 非中国","🐟 漏网之鱼")
-    declared_groups = set(re.findall(r'var\\s+\\w+Group\\s*=\\s*\\{\\s*name:\\s*"([^"]+)"', text))
+    declared_groups = set(re.findall(r'var\s+\w+Group\s*=\s*\{\s*name:\s*"([^"]+)"', text))
     missing_groups = [group for group in required_groups if group not in declared_groups]
     if missing_groups:
         raise RuntimeError("required airport group missing: " + ", ".join(missing_groups))
@@ -111,7 +111,7 @@ def transform(template,airport):
         rules_anchor = '  config["rules"] = ['
         if rules_anchor not in result:
             raise RuntimeError("Airport rules anchor missing")
-        result = result.replace(rules_anchor, rules_anchor + "\\n" + claude_rule, 1)
+        result = result.replace(rules_anchor, rules_anchor + "\n" + claude_rule, 1)
     result=map_airport_targets(result)
     result=ensure_airport_node_sanitizer(result)
     validate_airport(result)
