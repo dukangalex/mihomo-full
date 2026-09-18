@@ -27,7 +27,7 @@ jobs:
           python-version: '3.12'
       - name: Install YAML parser
         run: python -m pip install --disable-pip-version-check --no-input pyyaml
-      - name: Harden validator in working tree
+      - name: Harden airport synchronizer in working tree
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -35,9 +35,14 @@ jobs:
           s=p.read_text(encoding='utf-8')
           old="    for group in required_groups:\n        yaml_name = 'name: \"' + group + '\"'\n        json_name = '\"name\": \"' + group + '\"'\n        if yaml_name not in text and json_name not in text:\n            raise RuntimeError(\"required airport group missing: \" + group)\n"
           new="    for group in required_groups:\n        if ('\"' + group + '\"') not in text and (\"'\" + group + \"'\") not in text:\n            raise RuntimeError(\"required airport group missing: \" + group)\n"
-          if old not in s:
-              raise SystemExit('validator block not found')
-          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          if old in s:
+              s=s.replace(old,new,1)
+          old2="    start=text.find('  var AUTO_NAME = \"♻️ 自动选择\";')\n"
+          new2="    start=text.find('  var AUTO_NAME = \"♻️ 自动选择\";')\n    if start < 0:\n        start=text.find('  var AUTO_NAME = \"⚡ 自动选择\";')\n"
+          if old2 not in s:
+              raise SystemExit('strategy-group anchor not found')
+          s=s.replace(old2,new2,1)
+          p.write_text(s,encoding='utf-8')
           PY
           python -m py_compile tools/sync-airport-overwrite.py
       - name: Synchronize airport overwrite
