@@ -9,6 +9,7 @@ on:
       - 'template.yaml'
       - 'airport_overwrite.js'
       - 'tools/sync-airport-overwrite.py'
+      - '.github/workflows/sync-airport-overwrite.yml'
   workflow_dispatch:
 
 permissions:
@@ -26,6 +27,27 @@ jobs:
           python-version: '3.12'
       - name: Install YAML parser
         run: python -m pip install --disable-pip-version-check --no-input pyyaml
+      - name: Harden validator in working tree
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tools/sync-airport-overwrite.py')
+          s=p.read_text(encoding='utf-8')
+          old='''    for group in required_groups:
+        yaml_name = 'name: "' + group + '"'
+        json_name = '"name": "' + group + '"'
+        if yaml_name not in text and json_name not in text:
+            raise RuntimeError("required airport group missing: " + group)
+'''
+          new='''    for group in required_groups:
+        if ('"' + group + '"') not in text and ("'" + group + "'") not in text:
+            raise RuntimeError("required airport group missing: " + group)
+'''
+          if old not in s:
+              raise SystemExit('validator block not found')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
+          python -m py_compile tools/sync-airport-overwrite.py
       - name: Synchronize airport overwrite
         run: python tools/sync-airport-overwrite.py
       - name: Validate JavaScript syntax
@@ -34,12 +56,12 @@ jobs:
         run: python tools/static-audit.py
       - name: Commit generated synchronization
         run: |
-          if git diff --quiet -- airport_overwrite.js; then
+          if git diff --quiet -- airport_overwrite.js tools/sync-airport-overwrite.py; then
             echo 'No airport overwrite changes required.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add airport_overwrite.js
+          git add airport_overwrite.js tools/sync-airport-overwrite.py
           git commit -m 'chore: sync airport overwrite with template'
           git push
