@@ -1466,7 +1466,7 @@ function main(config) {
     "https://223.5.5.5/dns-query",
     "https://[2606:4700:4700::1111]/dns-query"
   ],
-  "direct-nameserver-follow-policy": false,
+  "direct-nameserver-follow-policy": true,
   "nameserver-policy": {
     "rule-set:cn": [
       "https://doh.pub/dns-query",
