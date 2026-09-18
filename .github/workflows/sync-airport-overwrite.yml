@@ -58,16 +58,16 @@ jobs:
 
           a=files['tools/static-audit.py']
           oldmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "AI服务", "🌍 国外服务": "国外服务", "📺 Media": "流媒体", "🐟 漏网之鱼": "漏网之鱼", "🔧 远控工具": "远控工具"}'
-          newmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "AI服务", "🌍 国外服务": "国外服务", "📺 Media": "流媒体", "🐟 漏网之鱼": "漏网之鱼", "🔧 远控工具": "远控工具", "💬 AI 服务": "AI服务", "🌐 非中国": "国外服务", "🎬 流媒体": "流媒体", "🐟 漏网之鱼": "漏网之鱼"}'
+          newmap='RULE_TARGET_REVERSE = {"🤖 AI服务": "AI服务", "🌍 国外服务": "国外服务", "📺 Media": "流媒体", "🐟 漏网之鱼": "漏网之鱼", "🔧 远控工具": "远控工具", "💬 AI 服务": "AI服务", "🌐 非中国": "国外服务", "🎬 流媒体": "流媒体"}'
           if oldmap in a: a=a.replace(oldmap,newmap,1)
           files['tools/static-audit.py']=a
 
           t=files['template.yaml']
           claude='  - DOMAIN-SUFFIX,claude.ai,💬 AI 服务\n'
           if 'DOMAIN-SUFFIX,claude.ai,💬 AI 服务' not in t:
-              anchor='rules:\n'
+              anchor='\nrules:\n'
               if anchor not in t: raise SystemExit('top-level rules anchor not found')
-              t=t.replace(anchor,anchor+claude,1)
+              t=t.replace(anchor,'\nrules:\n'+claude,1)
           files['template.yaml']=t
 
           for path,text in files.items(): Path(path).write_text(text,encoding='utf-8')
