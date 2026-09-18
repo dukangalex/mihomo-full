@@ -1207,7 +1207,7 @@ dns:
     # IPv6 DoH 直连解析器
     - https://[2606:4700:4700::1111]/dns-query
 
-  direct-nameserver-follow-policy: false
+  direct-nameserver-follow-policy: true
 
   nameserver-policy:
 
