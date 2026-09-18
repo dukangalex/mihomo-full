@@ -63,8 +63,8 @@ jobs:
           files['tools/static-audit.py']=a
 
           t=files['template.yaml']
-          claude='  - DOMAIN-SUFFIX,claude.ai,💬 AI 服务\n'
-          if 'DOMAIN-SUFFIX,claude.ai,💬 AI 服务' not in t:
+          claude='  - DOMAIN-SUFFIX,claude.ai,AI服务\n'
+          if 'DOMAIN-SUFFIX,claude.ai,AI服务' not in t:
               anchor='\nrules:\n'
               if anchor not in t: raise SystemExit('top-level rules anchor not found')
               t=t.replace(anchor,'\nrules:\n'+claude,1)
