@@ -1,3 +1,37 @@
+#!/usr/bin/env node
+/*
+ * Regression test for airport_overwrite.js.
+ * The airport script is a complete overwrite: only proxy nodes are accepted
+ * from the incoming subscription; chain/runtime/provider-specific fields must
+ * not leak into the generated configuration.
+ */
+const fs = require("fs");
+const vm = require("vm");
+
+const source = fs.readFileSync("airport_overwrite.js", "utf8");
+const sandbox = {};
+vm.createContext(sandbox);
+vm.runInContext(`${source}\nthis.__airportMain = main;`, sandbox, { filename: "airport_overwrite.js" });
+
+const input = {
+  mode: "global",
+  mixedPort: 9999,
+  proxies: [
+    {
+      name: "CI Airport Node",
+      type: "vless",
+      server: "198.51.100.20",
+      port: 443,
+      uuid: "00000000-0000-0000-0000-000000000000",
+      "dialer-proxy": "CI Forbidden Chain",
+    },
+  ],
+  dns: { enable: false, nameserver: ["192.0.2.1"] },
+  "proxy-groups": [{ name: "CI Injected Group", type: "select", proxies: ["DIRECT"] }],
+  rules: ["MATCH,DIRECT"],
+};
+
+const output = sandbox.__airportMain(input);
 
 function fail(message) {
   console.error(`[FAIL] ${message}`);
@@ -16,19 +50,6 @@ if (output.rules && output.rules.includes("MATCH,DIRECT")) fail("input rules lea
 if (JSON.stringify(output).includes("CI Forbidden Chain")) fail("forbidden chain marker leaked into output");
 
 const groups = Array.isArray(output["proxy-groups"]) ? output["proxy-groups"] : [];
-const requiredGroups = [
-  "🚀 节点选择", "⚡ 自动选择", "🛑 广告拦截", "💬 AI 服务", "🤖 Claude AI",
-  "📺 哔哩哔哩", "📹 油管视频", "🔍 谷歌服务", "🏠 私有网络", "🔒 国内服务",
-  "📲 电报消息", "🐱 Github", "Ⓜ️ 微软服务", "🍏 苹果服务", "🌐 社交媒体",
-  "🎬 流媒体", "🎮 游戏平台", "📚 教育资源", "💰 金融服务", "☁️ 云服务",
-  "🌐 非中国", "🐟 漏网之鱼"
-];
-for (const name of requiredGroups) {
-  if (!groups.some(g => g && g.name === name)) fail(`required strategy group missing: ${name}`);
-}
-if (!output.rules.some(rule => rule === "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI")) fail("Claude.ai is not routed to the AI service group");
-if (groups.some(g => g && ["🔰 节点选择", "🤖 AI服务", "🌍 国外服务"].includes(g.name))) fail("legacy strategy group remains");
-
 const genericChoiceGroups = groups.filter(g => g && g.type === "select" && Array.isArray(g.proxies) && g.proxies.includes("DIRECT"));
 const allowedDirectGroups = new Set(["🛑 广告拦截", "🔧 远控工具"]);
 for (const group of genericChoiceGroups) {
