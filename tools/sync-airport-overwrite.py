@@ -157,10 +157,12 @@ def apply_airport_strategy_groups(text):
         text=text.replace(","+src+",",","+dst+",").replace(","+src+",no-resolve",","+dst+",no-resolve")
     claude='  "DOMAIN-SUFFIX,claude.ai,💬 AI 服务",'
     if claude not in text:
-        match=re.search(r'(?m)^(\s*)"MATCH,',text)
-        if not match: raise RuntimeError("Airport MATCH rule anchor missing")
-        indent=match.group(1)
-        text=text[:match.start()]+indent+claude+"\n"+text[match.start():]
+        # Do not depend on a literal MATCH anchor. The template intentionally owns
+        # the final catch-all rule, while airport rules may omit MATCH entirely.
+        rules_anchor='  config["rules"] = ['
+        if rules_anchor not in text:
+            raise RuntimeError("Airport rules anchor missing")
+        text=text.replace(rules_anchor, rules_anchor+"\n"+claude, 1)
     return text
 
 def map_airport_targets(text):
