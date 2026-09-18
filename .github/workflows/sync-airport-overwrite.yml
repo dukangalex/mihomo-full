@@ -6,6 +6,7 @@ on:
       - 'airport_overwrite.js'
       - 'tools/sync-airport-overwrite.py'
       - 'tools/normalize-airport-strategy.py'
+      - 'tools/run-static-audit.py'
       - 'tools/static-audit.py'
       - 'tools/test-airport-overwrite.js'
       - '.airport-sync-trigger'
@@ -33,12 +34,12 @@ jobs:
       - name: Run airport regression test
         run: node tools/test-airport-overwrite.js
       - name: Run static repository audit
-        run: python tools/static-audit.py
+        run: python tools/run-static-audit.py
       - name: Commit generated synchronization
         run: |
-          if git diff --quiet -- template.yaml airport_overwrite.js tools/sync-airport-overwrite.py tools/normalize-airport-strategy.py tools/static-audit.py tools/test-airport-overwrite.js; then exit 0; fi
+          if git diff --quiet -- template.yaml airport_overwrite.js tools/sync-airport-overwrite.py tools/normalize-airport-strategy.py tools/run-static-audit.py tools/static-audit.py tools/test-airport-overwrite.js; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add template.yaml airport_overwrite.js tools/sync-airport-overwrite.py tools/normalize-airport-strategy.py tools/static-audit.py tools/test-airport-overwrite.js
+          git add template.yaml airport_overwrite.js tools/sync-airport-overwrite.py tools/normalize-airport-strategy.py tools/run-static-audit.py tools/static-audit.py tools/test-airport-overwrite.js
           git commit -m 'fix: align airport strategy group policy'
           git push
