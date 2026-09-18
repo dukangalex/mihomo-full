@@ -304,7 +304,7 @@ function main(config) {
   var ruleProviderClassical = { type: "http", behavior: "classical", interval: 86400 };
   var ruleProviderTextDomain = { type: "http", format: "text", interval: 86400, behavior: "domain" };
 
-  var BASE_META = "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo";
+  var BASE_META = "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo";
   var BASE_BLACK = "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash";
 
   config["rule-providers"] = {
@@ -313,7 +313,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ads-all.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ads-all.mrs",
     "path": "./ruleset/category-ads-all.mrs"
   },
   "category-ai-!cn": {
@@ -321,7 +321,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ai-!cn.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ai-!cn.mrs",
     "path": "./ruleset/category-ai-!cn.mrs"
   },
   "openai": {
@@ -329,7 +329,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/openai.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/openai.mrs",
     "path": "./ruleset/openai.mrs"
   },
   "bilibili": {
@@ -337,7 +337,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/bilibili.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bilibili.mrs",
     "path": "./ruleset/bilibili.mrs"
   },
   "geolocation-cn": {
@@ -345,7 +345,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/geolocation-cn.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-cn.mrs",
     "path": "./ruleset/geolocation-cn.mrs"
   },
   "cn": {
@@ -353,7 +353,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/cn.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cn.mrs",
     "path": "./ruleset/cn.mrs"
   },
   "youtube": {
@@ -361,7 +361,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/youtube.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/youtube.mrs",
     "path": "./ruleset/youtube.mrs"
   },
   "netflix": {
@@ -369,7 +369,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/netflix.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/netflix.mrs",
     "path": "./ruleset/netflix.mrs"
   },
   "hulu": {
@@ -377,7 +377,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/hulu.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hulu.mrs",
     "path": "./ruleset/hulu.mrs"
   },
   "disney": {
@@ -385,7 +385,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/disney.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/disney.mrs",
     "path": "./ruleset/disney.mrs"
   },
   "hbo": {
@@ -393,7 +393,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/hbo.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hbo.mrs",
     "path": "./ruleset/hbo.mrs"
   },
   "amazon": {
@@ -401,7 +401,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/amazon.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/amazon.mrs",
     "path": "./ruleset/amazon.mrs"
   },
   "bahamut": {
@@ -409,7 +409,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/bahamut.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bahamut.mrs",
     "path": "./ruleset/bahamut.mrs"
   },
   "spotify": {
@@ -417,7 +417,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/spotify.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/spotify.mrs",
     "path": "./ruleset/spotify.mrs"
   },
   "tiktok": {
@@ -425,7 +425,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/tiktok.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tiktok.mrs",
     "path": "./ruleset/tiktok.mrs"
   },
   "biliintl": {
@@ -433,7 +433,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/biliintl.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/biliintl.mrs",
     "path": "./ruleset/biliintl.mrs"
   },
   "abema": {
@@ -441,7 +441,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/abema.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/abema.mrs",
     "path": "./ruleset/abema.mrs"
   },
   "bbc": {
@@ -449,7 +449,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/bbc.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bbc.mrs",
     "path": "./ruleset/bbc.mrs"
   },
   "google": {
@@ -457,7 +457,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/google.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google.mrs",
     "path": "./ruleset/google.mrs"
   },
   "github": {
@@ -465,7 +465,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/github.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/github.mrs",
     "path": "./ruleset/github.mrs"
   },
   "gitlab": {
@@ -473,7 +473,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/gitlab.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/gitlab.mrs",
     "path": "./ruleset/gitlab.mrs"
   },
   "apple": {
@@ -481,7 +481,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/apple.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple.mrs",
     "path": "./ruleset/apple.mrs"
   },
   "microsoft": {
@@ -489,7 +489,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/microsoft.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft.mrs",
     "path": "./ruleset/microsoft.mrs"
   },
   "facebook": {
@@ -497,7 +497,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/facebook.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/facebook.mrs",
     "path": "./ruleset/facebook.mrs"
   },
   "instagram": {
@@ -505,7 +505,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/instagram.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/instagram.mrs",
     "path": "./ruleset/instagram.mrs"
   },
   "twitter": {
@@ -513,7 +513,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/twitter.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/twitter.mrs",
     "path": "./ruleset/twitter.mrs"
   },
   "linkedin": {
@@ -521,7 +521,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/linkedin.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/linkedin.mrs",
     "path": "./ruleset/linkedin.mrs"
   },
   "discord": {
@@ -529,7 +529,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/discord.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/discord.mrs",
     "path": "./ruleset/discord.mrs"
   },
   "snapchat": {
@@ -537,7 +537,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/snap.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/snap.mrs",
     "path": "./ruleset/snapchat.mrs"
   },
   "icloud": {
@@ -545,7 +545,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/icloud.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/icloud.mrs",
     "path": "./ruleset/icloud.mrs"
   },
   "apple-cn": {
@@ -553,7 +553,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/apple-cn.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple-cn.mrs",
     "path": "./ruleset/apple-cn.mrs"
   },
   "microsoft-cn": {
@@ -561,7 +561,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/microsoft@cn.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft@cn.mrs",
     "path": "./ruleset/microsoft-cn.mrs"
   },
   "steam": {
@@ -569,7 +569,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam.mrs",
     "path": "./ruleset/steam.mrs"
   },
   "epicgames": {
@@ -577,7 +577,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/epicgames.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/epicgames.mrs",
     "path": "./ruleset/epicgames.mrs"
   },
   "ea": {
@@ -585,7 +585,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/ea.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ea.mrs",
     "path": "./ruleset/ea.mrs"
   },
   "ubisoft": {
@@ -593,7 +593,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/ubisoft.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ubisoft.mrs",
     "path": "./ruleset/ubisoft.mrs"
   },
   "blizzard": {
@@ -601,7 +601,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/blizzard.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/blizzard.mrs",
     "path": "./ruleset/blizzard.mrs"
   },
   "steam-cn": {
@@ -609,7 +609,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam@cn.mrs",
     "path": "./ruleset/steam-cn.mrs"
   },
   "category-games-cn": {
@@ -617,7 +617,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-games@cn.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-games@cn.mrs",
     "path": "./ruleset/category-games-cn.mrs"
   },
   "paypal": {
@@ -625,7 +625,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/paypal.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/paypal.mrs",
     "path": "./ruleset/paypal.mrs"
   },
   "aws": {
@@ -633,7 +633,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/aws.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/aws.mrs",
     "path": "./ruleset/aws.mrs"
   },
   "azure": {
@@ -641,7 +641,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/azure.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/azure.mrs",
     "path": "./ruleset/azure.mrs"
   },
   "dropbox": {
@@ -649,7 +649,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/dropbox.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/dropbox.mrs",
     "path": "./ruleset/dropbox.mrs"
   },
   "onedrive": {
@@ -657,7 +657,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/onedrive.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/onedrive.mrs",
     "path": "./ruleset/onedrive.mrs"
   },
   "category-scholar-!cn": {
@@ -665,7 +665,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-scholar-!cn.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-scholar-!cn.mrs",
     "path": "./ruleset/category-scholar-!cn.mrs"
   },
   "tracker": {
@@ -673,7 +673,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/tracker.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tracker.mrs",
     "path": "./ruleset/tracker.mrs"
   },
   "geolocation-!cn": {
@@ -681,7 +681,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "domain",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/geolocation-!cn.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.mrs",
     "path": "./ruleset/geolocation-!cn.mrs"
   },
   "wechat": {
@@ -697,7 +697,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/private.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/private.mrs",
     "path": "./ruleset/private-ip.mrs"
   },
   "cn-ip": {
@@ -705,7 +705,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cn.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs",
     "path": "./ruleset/cn-ip.mrs"
   },
   "google-ip": {
@@ -713,7 +713,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/google.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/google.mrs",
     "path": "./ruleset/google-ip.mrs"
   },
   "telegram-ip": {
@@ -721,7 +721,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/telegram.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/telegram.mrs",
     "path": "./ruleset/telegram-ip.mrs"
   },
   "netflix-ip": {
@@ -729,7 +729,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/netflix.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/netflix.mrs",
     "path": "./ruleset/netflix-ip.mrs"
   },
   "facebook-ip": {
@@ -737,7 +737,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/facebook.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/facebook.mrs",
     "path": "./ruleset/facebook-ip.mrs"
   },
   "twitter-ip": {
@@ -745,7 +745,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/twitter.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/twitter.mrs",
     "path": "./ruleset/twitter-ip.mrs"
   },
   "cloudflare-ip": {
@@ -753,7 +753,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cloudflare.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudflare.mrs",
     "path": "./ruleset/cloudflare-ip.mrs"
   },
   "cloudfront-ip": {
@@ -761,7 +761,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cloudfront.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudfront.mrs",
     "path": "./ruleset/cloudfront-ip.mrs"
   },
   "fastly-ip": {
@@ -769,7 +769,7 @@ function main(config) {
     "format": "mrs",
     "behavior": "ipcidr",
     "interval": 604800,
-    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/fastly.mrs",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/fastly.mrs",
     "path": "./ruleset/fastly-ip.mrs"
   },
   "sukka-phishing": {
@@ -2163,10 +2163,10 @@ function main(config) {
   config["geo-auto-update"] = true;
   config["geo-update-interval"] = 168;
   config["geox-url"] = {
-  "geoip": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geoip.dat",
-  "geosite": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geosite.dat",
-  "mmdb": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geoip.metadb",
-  "asn": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/GeoLite2-ASN.mmdb"
+  "geoip": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat",
+  "geosite": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat",
+  "mmdb": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb",
+  "asn": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
 };
 
   config["profile"] = {
@@ -2289,10 +2289,10 @@ function main(config) {
     "allow-private-network": false
   },
   "geox-url": {
-    "geoip": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geoip.dat",
-    "geosite": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geosite.dat",
-    "mmdb": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/geoip.metadb",
-    "asn": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/release/GeoLite2-ASN.mmdb"
+    "geoip": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat",
+    "geosite": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat",
+    "mmdb": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb",
+    "asn": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
   }
 };
   config["mode"] = CANONICAL["mode"];
