@@ -23,7 +23,7 @@ for cmd in curl python3 systemctl flock; do command -v "$cmd" >/dev/null 2>&1 ||
 exec 9>"$LOCK_FILE"
 flock -n 9 || err "已有更新任务正在运行，请稍后再试"
 
-COMMIT="$(curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 "https://api.github.com/repos/${REPO}/commits/main" | sed -n 's/.*"sha":"\([0-9a-f]\{40\}\)".*/\1/p' | head -n1)"
+COMMIT="$(curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 "https://api.github.com/repos/${REPO}/commits/main" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("sha",""))' 2>/dev/null || true)"
 [[ "$COMMIT" =~ ^[0-9a-f]{40}$ ]] || err "无法获取有效提交 SHA"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/${COMMIT}"
 

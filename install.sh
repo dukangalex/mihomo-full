@@ -124,10 +124,11 @@ download "${WORK_DIR}/tools/audit-generated-config.sh" "${RAW_BASE}/tools/audit-
 download "${WORK_DIR}/telegram-bot/bot.py" "${RAW_BASE}/telegram-bot/bot.py"
 download "${WORK_DIR}/telegram-bot/vps_usage.py" "${RAW_BASE}/telegram-bot/vps_usage.py"
 download "${WORK_DIR}/telegram-bot/install-telegram-bot.sh" "${RAW_BASE}/telegram-bot/install-telegram-bot.sh"
+download "${WORK_DIR}/telegram-bot/uninstall-bot.sh" "${RAW_BASE}/telegram-bot/uninstall-bot.sh"
 download "${WORK_DIR}/telegram-bot/mihomo-full-bot.service" "${RAW_BASE}/telegram-bot/mihomo-full-bot.service"
 download "${WORK_DIR}/telegram-bot/requirements.txt" "${RAW_BASE}/telegram-bot/requirements.txt"
 download "${WORK_DIR}/telegram-bot.example.env" "${RAW_BASE}/telegram-bot.example.env"
-chmod 700 "${WORK_DIR}/manage.sh" "${WORK_DIR}/generate.sh" "${WORK_DIR}/uninstall.sh" "${WORK_DIR}/update.sh" "${WORK_DIR}/tools/audit-generated-config.sh" "${WORK_DIR}/tools/generate-endpoint.py" "${WORK_DIR}/tools/load-settings.sh" "${WORK_DIR}/telegram-bot/install-telegram-bot.sh"
+chmod 700 "${WORK_DIR}/manage.sh" "${WORK_DIR}/generate.sh" "${WORK_DIR}/uninstall.sh" "${WORK_DIR}/update.sh" "${WORK_DIR}/tools/audit-generated-config.sh" "${WORK_DIR}/tools/generate-endpoint.py" "${WORK_DIR}/tools/load-settings.sh" "${WORK_DIR}/telegram-bot/install-telegram-bot.sh" "${WORK_DIR}/telegram-bot/uninstall-bot.sh"
 chmod 600 "${WORK_DIR}/telegram-bot/bot.py" "${WORK_DIR}/telegram-bot/vps_usage.py" "${WORK_DIR}/telegram-bot/requirements.txt"
 
 if [[ -f "${WORK_DIR}/settings.conf" ]]; then
@@ -266,29 +267,36 @@ if (( ! has_cert )); then
 fi
 
 mkdir -p /etc/nginx/snippets
-cat > "$SNIPPET_FILE" <<EOF
-# Managed by mihomo-full — do not edit by hand; re-run install/generate to refresh paths.
-${BEGIN_MARK}
-location = ${FULL_PATH} {
-    alias ${INSTALL_DIR}/output/full-config.yaml;
+AIRPORT_UPSTREAM="$AIRPORT_SUB_URL" FULL_PATH="$FULL_PATH" EXIT_PATH="$NODES_PATH" INSTALL_DIR="$INSTALL_DIR" python3 - "$SNIPPET_FILE" <<'PY'
+import os, sys
+from pathlib import Path
+
+def q(v):
+    return v.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$')
+
+a = os.environ['AIRPORT_UPSTREAM']
+out = f'''# Managed by mihomo-full — do not edit by hand; re-run install/generate to refresh paths.
+{os.environ.get("BEGIN_MARK", "# BEGIN mihomo-full managed assets")}
+location = {os.environ['FULL_PATH']} {{
+    alias {os.environ['INSTALL_DIR']}/output/full-config.yaml;
     default_type application/octet-stream;
     add_header Cache-Control "no-cache";
     add_header Content-Disposition "inline";
-}
-location = ${NODES_PATH} {
-    alias ${INSTALL_DIR}/output/exit-nodes.yaml;
+}}
+location = {os.environ['EXIT_PATH']} {{
+    alias {os.environ['INSTALL_DIR']}/output/exit-nodes.yaml;
     default_type application/octet-stream;
     add_header Cache-Control "no-cache";
     add_header Content-Disposition "inline";
-}
-location = ${FULL_PATH}/source {
-    proxy_pass "${AIRPORT_SUB_URL}";
+}}
+location = {os.environ['FULL_PATH']}/source {{
+    proxy_pass "{q(a)}";
     proxy_ssl_server_name on;
     proxy_ssl_verify on;
     proxy_ssl_verify_depth 2;
     proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
     proxy_ssl_protocols TLSv1.2 TLSv1.3;
-    proxy_set_header Host \$proxy_host;
+    proxy_set_header Host $proxy_host;
     proxy_set_header Connection "";
     proxy_http_version 1.1;
     proxy_method GET;
@@ -297,13 +305,15 @@ location = ${FULL_PATH}/source {
     proxy_buffering off;
     add_header Cache-Control "no-store" always;
     add_header Content-Disposition "inline";
-}
-location /assets/ {
+}}
+location /assets/ {{
     return 404;
-}
-${END_MARK}
-EOF
-chmod 600 "$SNIPPET_FILE"
+}}
+{os.environ.get("END_MARK", "# END mihomo-full managed assets")}
+'''
+Path(sys.argv[1]).write_text(out, encoding='utf-8')
+os.chmod(sys.argv[1], 0o600)
+PY
 info "已写入 Nginx 片段：$SNIPPET_FILE"
 
 if [[ -z "$MATCH_CONF" ]]; then

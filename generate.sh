@@ -50,6 +50,8 @@ fi
       BEGIN { block="" }
       {
         line=$0
+        if (line ~ /^proxies:[[:space:]]*$/) next
+        if (line ~ /^[A-Za-z0-9_-]+:/ && line !~ /^[[:space:]]/) next
         if (tolower(line) ~ /^  - name:[[:space:]]*/) {
           if (block != "") print block
           block=line
@@ -126,7 +128,10 @@ apply_ruleset_overrides() {
         YAML_URL=$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1], ensure_ascii=False))' "$url")
         awk -v n="$name" -v u="$YAML_URL" -v a="$anchor" '/^rule-providers:/{print;printf "\n  %s:\n    <<: *%s\n    url: %s\n    path: \"./ruleset/%s.mrs\"\n",n,a,u,n;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
         tmp="$FULL_CONFIG.tmp"
-        awk -v n="$name" -v t="$target" '/^rules:/{print;printf "\n  - RULE-SET,%s,%s\n",n,t;next}{print}' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
+        awk -v n="$name" -v t="$target" '
+          /^  - MATCH,/ { printf "  - RULE-SET,%s,%s\n", n, t }
+          { print }
+        ' "$FULL_CONFIG" > "$tmp" && mv "$tmp" "$FULL_CONFIG"
       fi
     else
       sed -i -E "s|^([[:space:]]*- RULE-SET,$name,)|# [disabled] \1|" "$FULL_CONFIG"
@@ -201,9 +206,16 @@ Path(sys.argv[1]).write_text(out, encoding='utf-8')
 os.chmod(sys.argv[1], 0o600)
 PY
   mv -- "$NGINX_TMP" "$NGINX_SNIPPET_FILE"
-  if command -v nginx >/dev/null 2>&1 && ! nginx -t 2>/tmp/mihomo-full-nginx-test.err; then
-    cat /tmp/mihomo-full-nginx-test.err >&2 || true
-    err "Nginx 配置测试失败，拒绝发布新的机场代理上游"
+  if command -v nginx >/dev/null 2>&1; then
+    if ! nginx -t 2>/tmp/mihomo-full-nginx-test.err; then
+      cat /tmp/mihomo-full-nginx-test.err >&2 || true
+      err "Nginx 配置测试失败，拒绝发布新的机场代理上游"
+    fi
+    if systemctl reload nginx 2>/dev/null || nginx -s reload 2>/dev/null; then
+      log "Nginx 已重载，机场订阅上游已生效"
+    else
+      warn "Nginx 片段已更新但无法自动 reload，请手动执行：systemctl reload nginx"
+    fi
   fi
 fi
 
