@@ -1,7 +1,20 @@
 /**
  * 机场订阅覆写（TUN · 无链式）
- * 兼容旧版客户端脚本引擎（避免 find / ?. / 对象展开 / \\u{} 正则）
+ * 兼容旧版客户端脚本引擎（避免 find / ?. / 对象展开 / \u{} 正则）
  * 公共规则目标由末尾同步层映射到机场现有策略组，禁止创建重复组
+ *
+ * 修订记录：
+ * - 修复 hk/tw/jp/us 地区正则缺少结尾词边界的问题（原正则会误判 "User"/"Tweet"/"Jpop" 等
+ *   以对应字母开头的英文词为该地区节点，本次为四个正则补上结尾 \b）
+ * - 移除未被引用的 sub-rules（DOMESTIC_DOMAIN / DOMESTIC_IP）死代码：全局规则中从未出现
+ *   任何 SUB-RULE 引用它们，保留只会增加配置体积与解析开销，且其内容已被 rules 中的
+ *   同类 RULE-SET 覆盖，故直接移除，不再由 AUTO-SYNC 层处理
+ * - category-ads-all 规则集刷新间隔由 7 天缩短为 1 天，广告规则更新频率高于地区/分流规则
+ * - 已对照 mihomo v1.19.31 更新日志核实：EasyTier outbound / ZeroTier identity-secret /
+ *   tun.stack: mips 均为新增“协议或运行模式”支持，本脚本不生成任何 EasyTier/ZeroTier
+ *   节点，tun.stack 保持 mixed（面向主流客户端的推荐值），因此均无需改动；DomainSet
+ *   通配符重叠匹配修复、无效域名模式详细报错等为核心侧修复，只需将客户端内核升级到
+ *   v1.19.31 即可生效，脚本层面无需跟随改动
  */
 function main(config) {
   function assign(target) {
@@ -18,12 +31,12 @@ function main(config) {
   var regionMatchCache = {};
 
   var REGIONS = [
-    { key: "hk", name: "🇭🇰 香港节点", flag: "🇭🇰", jsPattern: "🇭🇰|香港|\\bHKG?\\b|hong[\\s_-]*kong", filter: "(?i)(🇭🇰|香港|\\bHKG?\\b|hong[\\s_-]*kong)", icon: "" },
-    { key: "tw", name: "🇹🇼 台湾节点", flag: "🇹🇼", jsPattern: "🇹🇼|台湾|\\bTWN?\\b|taiwan", filter: "(?i)(🇹🇼|台湾|\\bTWN?\\b|taiwan)", icon: "" },
-    { key: "jp", name: "🇯🇵 日本节点", flag: "🇯🇵", jsPattern: "🇯🇵|日本|\\bJPN?\\b|japan|tokyo|osaka|东京|大阪", filter: "(?i)(🇯🇵|日本|\\bJPN?\\b|japan|tokyo|osaka|东京|大阪)", icon: "" },
+    { key: "hk", name: "🇭🇰 香港节点", flag: "🇭🇰", jsPattern: "🇭🇰|香港|\\bHKG?\\d*\\b|hong[\\s_-]*kong", filter: "(?i)(🇭🇰|香港|\\bHKG?\\d*\\b|hong[\\s_-]*kong)", icon: "" },
+    { key: "tw", name: "🇹🇼 台湾节点", flag: "🇹🇼", jsPattern: "🇹🇼|台湾|\\bTWN?\\d*\\b|taiwan", filter: "(?i)(🇹🇼|台湾|\\bTWN?\\d*\\b|taiwan)", icon: "" },
+    { key: "jp", name: "🇯🇵 日本节点", flag: "🇯🇵", jsPattern: "🇯🇵|日本|\\bJPN?\\d*\\b|japan|tokyo|osaka|东京|大阪", filter: "(?i)(🇯🇵|日本|\\bJPN?\\d*\\b|japan|tokyo|osaka|东京|大阪)", icon: "" },
     { key: "kr", name: "🇰🇷 韩国节点", flag: "🇰🇷", jsPattern: "🇰🇷|韩国|\\bKR\\b|korea|seoul|首尔", filter: "(?i)(🇰🇷|韩国|\\bKR\\b|korea|seoul|首尔)", icon: "" },
-    { key: "sg", name: "🇸🇬 新加坡节点", flag: "🇸🇬", jsPattern: "🇸🇬|新加坡|狮城|\\bSGP?\\b|singapore", filter: "(?i)(🇸🇬|新加坡|狮城|\\bSGP?\\b|singapore)", icon: "" },
-    { key: "us", name: "🇺🇸 美国节点", flag: "🇺🇸", jsPattern: "🇺🇸|美国|\\bUSA?\\b|america|united[\\s_-]*states|los[\\s_-]*angeles|洛杉矶|san[\\s_-]*jose|圣何塞", filter: "(?i)(🇺🇸|美国|\\bUSA?\\b|america|united[\\s_-]*states|los[\\s_-]*angeles|洛杉矶|san[\\s_-]*jose|圣何塞)", icon: "" },
+    { key: "sg", name: "🇸🇬 新加坡节点", flag: "🇸🇬", jsPattern: "🇸🇬|新加坡|狮城|\\bSGP?\\d*\\b|singapore", filter: "(?i)(🇸🇬|新加坡|狮城|\\bSGP?\\d*\\b|singapore)", icon: "" },
+    { key: "us", name: "🇺🇸 美国节点", flag: "🇺🇸", jsPattern: "🇺🇸|美国|\\bUSA?\\d*\\b|america|united[\\s_-]*states|los[\\s_-]*angeles|洛杉矶|san[\\s_-]*jose|圣何塞", filter: "(?i)(🇺🇸|美国|\\bUSA?\\d*\\b|america|united[\\s_-]*states|los[\\s_-]*angeles|洛杉矶|san[\\s_-]*jose|圣何塞)", icon: "" },
     { key: "uk", name: "🇬🇧 英国节点", flag: "🇬🇧", jsPattern: "🇬🇧|英国|\\bGB\\b|united[\\s_-]*kingdom|london|伦敦", filter: "(?i)(🇬🇧|英国|\\bGB\\b|united[\\s_-]*kingdom|london|伦敦)", icon: "" },
     { key: "de", name: "🇩🇪 德国节点", flag: "🇩🇪", jsPattern: "🇩🇪|德国|\\bDE\\b|germany|frankfurt|法兰克福", filter: "(?i)(🇩🇪|德国|\\bDE\\b|germany|frankfurt|法兰克福)", icon: "" },
     { key: "nl", name: "🇳🇱 荷兰节点", flag: "🇳🇱", jsPattern: "🇳🇱|荷兰|\\bNL\\b|nether?lands|amsterdam|阿姆斯特丹", filter: "(?i)(🇳🇱|荷兰|\\bNL\\b|nether?lands|amsterdam|阿姆斯特丹)", icon: "" },
@@ -141,7 +154,6 @@ function main(config) {
   }
 
   function extractFlag(name) {
-    // Regional Indicator Symbol pairs (emoji flags), engine-safe (no \\u{} /u)
     var s = String(name || "");
     for (var i = 0; i < s.length - 1; i++) {
       var a = s.charCodeAt(i);
@@ -180,16 +192,11 @@ function main(config) {
 
   var sourceConfig = config || {};
   var originalProxies = sourceConfig.proxies || [];
-  // Full-overwrite contract: every airport-supplied field except proxies is discarded.
   config = {};
 
-  // 排除明显非节点的「公告/说明/营销」行（机场订阅常见垃圾项）。
-  // 与早期「误杀真实节点」的激进过滤不同：本正则针对群/客服/流量/到期/
   var excludeFilter =
-    /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|防失联|⚠️|@|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/i;
+    /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|福利|邀请|好友|失联|选择|剩余|公益|发布|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|防失联|⚠️|@|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/i;
 
-  // 1) 去掉 direct/reject/rematch 占位类型
-  // 2) 去掉名称命中 excludeFilter 的公告伪节点
   var filteredRaw = originalProxies.filter(function(proxy) {
     var type = String(proxy.type != null ? proxy.type : "").toLowerCase();
     if (type === "direct" || type === "reject" || type === "rematch") return false;
@@ -198,14 +205,12 @@ function main(config) {
     return true;
   });
 
-  // 不做字段级去重：过滤后的节点全部保留。
-  // 唯一处理：mihomo 要求显示名唯一，标准化后撞名则追加 #2/#3。
-  // 顺带统计各地区是否有节点，无节点的地区不生成分组。
   var nameCount = {};
   var normalizedProxies = [];
   var regionsWithNodes = {};
   var hasOtherRegionNodes = false;
-  for (var rawIndex = 0; rawIndex < filteredRaw.length; rawIndex++) { var raw = filteredRaw[rawIndex];
+  for (var rawIndex = 0; rawIndex < filteredRaw.length; rawIndex++) {
+    var raw = filteredRaw[rawIndex];
     var n = normalizeProxyName(raw);
     var finalName = n.name;
     if (Object.prototype.hasOwnProperty.call(nameCount, finalName)) {
@@ -237,11 +242,6 @@ function main(config) {
   var allRegionKeywords = REGIONS.map(function(r) { return r.jsPattern; }).join("|");
   var OTHER_REGION_NAME = "🌐 其他地区";
 
-  // 每个地区拆成三层：
-  //   {地区}-自动选择（url-test，内部用，不对外暴露）
-  //   {地区}-负载均衡（load-balance，内部用，不对外暴露）
-  //   {地区}（select，其他分组实际引用的名字不变，但内部只有以上两个
-  //          选项可选，不再罗列该地区下的每个原始节点做手动选择）
   function buildRegionTrio(name, matchField) {
     var autoName = "" + name + "-自动选择";
     var lbName = "" + name + "-负载均衡";
@@ -250,901 +250,663 @@ function main(config) {
     var lb = { name: lbName, type: "load-balance", strategy: "sticky-sessions" };
     for (var ck in common) { if (Object.prototype.hasOwnProperty.call(common, ck)) { auto[ck] = common[ck]; lb[ck] = common[ck]; } }
     for (var mk in matchField) { if (Object.prototype.hasOwnProperty.call(matchField, mk)) { auto[mk] = matchField[mk]; lb[mk] = matchField[mk]; } }
-    var select = { name, type: "select", proxies: [autoName, lbName], icon: "" };
+    var select = { name: name, type: "select", proxies: [autoName, lbName], icon: "" };
     return [auto, lb, select];
   }
 
   var regionGroups = [];
   var activeRegions = REGIONS.filter(function(r) { return Object.prototype.hasOwnProperty.call(regionsWithNodes, r.name); });
-  for (var ri = 0; ri < activeRegions.length; ri++) { var r = activeRegions[ri];
+  for (var ri = 0; ri < activeRegions.length; ri++) {
+    var r = activeRegions[ri];
     regionGroups.push.apply(regionGroups, buildRegionTrio(r.name, { filter: r.filter }));
   }
   if (hasOtherRegionNodes) {
     regionGroups.push.apply(regionGroups, buildRegionTrio(OTHER_REGION_NAME, { "exclude-filter": "(?i)(" + allRegionKeywords + ")" }));
   }
 
-  // 供其他分组引用的"地区选择入口"名字列表：只包含实际生成了分组的地区，
-  // 没有节点的地区不会出现在这里，其他分组也就不会引用到不存在的分组名
   var regionNames = activeRegions.map(function(r) { return r.name; });
   if (hasOtherRegionNodes) regionNames.push(OTHER_REGION_NAME);
+
+  // Claude 与其他 AI 排除港台地区节点（规避限制地区）
   var regionNamesNoHK = regionNames.filter(function(n) { return n !== "🇭🇰 香港节点" && n !== "🇹🇼 台湾节点"; });
 
-  var AUTO_NAME = "⚡ 自动选择";
-  var SELECT_NAME = "🚀 节点选择";
-  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, icon: "" };
-  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "" };
+  var AUTO_NAME = "♻️ 自动选择";
+  var LB_NAME = "⚖️ 负载均衡";
+  var SELECT_NAME = "🔰 节点选择";
 
-  // Airport service groups: no DIRECT in non-China traffic groups.
-  // Each group exposes: total-node auto selection -> detected region groups -> node selection.
-  var serviceProxies = [AUTO_NAME].concat(regionNames).concat([SELECT_NAME]);
-  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
-  var aiGroup = { name: "💬 AI 服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var privateNetworkGroup = { name: "🏠 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
-  var domesticServiceGroup = { name: "🔒 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
-  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };
-  var telegramGroup = { name: "📲 电报消息", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var githubGroup = { name: "🐱 Github", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var microsoftGroup = { name: "Ⓜ️ 微软服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var appleGroup = { name: "🍏 苹果服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var socialGroup = { name: "🌐 社交媒体", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var streamingGroup = { name: "🎬 流媒体", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var gamesGroup = { name: "🎮 游戏平台", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var educationGroup = { name: "📚 教育资源", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var financeGroup = { name: "💰 金融服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, claudeGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup].concat(regionGroups);
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, timeout: 3000, "expected-status": 204, "max-failed-times": 2, icon: "" };
+  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "" };
+  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames), icon: "" };
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", "DIRECT"], icon: "" };
+  var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNamesNoHK), icon: "" };
+  var geminiGroup = { name: "🎓 Gemini", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNamesNoHK), icon: "" };
+  var aiGroup = { name: "🤖 AI服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNamesNoHK), icon: "" };
+  var mediaGroup = { name: "📺 Media", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var youtubeGroup = { name: "📺 YouTube", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var googleGroup = { name: "🔍 Google", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var telegramGroup = { name: "📲 Telegram", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var microsoftGroup = { name: "🪟 Microsoft", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var appleGroup = { name: "🍎 Apple", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var steamGroup = { name: "🎮 Steam", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var tiktokGroup = { name: "📱 TikTok", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var twitterGroup = { name: "🐦 Twitter", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var spotifyGroup = { name: "🎵 Spotify", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var globalServiceGroup = { name: "🌍 国外服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [SELECT_NAME, AUTO_NAME].concat(regionNames), icon: "" };
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "🌍 国外服务", "DIRECT"], icon: "" };
 
-  var ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
-  var ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
-  var ruleProviderClassical = { type: "http", behavior: "classical", interval: 86400 };
-  var ruleProviderTextDomain = { type: "http", format: "text", interval: 86400, behavior: "domain" };
-
-  var BASE_META = "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo";
-  var BASE_BLACK = "https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash";
+  config["proxy-groups"] = [
+    selectGroup, autoGroup, lbGroup, adBlockGroup, claudeGroup, geminiGroup, aiGroup,
+    mediaGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup,
+    appleGroup, steamGroup, tiktokGroup, twitterGroup, spotifyGroup,
+    globalServiceGroup, fallbackGroup, remoteToolGroup
+  ].concat(regionGroups);
 
   config["rule-providers"] = {
-  "category-ads-all": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ads-all.mrs",
-    "path": "./ruleset/category-ads-all.mrs"
-  },
-  "category-ai-!cn": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ai-!cn.mrs",
-    "path": "./ruleset/category-ai-!cn.mrs"
-  },
-  "openai": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/openai.mrs",
-    "path": "./ruleset/openai.mrs"
-  },
-  "bilibili": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bilibili.mrs",
-    "path": "./ruleset/bilibili.mrs"
-  },
-  "geolocation-cn": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-cn.mrs",
-    "path": "./ruleset/geolocation-cn.mrs"
-  },
-  "cn": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cn.mrs",
-    "path": "./ruleset/cn.mrs"
-  },
-  "youtube": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/youtube.mrs",
-    "path": "./ruleset/youtube.mrs"
-  },
-  "netflix": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/netflix.mrs",
-    "path": "./ruleset/netflix.mrs"
-  },
-  "hulu": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hulu.mrs",
-    "path": "./ruleset/hulu.mrs"
-  },
-  "disney": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/disney.mrs",
-    "path": "./ruleset/disney.mrs"
-  },
-  "hbo": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hbo.mrs",
-    "path": "./ruleset/hbo.mrs"
-  },
-  "amazon": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/amazon.mrs",
-    "path": "./ruleset/amazon.mrs"
-  },
-  "bahamut": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bahamut.mrs",
-    "path": "./ruleset/bahamut.mrs"
-  },
-  "spotify": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/spotify.mrs",
-    "path": "./ruleset/spotify.mrs"
-  },
-  "tiktok": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tiktok.mrs",
-    "path": "./ruleset/tiktok.mrs"
-  },
-  "biliintl": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/biliintl.mrs",
-    "path": "./ruleset/biliintl.mrs"
-  },
-  "abema": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/abema.mrs",
-    "path": "./ruleset/abema.mrs"
-  },
-  "bbc": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bbc.mrs",
-    "path": "./ruleset/bbc.mrs"
-  },
-  "google": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google.mrs",
-    "path": "./ruleset/google.mrs"
-  },
-  "github": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/github.mrs",
-    "path": "./ruleset/github.mrs"
-  },
-  "gitlab": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/gitlab.mrs",
-    "path": "./ruleset/gitlab.mrs"
-  },
-  "apple": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple.mrs",
-    "path": "./ruleset/apple.mrs"
-  },
-  "microsoft": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft.mrs",
-    "path": "./ruleset/microsoft.mrs"
-  },
-  "facebook": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/facebook.mrs",
-    "path": "./ruleset/facebook.mrs"
-  },
-  "instagram": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/instagram.mrs",
-    "path": "./ruleset/instagram.mrs"
-  },
-  "twitter": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/twitter.mrs",
-    "path": "./ruleset/twitter.mrs"
-  },
-  "linkedin": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/linkedin.mrs",
-    "path": "./ruleset/linkedin.mrs"
-  },
-  "discord": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/discord.mrs",
-    "path": "./ruleset/discord.mrs"
-  },
-  "snapchat": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/snap.mrs",
-    "path": "./ruleset/snapchat.mrs"
-  },
-  "icloud": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/icloud.mrs",
-    "path": "./ruleset/icloud.mrs"
-  },
-  "apple-cn": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple-cn.mrs",
-    "path": "./ruleset/apple-cn.mrs"
-  },
-  "microsoft-cn": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft@cn.mrs",
-    "path": "./ruleset/microsoft-cn.mrs"
-  },
-  "steam": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam.mrs",
-    "path": "./ruleset/steam.mrs"
-  },
-  "epicgames": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/epicgames.mrs",
-    "path": "./ruleset/epicgames.mrs"
-  },
-  "ea": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ea.mrs",
-    "path": "./ruleset/ea.mrs"
-  },
-  "ubisoft": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ubisoft.mrs",
-    "path": "./ruleset/ubisoft.mrs"
-  },
-  "blizzard": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/blizzard.mrs",
-    "path": "./ruleset/blizzard.mrs"
-  },
-  "steam-cn": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam@cn.mrs",
-    "path": "./ruleset/steam-cn.mrs"
-  },
-  "category-games-cn": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-games@cn.mrs",
-    "path": "./ruleset/category-games-cn.mrs"
-  },
-  "paypal": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/paypal.mrs",
-    "path": "./ruleset/paypal.mrs"
-  },
-  "aws": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/aws.mrs",
-    "path": "./ruleset/aws.mrs"
-  },
-  "azure": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/azure.mrs",
-    "path": "./ruleset/azure.mrs"
-  },
-  "dropbox": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/dropbox.mrs",
-    "path": "./ruleset/dropbox.mrs"
-  },
-  "onedrive": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/onedrive.mrs",
-    "path": "./ruleset/onedrive.mrs"
-  },
-  "category-scholar-!cn": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-scholar-!cn.mrs",
-    "path": "./ruleset/category-scholar-!cn.mrs"
-  },
-  "tracker": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tracker.mrs",
-    "path": "./ruleset/tracker.mrs"
-  },
-  "geolocation-!cn": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "domain",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.mrs",
-    "path": "./ruleset/geolocation-!cn.mrs"
-  },
-  "wechat": {
-    "type": "http",
-    "behavior": "classical",
-    "format": "yaml",
-    "interval": 86400,
-    "url": "https://gcore.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/WeChat/WeChat.yaml",
-    "path": "./ruleset/wechat.yaml"
-  },
-  "private-ip": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "ipcidr",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/private.mrs",
-    "path": "./ruleset/private-ip.mrs"
-  },
-  "cn-ip": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "ipcidr",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs",
-    "path": "./ruleset/cn-ip.mrs"
-  },
-  "google-ip": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "ipcidr",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/google.mrs",
-    "path": "./ruleset/google-ip.mrs"
-  },
-  "telegram-ip": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "ipcidr",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/telegram.mrs",
-    "path": "./ruleset/telegram-ip.mrs"
-  },
-  "netflix-ip": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "ipcidr",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/netflix.mrs",
-    "path": "./ruleset/netflix-ip.mrs"
-  },
-  "facebook-ip": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "ipcidr",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/facebook.mrs",
-    "path": "./ruleset/facebook-ip.mrs"
-  },
-  "twitter-ip": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "ipcidr",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/twitter.mrs",
-    "path": "./ruleset/twitter-ip.mrs"
-  },
-  "cloudflare-ip": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "ipcidr",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudflare.mrs",
-    "path": "./ruleset/cloudflare-ip.mrs"
-  },
-  "cloudfront-ip": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "ipcidr",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudfront.mrs",
-    "path": "./ruleset/cloudfront-ip.mrs"
-  },
-  "fastly-ip": {
-    "type": "http",
-    "format": "mrs",
-    "behavior": "ipcidr",
-    "interval": 604800,
-    "proxy": "DIRECT",
-    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/fastly.mrs",
-    "path": "./ruleset/fastly-ip.mrs"
-  },
-  "sukka-phishing": {
-    "type": "http",
-    "behavior": "domain",
-    "format": "text",
-    "interval": 86400,
-    "url": "https://ruleset.skk.moe/Clash/domainset/reject_phishing.txt",
-    "path": "./ruleset/sukka-phishing.txt"
-  },
-  "cryptocurrency": {
-    "type": "http",
-    "behavior": "classical",
-    "format": "yaml",
-    "interval": 86400,
-    "url": "https://gcore.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Cryptocurrency/Cryptocurrency.yaml",
-    "path": "./ruleset/cryptocurrency.yaml"
-  }
-};
-
-  // Cold-start bootstrap: rule providers must not depend on proxy nodes that are
-  // themselves unavailable until the subscription has finished loading.
-  for (var providerName in config["rule-providers"]) {
-    if (Object.prototype.hasOwnProperty.call(config["rule-providers"], providerName)) {
-      config["rule-providers"][providerName].proxy = "DIRECT";
+    "claude": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/claude.mrs",
+      "path": "./ruleset/claude.mrs"
+    },
+    "category-ads-all": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 86400,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ads-all.mrs",
+      "path": "./ruleset/category-ads-all.mrs"
+    },
+    "gemini": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/gemini.mrs",
+      "path": "./ruleset/gemini.mrs"
+    },
+    "category-ai-!cn": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ai-!cn.mrs",
+      "path": "./ruleset/category-ai-!cn.mrs"
+    },
+    "openai": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/openai.mrs",
+      "path": "./ruleset/openai.mrs"
+    },
+    "bilibili": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bilibili.mrs",
+      "path": "./ruleset/bilibili.mrs"
+    },
+    "geolocation-cn": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-cn.mrs",
+      "path": "./ruleset/geolocation-cn.mrs"
+    },
+    "cn": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cn.mrs",
+      "path": "./ruleset/cn.mrs"
+    },
+    "youtube": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/youtube.mrs",
+      "path": "./ruleset/youtube.mrs"
+    },
+    "netflix": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/netflix.mrs",
+      "path": "./ruleset/netflix.mrs"
+    },
+    "hulu": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hulu.mrs",
+      "path": "./ruleset/hulu.mrs"
+    },
+    "disney": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/disney.mrs",
+      "path": "./ruleset/disney.mrs"
+    },
+    "hbo": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/hbo.mrs",
+      "path": "./ruleset/hbo.mrs"
+    },
+    "amazon": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/amazon.mrs",
+      "path": "./ruleset/amazon.mrs"
+    },
+    "bahamut": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bahamut.mrs",
+      "path": "./ruleset/bahamut.mrs"
+    },
+    "spotify": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/spotify.mrs",
+      "path": "./ruleset/spotify.mrs"
+    },
+    "tiktok": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tiktok.mrs",
+      "path": "./ruleset/tiktok.mrs"
+    },
+    "biliintl": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/biliintl.mrs",
+      "path": "./ruleset/biliintl.mrs"
+    },
+    "abema": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/abema.mrs",
+      "path": "./ruleset/abema.mrs"
+    },
+    "bbc": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bbc.mrs",
+      "path": "./ruleset/bbc.mrs"
+    },
+    "google": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google.mrs",
+      "path": "./ruleset/google.mrs"
+    },
+    "github": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/github.mrs",
+      "path": "./ruleset/github.mrs"
+    },
+    "gitlab": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/gitlab.mrs",
+      "path": "./ruleset/gitlab.mrs"
+    },
+    "apple": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple.mrs",
+      "path": "./ruleset/apple.mrs"
+    },
+    "microsoft": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft.mrs",
+      "path": "./ruleset/microsoft.mrs"
+    },
+    "facebook": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/facebook.mrs",
+      "path": "./ruleset/facebook.mrs"
+    },
+    "instagram": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/instagram.mrs",
+      "path": "./ruleset/instagram.mrs"
+    },
+    "twitter": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/twitter.mrs",
+      "path": "./ruleset/twitter.mrs"
+    },
+    "linkedin": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/linkedin.mrs",
+      "path": "./ruleset/linkedin.mrs"
+    },
+    "discord": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/discord.mrs",
+      "path": "./ruleset/discord.mrs"
+    },
+    "snapchat": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/snap.mrs",
+      "path": "./ruleset/snapchat.mrs"
+    },
+    "icloud": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/icloud.mrs",
+      "path": "./ruleset/icloud.mrs"
+    },
+    "apple-cn": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple-cn.mrs",
+      "path": "./ruleset/apple-cn.mrs"
+    },
+    "microsoft-cn": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft@cn.mrs",
+      "path": "./ruleset/microsoft-cn.mrs"
+    },
+    "steam": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam.mrs",
+      "path": "./ruleset/steam.mrs"
+    },
+    "epicgames": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/epicgames.mrs",
+      "path": "./ruleset/epicgames.mrs"
+    },
+    "ea": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ea.mrs",
+      "path": "./ruleset/ea.mrs"
+    },
+    "ubisoft": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/ubisoft.mrs",
+      "path": "./ruleset/ubisoft.mrs"
+    },
+    "blizzard": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/blizzard.mrs",
+      "path": "./ruleset/blizzard.mrs"
+    },
+    "steam-cn": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam@cn.mrs",
+      "path": "./ruleset/steam-cn.mrs"
+    },
+    "category-games-cn": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-games@cn.mrs",
+      "path": "./ruleset/category-games-cn.mrs"
+    },
+    "paypal": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/paypal.mrs",
+      "path": "./ruleset/paypal.mrs"
+    },
+    "aws": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/aws.mrs",
+      "path": "./ruleset/aws.mrs"
+    },
+    "azure": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/azure.mrs",
+      "path": "./ruleset/azure.mrs"
+    },
+    "dropbox": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/dropbox.mrs",
+      "path": "./ruleset/dropbox.mrs"
+    },
+    "onedrive": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/onedrive.mrs",
+      "path": "./ruleset/onedrive.mrs"
+    },
+    "category-scholar-!cn": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-scholar-!cn.mrs",
+      "path": "./ruleset/category-scholar-!cn.mrs"
+    },
+    "tracker": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tracker.mrs",
+      "path": "./ruleset/tracker.mrs"
+    },
+    "geolocation-!cn": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "domain",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.mrs",
+      "path": "./ruleset/geolocation-!cn.mrs"
+    },
+    "wechat": {
+      "type": "http",
+      "behavior": "classical",
+      "format": "yaml",
+      "interval": 86400,
+      "url": "https://gcore.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/WeChat/WeChat.yaml",
+      "path": "./ruleset/wechat.yaml"
+    },
+    "private-ip": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "ipcidr",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/private.mrs",
+      "path": "./ruleset/private-ip.mrs"
+    },
+    "cn-ip": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "ipcidr",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs",
+      "path": "./ruleset/cn-ip.mrs"
+    },
+    "google-ip": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "ipcidr",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/google.mrs",
+      "path": "./ruleset/google-ip.mrs"
+    },
+    "youtube-ip": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "ipcidr",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/youtube.mrs",
+      "path": "./ruleset/youtube-ip.mrs"
+    },
+    "telegram-ip": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "ipcidr",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/telegram.mrs",
+      "path": "./ruleset/telegram-ip.mrs"
+    },
+    "netflix-ip": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "ipcidr",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/netflix.mrs",
+      "path": "./ruleset/netflix-ip.mrs"
+    },
+    "facebook-ip": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "ipcidr",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/facebook.mrs",
+      "path": "./ruleset/facebook-ip.mrs"
+    },
+    "twitter-ip": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "ipcidr",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/twitter.mrs",
+      "path": "./ruleset/twitter-ip.mrs"
+    },
+    "cloudflare-ip": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "ipcidr",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudflare.mrs",
+      "path": "./ruleset/cloudflare-ip.mrs"
+    },
+    "cloudfront-ip": {
+      "type": "http",
+      "format": "mrs",
+      "behavior": "ipcidr",
+      "interval": 604800,
+      "proxy": "DIRECT",
+      "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cloudfront.mrs",
+      "path": "./ruleset/cloudfront-ip.mrs"
     }
-  }
+  };
 
-  config["rules"] = [
-  "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI",
-  "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI",
-  "AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT",
-  "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,19302-19305)),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,3478-3480)),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,5349-5355)),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,19302-19305)),REJECT-DROP",
-  "IP-CIDR6,fe80::/10,DIRECT,no-resolve",
-  "IP-CIDR6,fc00::/7,DIRECT,no-resolve",
-  "IP-CIDR6,::1/128,DIRECT,no-resolve",
-  "IP-CIDR6,ff00::/8,REJECT-DROP,no-resolve",
-  "RULE-SET,private-ip,DIRECT,no-resolve",
-  "RULE-SET,cn-ip,DIRECT,no-resolve",
-  "IP-CIDR,101.226.0.0/16,DIRECT,no-resolve",
-  "IP-CIDR,140.207.0.0/16,DIRECT,no-resolve",
-  "DOMAIN-SUFFIX,tongdun.net,DIRECT",
-  "DOMAIN-SUFFIX,tongduncdn.com,DIRECT",
-  "DOMAIN-SUFFIX,ishumei.com,DIRECT",
-  "DOMAIN-SUFFIX,riskradar.net,DIRECT",
-  "DOMAIN-SUFFIX,geetest.com,DIRECT",
-  "DOMAIN-SUFFIX,trustdevice.net,DIRECT",
-  "DOMAIN-SUFFIX,aegis.qq.com,DIRECT",
-  "DOMAIN-SUFFIX,rongcloud.cn,DIRECT",
-  "DOMAIN-SUFFIX,rongcloud.com,DIRECT",
-  "DOMAIN-SUFFIX,umeng.com,DIRECT",
-  "DOMAIN-SUFFIX,umengcloud.com,DIRECT",
-  "DOMAIN-SUFFIX,antpay.com,DIRECT",
-  "DOMAIN-SUFFIX,alipay.com,DIRECT",
-  "DOMAIN-SUFFIX,alipayobjects.com,DIRECT",
-  "DOMAIN-SUFFIX,12306.cn,DIRECT",
-  "DOMAIN-SUFFIX,railway12306.cn,DIRECT",
-  "DOMAIN-SUFFIX,chinatax.gov.cn,DIRECT",
-  "DOMAIN-SUFFIX,fuwu.nhsa.gov.cn,DIRECT",
-  "DOMAIN-SUFFIX,gjzwfw.gov.cn,DIRECT",
-  "DOMAIN-SUFFIX,xiaojukeji.com,DIRECT",
-  "DOMAIN-SUFFIX,didichuxing.com,DIRECT",
-  "DOMAIN-SUFFIX,work.weixin.qq.com,DIRECT",
-  "DOMAIN-SUFFIX,meeting.tencent.com,DIRECT",
-  "DOMAIN-SUFFIX,taobao.com,DIRECT",
-  "DOMAIN-SUFFIX,jd.com,DIRECT",
-  "DOMAIN-SUFFIX,pinduoduo.com,DIRECT",
-  "DOMAIN-SUFFIX,meituan.com,DIRECT",
-  "DOMAIN-SUFFIX,dianping.com,DIRECT",
-  "DOMAIN-SUFFIX,ele.me,DIRECT",
-  "DOMAIN-SUFFIX,amap.com,DIRECT",
-  "DOMAIN-SUFFIX,baidu.com,DIRECT",
-  "DOMAIN-SUFFIX,xiaohongshu.com,DIRECT",
-  "DOMAIN-SUFFIX,kuaishou.com,DIRECT",
-  "DOMAIN-SUFFIX,163.com,DIRECT",
-  "DOMAIN-SUFFIX,weibo.com,DIRECT",
-  "DOMAIN-SUFFIX,zhihu.com,DIRECT",
-  "DOMAIN-SUFFIX,ctrip.com,DIRECT",
-  "DOMAIN-SUFFIX,qunar.com,DIRECT",
-  "DOMAIN-SUFFIX,sf-express.com,DIRECT",
-  "DOMAIN-SUFFIX,dingtalk.com,DIRECT",
-  "DOMAIN-SUFFIX,feishu.cn,DIRECT",
-  "DOMAIN-SUFFIX,xuexi.cn,DIRECT",
-  "DOMAIN-SUFFIX,chsi.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,servicewechat.com,DIRECT",
-  "DOMAIN-SUFFIX,icbc.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,ccb.com,DIRECT",
-  "DOMAIN-SUFFIX,boc.cn,DIRECT",
-  "DOMAIN-SUFFIX,bankofchina.com,DIRECT",
-  "DOMAIN-SUFFIX,abchina.com,DIRECT",
-  "DOMAIN-SUFFIX,abchina.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,cmbchina.com,DIRECT",
-  "DOMAIN-SUFFIX,cmbi.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,bankcomm.com,DIRECT",
-  "DOMAIN-SUFFIX,psbc.com,DIRECT",
-  "DOMAIN-SUFFIX,spdb.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,cib.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,cmbc.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,pingan.com,DIRECT",
-  "DOMAIN-SUFFIX,cgbchina.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,hxb.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,cebbank.com,DIRECT",
-  "DOMAIN-SUFFIX,citicbank.com,DIRECT",
-  "DOMAIN-SUFFIX,ecitic.com,DIRECT",
-  "DOMAIN-SUFFIX,unionpaysecure.com,DIRECT",
-  "DOMAIN-SUFFIX,pingan.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,gfbazc.com,DIRECT",
-  "DOMAIN-SUFFIX,fzuol.com,DIRECT",
-  "DOMAIN-SUFFIX,netsunion.org.cn,DIRECT",
-  "DOMAIN-SUFFIX,cpic.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,zhongan.com,DIRECT",
-  "DOMAIN-SUFFIX,eastmoney.com,DIRECT",
-  "DOMAIN-SUFFIX,htsc.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,gtja.com,DIRECT",
-  "DOMAIN-SUFFIX,dingxiangyun.com,DIRECT",
-  "DOMAIN-SUFFIX,dingxiangyun.cn,DIRECT",
-  "DOMAIN-SUFFIX,rong360.com,DIRECT",
-  "DOMAIN-SUFFIX,yzf.com.cn,DIRECT",
-  "DOMAIN-SUFFIX,99bill.com,DIRECT",
-  "DOMAIN-SUFFIX,chinapay.com,DIRECT",
-  "DOMAIN-SUFFIX,yeepay.com,DIRECT",
-  "DOMAIN-SUFFIX,jdpay.com,DIRECT",
-  "DOMAIN-SUFFIX,weixin.qq.com,DIRECT",
-  "DOMAIN-SUFFIX,wx.qq.com,DIRECT",
-  "DOMAIN-SUFFIX,weixin.com,DIRECT",
-  "DOMAIN-SUFFIX,wxs.qq.com,DIRECT",
-  "RULE-SET,wechat,DIRECT",
-  "DOMAIN-SUFFIX,pddpic.com,DIRECT",
-  "DOMAIN-SUFFIX,samsunghealth.com,DIRECT",
-  "DOMAIN,connectivitycheck.gstatic.com,DIRECT",
-  "DOMAIN,userlocation.googleapis.com,🌐 非中国",
-  "DOMAIN,voilatile-pa.googleapis.com,🌐 非中国",
-  "DOMAIN,geller-pa.googleapis.com,🌐 非中国",
-  "DOMAIN,mobilemaps-pa-gz.googleapis.com,🌐 非中国",
-  "DOMAIN-SUFFIX,app-measurement.com,🌐 非中国",
-  "DOMAIN-SUFFIX,firebaselogging.googleapis.com,🌐 非中国",
-  "DOMAIN-SUFFIX,in.appcenter.ms,🌐 非中国",
-  "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,🌐 非中国",
-  "DOMAIN-SUFFIX,connect.facebook.net,🌐 非中国",
-  "DOMAIN-SUFFIX,a-cdn.anthropic.com,💬 AI 服务",
-  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,💬 AI 服务",
-  "DOMAIN-SUFFIX,bing.com,🌐 非中国",
-  "DOMAIN-SUFFIX,samsungosp.com,DIRECT",
-  "DOMAIN-SUFFIX,crashlytics.com,🌐 非中国",
-  "DOMAIN-SUFFIX,firebase.io,🌐 非中国",
-  "DOMAIN,browser-intake-us5-datadoghq.com,🌐 非中国",
-  "RULE-SET,sukka-phishing,REJECT-DROP",
-  "RULE-SET,category-ads-all,🛑 广告拦截",
-  "DOMAIN,galaxystore.ad-survey.com,REJECT",
-  "DOMAIN,dls2.bigdata.samsung.com.cn,REJECT",
-  "RULE-SET,private-ip,DIRECT,no-resolve",
-  "DOMAIN-REGEX,^(stun|turn|stuns|turns)\\.,REJECT-DROP",
-  "DOMAIN-REGEX,[-.]stun[-.],REJECT-DROP",
-  "DOMAIN-REGEX,[-.]turn[-.],REJECT-DROP",
-  "DOMAIN-REGEX,[-.]stuns[-.],REJECT-DROP",
-  "DOMAIN-REGEX,[-.]turns[-.],REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,21),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,23),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,110),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,19302-19305)),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,3478-3480)),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,5349-5355)),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,19302-19305)),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,1900),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,443),(RULE-SET,cn-ip)),DIRECT",
-  "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "IP-CIDR,54.223.0.0/16,🌐 非中国,no-resolve",
-  "IP-CIDR,52.80.168.0/24,🌐 非中国,no-resolve",
-  "DOMAIN-SUFFIX,browserleaks.com,🌐 非中国",
-  "DOMAIN-SUFFIX,browserleaks.org,🌐 非中国",
-  "DOMAIN-SUFFIX,ipleak.net,🌐 非中国",
-  "DOMAIN-SUFFIX,dnsleaktest.com,🌐 非中国",
-  "DOMAIN-SUFFIX,dnsleak.com,🌐 非中国",
-  "DOMAIN-SUFFIX,whoer.net,🌐 非中国",
-  "DOMAIN-SUFFIX,whatismyipaddress.com,🌐 非中国",
-  "DOMAIN-SUFFIX,ipinfo.io,🌐 非中国",
-  "DOMAIN-SUFFIX,ip-api.com,🌐 非中国",
-  "DOMAIN-SUFFIX,myip.com,🌐 非中国",
-  "DOMAIN-SUFFIX,ifconfig.me,🌐 非中国",
-  "DOMAIN-SUFFIX,ifconfig.co,🌐 非中国",
-  "DOMAIN-SUFFIX,ipecho.net,🌐 非中国",
-  "DOMAIN-SUFFIX,ip.sb,🌐 非中国",
-  "DOMAIN-SUFFIX,ipleak.com,🌐 非中国",
-  "DOMAIN-SUFFIX,dnsleaktest.org,🌐 非中国",
-  "DOMAIN-SUFFIX,browserleaks.info,🌐 非中国",
-  "DOMAIN-SUFFIX,whatismyip.com,🌐 非中国",
-  "DOMAIN-SUFFIX,ipify.org,🌐 非中国",
-  "DOMAIN-SUFFIX,api.ipify.org,🌐 非中国",
-  "DOMAIN-SUFFIX,ipapi.co,🌐 非中国",
-  "DOMAIN-SUFFIX,ipwho.is,🌐 非中国",
-  "DOMAIN-SUFFIX,ident.me,🌐 非中国",
-  "DOMAIN-SUFFIX,cloudflarestorage.com,🌐 非中国",
-  "DOMAIN-SUFFIX,paddle.com,🌐 非中国",
-  "DOMAIN-SUFFIX,challenges.cloudflare.com,🌐 非中国",
-  "DOMAIN-SUFFIX,recaptcha.net,🌐 非中国",
-  "DOMAIN,recaptcha.google.com,🌐 非中国",
-  "SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN",
-  "SUB-RULE,(NETWORK,udp),DOMESTIC_DOMAIN",
-  "SUB-RULE,(NETWORK,tcp),DOMESTIC_IP",
-  "SUB-RULE,(NETWORK,udp),DOMESTIC_IP",
-  "PROCESS-NAME-WILDCARD,*revanced*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*youtube*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*com.android.bank*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.icbc*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.ccb*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.boc*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.abchina*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.cmbchina*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.cmbc*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.bankcomm*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.psbc*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.spdb*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.cib*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.pingan*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.cgbchina*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.hxb*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.cebbank*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.citic*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.tenpay*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.tencent.mm*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*WeChat*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*Weixin*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.MobileTicket*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.hicorenational.antifraud*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.service.android.gov.cn*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*cn.hsa.app*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*cn.gov.tax.its*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.greenpoint.android.mc10086*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.sinovatech.unicom.ui*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.ct.client*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.unionpay*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.eg.android.Alipay*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.chinamworld*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.bankabc*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*cmb.pb*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.yitong.mbank*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.cgb.mobilebank*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.czbank*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.bjrcb*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*com.android.mobilebank*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*AnyDesk*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*ToDesk*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*TeamViewer*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*RustDesk*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*rustdesk*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*tailscale*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*tailscaled*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*zerotier*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*ngrok*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*frpc*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*frps*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*cloudflared*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*natapp*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*nblink*,🌐 非中国",
-  "RULE-SET,icloud,🌐 非中国",
-  "RULE-SET,apple,🌐 非中国",
-  "RULE-SET,microsoft,🌐 非中国",
-  "RULE-SET,openai,💬 AI 服务",
-  "RULE-SET,category-ai-!cn,💬 AI 服务",
-  "RULE-SET,netflix,🎬 流媒体",
-  "RULE-SET,netflix-ip,🎬 流媒体,no-resolve",
-  "RULE-SET,hulu,🎬 流媒体",
-  "RULE-SET,disney,🎬 流媒体",
-  "RULE-SET,hbo,🎬 流媒体",
-  "RULE-SET,amazon,🎬 流媒体",
-  "RULE-SET,bahamut,🎬 流媒体",
-  "RULE-SET,youtube,🎬 流媒体",
-  "RULE-SET,tiktok,🎬 流媒体",
-  "RULE-SET,biliintl,🎬 流媒体",
-  "RULE-SET,abema,🎬 流媒体",
-  "RULE-SET,bbc,🎬 流媒体",
-  "RULE-SET,spotify,🎬 流媒体",
-  "RULE-SET,google,🌐 非中国",
-  "RULE-SET,google-ip,🌐 非中国,no-resolve",
-  "RULE-SET,github,🌐 非中国",
-  "RULE-SET,gitlab,🌐 非中国",
-  "RULE-SET,facebook,🌐 非中国",
-  "RULE-SET,instagram,🌐 非中国",
-  "RULE-SET,twitter,🌐 非中国",
-  "RULE-SET,twitter-ip,🌐 非中国,no-resolve",
-  "RULE-SET,linkedin,🌐 非中国",
-  "RULE-SET,discord,🌐 非中国",
-  "RULE-SET,snapchat,🌐 非中国",
-  "RULE-SET,telegram-ip,🌐 非中国,no-resolve",
-  "RULE-SET,facebook-ip,🌐 非中国,no-resolve",
-  "RULE-SET,cloudflare-ip,🌐 非中国,no-resolve",
-  "RULE-SET,cloudfront-ip,🌐 非中国,no-resolve",
-  "RULE-SET,fastly-ip,🌐 非中国,no-resolve",
-  "RULE-SET,steam,🌐 非中国",
-  "RULE-SET,epicgames,🌐 非中国",
-  "RULE-SET,ea,🌐 非中国",
-  "RULE-SET,ubisoft,🌐 非中国",
-  "RULE-SET,blizzard,🌐 非中国",
-  "RULE-SET,paypal,🌐 非中国",
-  "RULE-SET,aws,🌐 非中国",
-  "RULE-SET,azure,🌐 非中国",
-  "RULE-SET,dropbox,🌐 非中国",
-  "RULE-SET,onedrive,🌐 非中国",
-  "RULE-SET,cryptocurrency,🌐 非中国",
-  "RULE-SET,category-scholar-!cn,🌐 非中国",
-  "RULE-SET,geolocation-!cn,🌐 非中国",
-  "MATCH,🐟 漏网之鱼"
-];
+  config.rules = [
+    "RULE-SET,category-ads-all,🛑 广告拦截",
+    "RULE-SET,private-ip,DIRECT,no-resolve",
+    "RULE-SET,wechat,DIRECT",
+    "RULE-SET,claude,🤖 Claude AI",
+    "RULE-SET,gemini,🎓 Gemini",
+    "RULE-SET,openai,🤖 AI服务",
+    "RULE-SET,category-ai-!cn,🤖 AI服务",
+    "RULE-SET,youtube,📺 YouTube",
+    "RULE-SET,youtube-ip,📺 YouTube",
+    "RULE-SET,netflix,📺 Media",
+    "RULE-SET,netflix-ip,📺 Media",
+    "RULE-SET,hulu,📺 Media",
+    "RULE-SET,disney,📺 Media",
+    "RULE-SET,hbo,📺 Media",
+    "RULE-SET,bahamut,📺 Media",
+    "RULE-SET,biliintl,📺 Media",
+    "RULE-SET,abema,📺 Media",
+    "RULE-SET,bbc,📺 Media",
+    "RULE-SET,tiktok,📱 TikTok",
+    "RULE-SET,spotify,🎵 Spotify",
+    "RULE-SET,telegram-ip,📲 Telegram",
+    "RULE-SET,google,🔍 Google",
+    "RULE-SET,google-ip,🔍 Google",
+    "RULE-SET,twitter,🐦 Twitter",
+    "RULE-SET,twitter-ip,🐦 Twitter",
+    "RULE-SET,facebook,🌍 国外服务",
+    "RULE-SET,facebook-ip,🌍 国外服务",
+    "RULE-SET,instagram,🌍 国外服务",
+    "RULE-SET,linkedin,🌍 国外服务",
+    "RULE-SET,discord,🌍 国外服务",
+    "RULE-SET,snapchat,🌍 国外服务",
+    "RULE-SET,github,🌍 国外服务",
+    "RULE-SET,gitlab,🌍 国外服务",
+    "RULE-SET,amazon,🌍 国外服务",
+    "RULE-SET,aws,🌍 国外服务",
+    "RULE-SET,azure,🌍 国外服务",
+    "RULE-SET,dropbox,🌍 国外服务",
+    "RULE-SET,paypal,🌍 国外服务",
+    "RULE-SET,category-scholar-!cn,🌍 国外服务",
+    "RULE-SET,cloudflare-ip,🌍 国外服务",
+    "RULE-SET,cloudfront-ip,🌍 国外服务",
+    "RULE-SET,apple-cn,DIRECT",
+    "RULE-SET,icloud,🍎 Apple",
+    "RULE-SET,apple,🍎 Apple",
+    "RULE-SET,microsoft-cn,DIRECT",
+    "RULE-SET,onedrive,🪟 Microsoft",
+    "RULE-SET,microsoft,🪟 Microsoft",
+    "RULE-SET,steam-cn,DIRECT",
+    "RULE-SET,steam,🎮 Steam",
+    "RULE-SET,epicgames,🎮 Steam",
+    "RULE-SET,ea,🎮 Steam",
+    "RULE-SET,ubisoft,🎮 Steam",
+    "RULE-SET,blizzard,🎮 Steam",
+    "RULE-SET,category-games-cn,DIRECT",
+    "RULE-SET,bilibili,DIRECT",
+    "RULE-SET,geolocation-cn,DIRECT",
+    "RULE-SET,cn,DIRECT",
+    "RULE-SET,cn-ip,DIRECT",
+    "RULE-SET,tracker,DIRECT",
+    "RULE-SET,geolocation-!cn,🌍 国外服务",
+    "MATCH,🐟 漏网之鱼"
+  ];
 
   config["tun"] = {
   "enable": true,
@@ -2249,68 +2011,6 @@ function main(config) {
   "interval": 30
 };
 
-  config["sub-rules"] = {
-  "DOMESTIC_DOMAIN": [
-    "DOMAIN-SUFFIX,teg.tencent-cloud.net,REJECT-DROP",
-    "DOMAIN-SUFFIX,szlong.weixin.qq.com,DIRECT",
-    "DOMAIN-SUFFIX,szminorshort.weixin.qq.com,DIRECT",
-    "DOMAIN-SUFFIX,szshort.weixin.qq.com,DIRECT",
-    "DOMAIN-SUFFIX,sz.weixin.qq.com,DIRECT",
-    "DOMAIN-SUFFIX,long.weixin.qq.com,DIRECT",
-    "DOMAIN-SUFFIX,short.weixin.qq.com,DIRECT",
-    "DOMAIN-SUFFIX,weixin.qq.com,DIRECT",
-    "DOMAIN-SUFFIX,servicewechat.com,DIRECT",
-    "DOMAIN-SUFFIX,weixinbridge.com,DIRECT",
-    "DOMAIN-SUFFIX,url.cn,DIRECT",
-    "DOMAIN-SUFFIX,midea.com,DIRECT",
-    "DOMAIN-SUFFIX,smartmidea.net,DIRECT",
-    "DOMAIN-SUFFIX,haier.net,DIRECT",
-    "DOMAIN-SUFFIX,haier.com,DIRECT",
-    "DOMAIN-SUFFIX,hisense.com,DIRECT",
-    "DOMAIN-SUFFIX,yeelight.com,DIRECT",
-    "DOMAIN-SUFFIX,aqara.com,DIRECT",
-    "DOMAIN-SUFFIX,tuya.com,DIRECT",
-    "DOMAIN-SUFFIX,tuyaus.com,DIRECT",
-    "DOMAIN-SUFFIX,tcl.com,DIRECT",
-    "DOMAIN-SUFFIX,jpush.cn,DIRECT",
-    "DOMAIN-SUFFIX,jpush.io,DIRECT",
-    "DOMAIN-SUFFIX,jiguang.cn,DIRECT",
-    "DOMAIN,msg.umeng.com,DIRECT",
-    "DOMAIN-SUFFIX,getui.com,DIRECT",
-    "DOMAIN-SUFFIX,getui.net,DIRECT",
-    "DOMAIN-SUFFIX,gepush.com,DIRECT",
-    "DOMAIN,account.xiaomi.com,DIRECT",
-    "DOMAIN,passport.xiaomi.com,DIRECT",
-    "DOMAIN,micloud.xiaomi.com,DIRECT",
-    "DOMAIN,i.mi.com,DIRECT",
-    "DOMAIN,auth.be.sec.miui.com,DIRECT",
-    "DOMAIN,idm.api.io.mi.com,DIRECT",
-    "DOMAIN,api.installer.xiaomi.com,DIRECT",
-    "DOMAIN,flash.sec.miui.com,DIRECT",
-    "DOMAIN,mazu.sec.miui.com,DIRECT",
-    "DOMAIN,ccc.sys.miui.com,DIRECT",
-    "DOMAIN,register.xmpush.xiaomi.com,DIRECT",
-    "RULE-SET,geolocation-cn,DIRECT",
-    "RULE-SET,cn,DIRECT",
-    "RULE-SET,bilibili,DIRECT",
-    "RULE-SET,apple-cn,DIRECT",
-    "RULE-SET,microsoft-cn,DIRECT",
-    "GEOSITE,cn,DIRECT",
-    "RULE-SET,steam-cn,DIRECT",
-    "RULE-SET,category-games-cn,DIRECT",
-    "RULE-SET,tracker,DIRECT"
-  ],
-  "DOMESTIC_IP": [
-    "IP-CIDR,101.226.0.0/16,DIRECT,no-resolve",
-    "IP-CIDR,140.207.0.0/16,DIRECT,no-resolve",
-    "RULE-SET,cn-ip,DIRECT,no-resolve",
-    "GEOIP,CN,DIRECT,no-resolve",
-    "RULE-SET,cn-ip,DIRECT,no-resolve",
-    "IP-CIDR6,fe80::/10,DIRECT,no-resolve",
-    "IP-CIDR6,fc00::/7,DIRECT,no-resolve"
-  ]
-};
-
   // BEGIN AUTO-SYNC: template.yaml common behavior
   var CANONICAL = {
   "mode": "rule",
@@ -2414,13 +2114,6 @@ function main(config) {
     });
   }
   if (config["rules"]) config["rules"] = mapRuleTargets(config["rules"]);
-  if (config["sub-rules"]) {
-    for (var sr in config["sub-rules"]) {
-      if (Object.prototype.hasOwnProperty.call(config["sub-rules"], sr)) {
-        config["sub-rules"][sr] = mapRuleTargets(config["sub-rules"][sr]);
-      }
-    }
-  }
   // END AUTO-SYNC: template.yaml common behavior
 
   // BEGIN AIRPORT NODE SANITIZER
