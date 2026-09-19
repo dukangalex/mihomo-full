@@ -67,11 +67,22 @@ for (const name of serviceGroups) {
 
 const ad = byName("🛑 广告拦截");
 if (!ad.proxies.includes("DIRECT")) fail("DIRECT exception missing from ad blocking group");
+if (!ad.proxies.includes("REJECT-DROP")) fail("REJECT-DROP default missing from ad blocking group");
 const remote = byName("🔧 远控工具");
 if (!remote.proxies.includes("DIRECT")) fail("DIRECT exception missing from remote-control group");
 
 const select = byName("🚀 节点选择");
 if (!select.proxies.includes("DIRECT")) fail("node selection group lost DIRECT fallback");
+
+const numbered = sandbox.__airportMain({
+  proxies: [
+    { name: "HK1", type: "vless", server: "198.51.100.21", port: 443 },
+    { name: "US03", type: "vless", server: "198.51.100.22", port: 443 },
+  ],
+});
+const numberedGroups = Array.isArray(numbered["proxy-groups"]) ? numbered["proxy-groups"] : [];
+if (!numberedGroups.some(g => g && g.name === "🇭🇰 香港节点")) fail("HK1 should match Hong Kong");
+if (!numberedGroups.some(g => g && g.name === "🇺🇸 美国节点")) fail("US03 should match United States");
 
 ok("full-overwrite input isolation");
 ok("airport proxy preservation");
@@ -79,3 +90,4 @@ ok("chain field isolation");
 ok("strategy-group contract");
 ok("non-China groups exclude DIRECT");
 ok("ad/remote DIRECT exceptions preserved");
+ok("numbered region node tags");

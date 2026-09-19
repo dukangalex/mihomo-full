@@ -86,10 +86,13 @@ def upsert_object(text,marker,value):
     return replace_assignment(text,marker,value) if start>=0 else add_assignment(text,marker,value)
 
 def enforce_full_overwrite_contract(text):
-    anchor='  var originalProxies = config.proxies || [];'
     replacement=('  var sourceConfig = config || {};\n  var originalProxies = sourceConfig.proxies || [];\n'
                  '  // Full-overwrite contract: every airport-supplied field except proxies is discarded.\n  config = {};')
     if replacement in text: return text
+    already=('  var sourceConfig = config || {};\n  var originalProxies = sourceConfig.proxies || [];\n  config = {};')
+    if already in text:
+        return text.replace(already, replacement, 1)
+    anchor='  var originalProxies = config.proxies || [];'
     if anchor not in text: raise RuntimeError("full-overwrite anchor not found: expected config.proxies capture")
     if '  var sourceConfig = config || {};' in text or '  // Full-overwrite contract:' in text: raise RuntimeError("partial full-overwrite transformation detected")
     return text.replace(anchor,replacement,1)
@@ -131,7 +134,7 @@ def apply_airport_strategy_groups(text):
   var SELECT_NAME = "🚀 节点选择";
   var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, icon: "" };
   var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "" };
-  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", "DIRECT"], icon: "" };
   var aiGroup = { name: "💬 AI 服务", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };
   var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: [SELECT_NAME, AUTO_NAME, "DIRECT"], icon: "" };

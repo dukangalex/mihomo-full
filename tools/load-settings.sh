@@ -45,11 +45,17 @@ PY
 
 command -v python3 >/dev/null 2>&1 || { echo '[✗] 需要 python3' >&2; return 1 2>/dev/null || exit 1; }
 
+_settings_parsed="$(mktemp)"
+if ! _load_settings_python > "$_settings_parsed"; then
+  rm -f -- "$_settings_parsed"
+  return 1 2>/dev/null || exit 1
+fi
 while IFS=$'\t' read -r key value; do
-  case " $ALLOWED_KEYS " in *" $key "*) ;; *) echo "[✗] 未授权配置项: $key" >&2; return 1 2>/dev/null || exit 1;; esac
+  case " $ALLOWED_KEYS " in *" $key "*) ;; *) echo "[✗] 未授权配置项: $key" >&2; rm -f -- "$_settings_parsed"; return 1 2>/dev/null || exit 1;; esac
   printf -v "$key" '%s' "$value"
   export "$key"
-done < <(_load_settings_python)
+done < "$_settings_parsed"
+rm -f -- "$_settings_parsed"
 
 [[ -n "${AIRPORT_SUB_URL:-}" ]] || { echo '[✗] 缺少 AIRPORT_SUB_URL' >&2; return 1 2>/dev/null || exit 1; }
 [[ -n "${FIXED_FULL_CONFIG_PATH:-}" ]] || { echo '[✗] 缺少 FIXED_FULL_CONFIG_PATH' >&2; return 1 2>/dev/null || exit 1; }

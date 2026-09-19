@@ -27,7 +27,9 @@ systemctl disable --now "$SERVICE" 2>/dev/null || true
 rm -f -- "$SERVICE_FILE"
 systemctl daemon-reload || true
 rm -f -- "$ENV_FILE"
-rm -rf -- "$BOT_DIR"
+# Keep telegram-bot scripts so the operator can reinstall without re-running update.sh.
+# Traffic snapshot (vps-usage.json) is also retained.
 
 echo "Telegram Bot 已卸载。"
 echo "Mihomo Full 主配置、Mihomo 服务和 v2ray-agent 未被操作。"
+echo "如需重新启用：bash ${BOT_DIR}/install-telegram-bot.sh"

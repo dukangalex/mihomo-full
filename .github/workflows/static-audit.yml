@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   audit:
@@ -42,7 +42,7 @@ jobs:
       - name: VPS traffic state regression audit
         run: python tools/test-vps-usage.py
       - name: Shell syntax audit
-        run: bash -n generate.sh manage.sh install.sh uninstall.sh update.sh tools/load-settings.sh telegram-bot/install-telegram-bot.sh
+        run: bash -n generate.sh manage.sh install.sh uninstall.sh update.sh tools/load-settings.sh telegram-bot/install-telegram-bot.sh telegram-bot/uninstall-bot.sh
       - name: Python syntax audit
         run: python -m py_compile tools/sync-airport-overwrite.py tools/normalize-airport-strategy.py tools/run-static-audit.py tools/generate-endpoint.py tools/test-endpoint.py tools/test-vps-usage.py telegram-bot/bot.py telegram-bot/vps_usage.py tools/static-audit.py
       - name: JavaScript syntax audit

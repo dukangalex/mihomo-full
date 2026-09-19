@@ -31,7 +31,7 @@ def main() -> None:
   // Airport service groups: no DIRECT in non-China traffic groups.
   // Each group exposes: total-node auto selection -> detected region groups -> node selection.
   var serviceProxies = [AUTO_NAME].concat(regionNames).concat([SELECT_NAME]);
-  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT", "DIRECT"], icon: "" };
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", "DIRECT"], icon: "" };
   var aiGroup = { name: "💬 AI 服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
   var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: serviceProxies.slice(), icon: "" };
   var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: serviceProxies.slice(), icon: "" };

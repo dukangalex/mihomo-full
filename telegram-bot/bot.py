@@ -223,7 +223,7 @@ async def confirm(update, context):
     await q.answer()
     _, action = q.data.split(":", 1)
     pending = context.user_data.get("pending")
-    if pending != action and action != "uninstall":
+    if pending != action and action not in {"uninstall", "bot_uninstall"}:
         await q.edit_message_text("操作已过期，请重新选择。", reply_markup=menu()); return
     context.user_data.pop("pending", None)
     if action == "generate":
