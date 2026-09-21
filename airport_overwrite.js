@@ -4,6 +4,7 @@
  * 公共行为与 template.yaml 同步。
  * 框架：MyClash 全量分流组；MY 只保留 100+ 地区三层组（自动识别）和安全基线。
  * 哔哩哔哩是可选组，默认 直连，不再把 B 站钉死在底层 DIRECT。
+ * Emby / EHentai 来自 MyClash，用域名/进程规则，不加新 MRS。
  * 禁止引用已 404 的旧 Gemini/Claude/YouTube-IP 规则集文件名
  */
 function main(config) {
@@ -377,13 +378,15 @@ function main(config) {
   var metaGroup = serviceGroup("📘 Meta", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Facebook.png", "", false, false);
   var lineGroup = serviceGroup("💬 Line", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Line.png", "🇯🇵 日本节点", false, false);
   var netflixGroup = serviceGroup("📺 Netflix", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png", "", false, false);
+  var embyGroup = serviceGroup("🎬 Emby", "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Emby.svg", "", true, false);
   var spotifyGroup = serviceGroup("🎵 Spotify", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Spotify.png", "", true, false);
   var steamGroup = serviceGroup("🎮 Steam", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Steam.png", "", true, false);
   var pikpakGroup = serviceGroup("📦 PikPak", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Cloud.png", "", true, false);
   var cryptoGroup = serviceGroup("🪙 Crypto", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bitcoin.png", "🇯🇵 日本节点", false, false);
+  var ehentaiGroup = serviceGroup("📖 EHentai", "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Ehentai.svg", "🇺🇸 美国节点", true, false);
   var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png" };
 
-  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
+  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
 
   var ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
   var ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
@@ -1294,6 +1297,21 @@ function main(config) {
   "RULE-SET,cryptocurrency,🪙 Crypto",
   "RULE-SET,category-scholar-!cn,默认代理",
   "RULE-SET,geolocation-!cn,默认代理",
+  "DOMAIN-SUFFIX,mb3admin.com,🎬 Emby",
+  "DOMAIN-SUFFIX,nubebelle.com,🎬 Emby",
+  "DOMAIN-KEYWORD,emby,🎬 Emby",
+  "PROCESS-NAME,com.mb.android,🎬 Emby",
+  "PROCESS-NAME,tv.emby.embyatv,🎬 Emby",
+  "PROCESS-NAME,com.hush.yamby,🎬 Emby",
+  "PROCESS-NAME,com.jellycine.app,🎬 Emby",
+  "PROCESS-NAME,com.mountains.hills,🎬 Emby",
+  "PROCESS-NAME,RodelPlayer.App.exe,🎬 Emby",
+  "PROCESS-NAME,com.feifeiduck.capyplayer,🎬 Emby",
+  "DOMAIN-SUFFIX,e-hentai.org,📖 EHentai",
+  "DOMAIN-SUFFIX,exhentai.org,📖 EHentai",
+  "DOMAIN-SUFFIX,ehgt.org,📖 EHentai",
+  "DOMAIN-SUFFIX,hath.network,📖 EHentai",
+  "DOMAIN-SUFFIX,e-hentai.to,📖 EHentai",
   "MATCH,🐟 漏网之鱼"
 ];
 

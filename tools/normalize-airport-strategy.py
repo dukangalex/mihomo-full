@@ -9,6 +9,7 @@ Airport UI policy after the MyClash merge:
 - Homogeneous catch-alls (Gemini/Claude clones, 流媒体, 社交媒体, 游戏平台,
   云服务, 教育资源, 金融服务, 非中国, 私有网络, 国内服务, Github) are removed
 - 哔哩哔哩 is a real group with 直连 first (not a dead bottom-layer DIRECT)
+- Emby / EHentai come from MyClash (no extra MRS files; domain/process rules)
 """
 from pathlib import Path
 
@@ -19,6 +20,7 @@ START = '  var AUTO_NAME = "⚡ 自动选择";'
 END = '  var ruleProviderCommonDomain ='
 
 ICON = "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color"
+MYCLASH_ICON = "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg"
 
 BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
   var LB_NAME = "⚖️ 负载均衡";
@@ -85,13 +87,15 @@ BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
   var metaGroup = serviceGroup("📘 Meta", "''' + ICON + r'''/Facebook.png", "", false, false);
   var lineGroup = serviceGroup("💬 Line", "''' + ICON + r'''/Line.png", "🇯🇵 日本节点", false, false);
   var netflixGroup = serviceGroup("📺 Netflix", "''' + ICON + r'''/Netflix.png", "", false, false);
+  var embyGroup = serviceGroup("🎬 Emby", "''' + MYCLASH_ICON + r'''/Emby.svg", "", true, false);
   var spotifyGroup = serviceGroup("🎵 Spotify", "''' + ICON + r'''/Spotify.png", "", true, false);
   var steamGroup = serviceGroup("🎮 Steam", "''' + ICON + r'''/Steam.png", "", true, false);
   var pikpakGroup = serviceGroup("📦 PikPak", "''' + ICON + r'''/Cloud.png", "", true, false);
   var cryptoGroup = serviceGroup("🪙 Crypto", "''' + ICON + r'''/Bitcoin.png", "🇯🇵 日本节点", false, false);
+  var ehentaiGroup = serviceGroup("📖 EHentai", "''' + MYCLASH_ICON + r'''/Ehentai.svg", "🇺🇸 美国节点", true, false);
   var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "''' + ICON + r'''/Stack.png" };
 
-  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
+  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
 
 '''
 

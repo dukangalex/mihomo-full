@@ -204,8 +204,8 @@ REQUIRED_AIRPORT_GROUPS = (
     "默认代理", "🚀 节点选择", "⚡ 自动选择", "⚖️ 负载均衡", "直连",
     "🛑 广告拦截", "🔧 远控工具", "💬 AI 服务", "🔔 FCM", "📺 哔哩哔哩",
     "📹 油管视频", "🔍 谷歌服务", "📲 电报消息", "Ⓜ️ 微软服务", "🍏 苹果服务",
-    "📱 TikTok", "🐦 Twitter", "📘 Meta", "💬 Line", "📺 Netflix", "🎵 Spotify",
-    "🎮 Steam", "📦 PikPak", "🪙 Crypto", "🐟 漏网之鱼",
+    "📱 TikTok", "🐦 Twitter", "📘 Meta", "💬 Line", "📺 Netflix", "🎬 Emby",
+    "🎵 Spotify", "🎮 Steam", "📦 PikPak", "🪙 Crypto", "📖 EHentai", "🐟 漏网之鱼",
 )
 BANNED_AIRPORT_GROUPS = (
     "✨ Gemini", "🤖 Claude AI", "🏠 私有网络", "🔒 国内服务", "🐱 Github",
@@ -218,6 +218,23 @@ DEAD_RULESET_URLS = (
     "/geo/geoip/youtube.mrs",
 )
 BILIBILI_RULE = "RULE-SET,bilibili,📺 哔哩哔哩"
+AIRPORT_ONLY_RULES = (
+    "DOMAIN-SUFFIX,mb3admin.com,🎬 Emby",
+    "DOMAIN-SUFFIX,nubebelle.com,🎬 Emby",
+    "DOMAIN-KEYWORD,emby,🎬 Emby",
+    "PROCESS-NAME,com.mb.android,🎬 Emby",
+    "PROCESS-NAME,tv.emby.embyatv,🎬 Emby",
+    "PROCESS-NAME,com.hush.yamby,🎬 Emby",
+    "PROCESS-NAME,com.jellycine.app,🎬 Emby",
+    "PROCESS-NAME,com.mountains.hills,🎬 Emby",
+    "PROCESS-NAME,RodelPlayer.App.exe,🎬 Emby",
+    "PROCESS-NAME,com.feifeiduck.capyplayer,🎬 Emby",
+    "DOMAIN-SUFFIX,e-hentai.org,📖 EHentai",
+    "DOMAIN-SUFFIX,exhentai.org,📖 EHentai",
+    "DOMAIN-SUFFIX,ehgt.org,📖 EHentai",
+    "DOMAIN-SUFFIX,hath.network,📖 EHentai",
+    "DOMAIN-SUFFIX,e-hentai.to,📖 EHentai",
+)
 
 
 def remap_one_rule(rule):
@@ -247,6 +264,7 @@ def remap_airport_rules(rules):
     out = []
     seen = set()
     injected = False
+    extras_injected = False
     for rule in rules or []:
         mapped = remap_one_rule(rule)
         if (
@@ -258,12 +276,27 @@ def remap_airport_rules(rules):
             out.append(BILIBILI_RULE)
             seen.add(BILIBILI_RULE)
             injected = True
+        if (
+            not extras_injected
+            and isinstance(mapped, str)
+            and mapped.startswith("MATCH,")
+        ):
+            for extra in AIRPORT_ONLY_RULES:
+                if extra not in seen:
+                    out.append(extra)
+                    seen.add(extra)
+            extras_injected = True
         if mapped in seen:
             continue
         seen.add(mapped)
         out.append(mapped)
     if not injected and BILIBILI_RULE not in seen:
         out.append(BILIBILI_RULE)
+    if not extras_injected:
+        for extra in AIRPORT_ONLY_RULES:
+            if extra not in seen:
+                out.append(extra)
+                seen.add(extra)
     return out
 
 
@@ -313,12 +346,14 @@ def apply_airport_strategy_groups(text):
   var metaGroup = { name: "📘 Meta", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
   var lineGroup = { name: "💬 Line", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
   var netflixGroup = { name: "📺 Netflix", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var embyGroup = { name: "🎬 Emby", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
   var spotifyGroup = { name: "🎵 Spotify", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
   var steamGroup = { name: "🎮 Steam", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
   var pikpakGroup = { name: "📦 PikPak", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
   var cryptoGroup = { name: "🪙 Crypto", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var ehentaiGroup = { name: "📖 EHentai", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
   var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, SELECT_NAME], icon: "" };
-  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, fallbackGroup];
+  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup];
 
 '''
     return text[:start]+block+text[end:]
@@ -349,6 +384,8 @@ def validate_airport(text):
     if '"RULE-SET,youtube,📹 油管视频"' not in text: raise RuntimeError("YouTube must route to the dedicated YouTube group")
     if '"RULE-SET,google,🔍 谷歌服务"' not in text: raise RuntimeError("Google must route to the dedicated Google group")
     if BILIBILI_RULE not in text and '"RULE-SET,bilibili,📺 哔哩哔哩"' not in text: raise RuntimeError("Bilibili must route to the dedicated Bilibili group")
+    if '"DOMAIN-KEYWORD,emby,🎬 Emby"' not in text: raise RuntimeError("Emby must route to the dedicated Emby group")
+    if '"DOMAIN-SUFFIX,e-hentai.org,📖 EHentai"' not in text: raise RuntimeError("EHentai must route to the dedicated EHentai group")
     if '"PROCESS-NAME-WILDCARD,*AnyDesk*,🔧 远控工具"' not in text: raise RuntimeError("remote-control processes must stay on the remote-control group")
     for group in REQUIRED_AIRPORT_GROUPS:
         if ('"' + group + '"') not in text and ("'" + group + "'") not in text:
