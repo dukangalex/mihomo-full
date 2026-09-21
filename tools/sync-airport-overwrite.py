@@ -381,7 +381,7 @@ def validate_airport(text):
     if 'var sourceConfig = config || {};' not in text or 'var originalProxies = sourceConfig.proxies || [];' not in text: raise RuntimeError("airport full-overwrite contract is missing")
     if text.count('  config = {};')!=1: raise RuntimeError("airport full-overwrite contract must reset config exactly once")
     if text.find('  config = {};')<text.find('  var originalProxies = sourceConfig.proxies || []'): raise RuntimeError("airport proxies must be captured before config reset")
-    if '"RULE-SET,category-ads-all,广告拦截"' not in text: raise RuntimeError("airport ad rule is not connected to the ad group")
+    if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text: raise RuntimeError("airport ad rule is not connected to the ad group")
     if '"DOMAIN-SUFFIX,claude.ai,AI Services"' not in text: raise RuntimeError("Claude.ai rule is missing")
     if '"RULE-SET,youtube,YouTube"' not in text: raise RuntimeError("YouTube must route to the dedicated YouTube group")
     if '"RULE-SET,google,Google"' not in text: raise RuntimeError("Google must route to the dedicated Google group")
