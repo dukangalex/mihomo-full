@@ -125,16 +125,16 @@ def restore_airport_exceptions(text):
     return text
 
 RULESET_TARGET = {
-    "google-gemini": "✨ Gemini",
-    "anthropic": "🤖 Claude AI",
+    "google-gemini": "💬 AI 服务",
+    "anthropic": "💬 AI 服务",
     "openai": "💬 AI 服务",
     "category-ai-!cn": "💬 AI 服务",
     "youtube": "📹 油管视频",
     "google": "🔍 谷歌服务",
     "google-ip": "🔍 谷歌服务",
     "googlefcm": "🔔 FCM",
-    "github": "🐱 Github",
-    "gitlab": "🐱 Github",
+    "github": "默认代理",
+    "gitlab": "默认代理",
     "apple": "🍏 苹果服务",
     "icloud": "🍏 苹果服务",
     "microsoft": "Ⓜ️ 微软服务",
@@ -148,66 +148,76 @@ RULESET_TARGET = {
     "instagram": "📘 Meta",
     "meta": "📘 Meta",
     "line": "💬 Line",
-    "discord": "🌐 社交媒体",
-    "snapchat": "🌐 社交媒体",
-    "linkedin": "🌐 社交媒体",
+    "discord": "默认代理",
+    "snapchat": "默认代理",
+    "linkedin": "默认代理",
     "netflix": "📺 Netflix",
     "netflix-ip": "📺 Netflix",
     "spotify": "🎵 Spotify",
-    "hulu": "🎬 流媒体",
-    "disney": "🎬 流媒体",
-    "hbo": "🎬 流媒体",
-    "amazon": "🎬 流媒体",
-    "bahamut": "🎬 流媒体",
-    "biliintl": "🎬 流媒体",
-    "abema": "🎬 流媒体",
-    "bbc": "🎬 流媒体",
+    "hulu": "默认代理",
+    "disney": "默认代理",
+    "hbo": "默认代理",
+    "amazon": "默认代理",
+    "bahamut": "默认代理",
+    "biliintl": "📺 哔哩哔哩",
+    "bilibili": "📺 哔哩哔哩",
+    "abema": "默认代理",
+    "bbc": "默认代理",
     "steam": "🎮 Steam",
-    "epicgames": "🎮 游戏平台",
-    "ea": "🎮 游戏平台",
-    "ubisoft": "🎮 游戏平台",
-    "blizzard": "🎮 游戏平台",
-    "paypal": "💰 金融服务",
+    "epicgames": "🎮 Steam",
+    "ea": "🎮 Steam",
+    "ubisoft": "🎮 Steam",
+    "blizzard": "🎮 Steam",
+    "paypal": "默认代理",
     "cryptocurrency": "🪙 Crypto",
-    "aws": "☁️ 云服务",
-    "azure": "☁️ 云服务",
-    "dropbox": "☁️ 云服务",
-    "onedrive": "☁️ 云服务",
-    "cloudflare-ip": "☁️ 云服务",
-    "cloudfront-ip": "☁️ 云服务",
-    "fastly-ip": "☁️ 云服务",
-    "category-scholar-!cn": "📚 教育资源",
+    "aws": "默认代理",
+    "azure": "默认代理",
+    "dropbox": "默认代理",
+    "onedrive": "默认代理",
+    "cloudflare-ip": "默认代理",
+    "cloudfront-ip": "默认代理",
+    "fastly-ip": "默认代理",
+    "category-scholar-!cn": "默认代理",
     "pikpak": "📦 PikPak",
-    "geolocation-!cn": "🌐 非中国",
+    "geolocation-!cn": "默认代理",
 }
 GROUP_TARGET = {
     "AI服务": "💬 AI 服务",
-    "国外服务": "🌐 非中国",
-    "流媒体": "🎬 流媒体",
+    "国外服务": "默认代理",
+    "流媒体": "默认代理",
     "漏网之鱼": "🐟 漏网之鱼",
     "远控工具": "🔧 远控工具",
 }
 DOMAIN_TARGET = {
-    "claude.ai": "🤖 Claude AI",
-    "anthropic.com": "🤖 Claude AI",
-    "a-cdn.anthropic.com": "🤖 Claude AI",
-    "assets-proxy.anthropic.com": "🤖 Claude AI",
-    "gemini.google.com": "✨ Gemini",
-    "aistudio.google.com": "✨ Gemini",
+    "claude.ai": "💬 AI 服务",
+    "anthropic.com": "💬 AI 服务",
+    "a-cdn.anthropic.com": "💬 AI 服务",
+    "assets-proxy.anthropic.com": "💬 AI 服务",
+    "gemini.google.com": "💬 AI 服务",
+    "aistudio.google.com": "💬 AI 服务",
+}
+PROCESS_TARGET = {
+    "*revanced*": "📹 油管视频",
+    "*youtube*": "📹 油管视频",
 }
 REQUIRED_AIRPORT_GROUPS = (
-    "🚀 节点选择", "⚡ 自动选择", "🛑 广告拦截", "💬 AI 服务", "✨ Gemini", "🤖 Claude AI",
-    "🔔 FCM", "📺 哔哩哔哩", "📹 油管视频", "🔍 谷歌服务", "🏠 私有网络", "🔒 国内服务",
-    "🔧 远控工具", "📲 电报消息", "🐱 Github", "Ⓜ️ 微软服务", "🍏 苹果服务", "📱 TikTok",
-    "🐦 Twitter", "📘 Meta", "💬 Line", "🌐 社交媒体", "📺 Netflix", "🎵 Spotify",
-    "🎬 流媒体", "🎮 Steam", "🎮 游戏平台", "📦 PikPak", "🪙 Crypto", "📚 教育资源",
-    "💰 金融服务", "☁️ 云服务", "🌐 非中国", "🐟 漏网之鱼",
+    "默认代理", "🚀 节点选择", "⚡ 自动选择", "⚖️ 负载均衡", "直连",
+    "🛑 广告拦截", "🔧 远控工具", "💬 AI 服务", "🔔 FCM", "📺 哔哩哔哩",
+    "📹 油管视频", "🔍 谷歌服务", "📲 电报消息", "Ⓜ️ 微软服务", "🍏 苹果服务",
+    "📱 TikTok", "🐦 Twitter", "📘 Meta", "💬 Line", "📺 Netflix", "🎵 Spotify",
+    "🎮 Steam", "📦 PikPak", "🪙 Crypto", "🐟 漏网之鱼",
+)
+BANNED_AIRPORT_GROUPS = (
+    "✨ Gemini", "🤖 Claude AI", "🏠 私有网络", "🔒 国内服务", "🐱 Github",
+    "🌐 社交媒体", "🎬 流媒体", "🎮 游戏平台", "📚 教育资源", "💰 金融服务",
+    "☁️ 云服务", "🌐 非中国",
 )
 DEAD_RULESET_URLS = (
     "/geo/geosite/gemini.mrs",
     "/geo/geosite/claude.mrs",
     "/geo/geoip/youtube.mrs",
 )
+BILIBILI_RULE = "RULE-SET,bilibili,📺 哔哩哔哩"
 
 
 def remap_one_rule(rule):
@@ -225,6 +235,9 @@ def remap_one_rule(rule):
     if kind in ("DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD") and len(parts) >= 3 and parts[1] in DOMAIN_TARGET:
         parts[target_idx] = DOMAIN_TARGET[parts[1]]
         return ",".join(parts)
+    if kind.startswith("PROCESS-NAME") and len(parts) >= 3 and parts[1] in PROCESS_TARGET:
+        parts[target_idx] = PROCESS_TARGET[parts[1]]
+        return ",".join(parts)
     if parts[target_idx] in GROUP_TARGET:
         parts[target_idx] = GROUP_TARGET[parts[target_idx]]
     return ",".join(parts)
@@ -233,12 +246,39 @@ def remap_one_rule(rule):
 def remap_airport_rules(rules):
     out = []
     seen = set()
+    injected = False
     for rule in rules or []:
         mapped = remap_one_rule(rule)
+        if (
+            not injected
+            and isinstance(mapped, str)
+            and mapped.startswith("SUB-RULE,")
+            and BILIBILI_RULE not in seen
+        ):
+            out.append(BILIBILI_RULE)
+            seen.add(BILIBILI_RULE)
+            injected = True
         if mapped in seen:
             continue
         seen.add(mapped)
         out.append(mapped)
+    if not injected and BILIBILI_RULE not in seen:
+        out.append(BILIBILI_RULE)
+    return out
+
+
+def tune_sub_rules(sub):
+    if not isinstance(sub, dict):
+        return sub
+    drop = {"RULE-SET,bilibili,DIRECT", BILIBILI_RULE}
+    out = {}
+    for key, rules in sub.items():
+        cleaned = []
+        for rule in rules or []:
+            if rule in drop:
+                continue
+            cleaned.append(rule)
+        out[key] = cleaned
     return out
 
 
@@ -249,42 +289,36 @@ def apply_airport_strategy_groups(text):
     end=text.find('  var ruleProviderCommonDomain =',start)
     if start<0 or end<0: raise RuntimeError("airport strategy-group block not found")
     block='''  var AUTO_NAME = "⚡ 自动选择";
+  var LB_NAME = "⚖️ 负载均衡";
   var SELECT_NAME = "🚀 节点选择";
-  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, icon: "" };
-  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "" };
-  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", "DIRECT"], icon: "" };
-  var aiGroup = { name: "💬 AI 服务", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var geminiGroup = { name: "✨ Gemini", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var fcmGroup = { name: "🔔 FCM", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };
-  var privateNetworkGroup = { name: "🏠 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
-  var domesticServiceGroup = { name: "🔒 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
-  var telegramGroup = { name: "📲 电报消息", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var githubGroup = { name: "🐱 Github", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var microsoftGroup = { name: "Ⓜ️ 微软服务", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var appleGroup = { name: "🍏 苹果服务", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var tiktokGroup = { name: "📱 TikTok", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var twitterGroup = { name: "🐦 Twitter", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var metaGroup = { name: "📘 Meta", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var lineGroup = { name: "💬 Line", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var socialGroup = { name: "🌐 社交媒体", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var netflixGroup = { name: "📺 Netflix", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var spotifyGroup = { name: "🎵 Spotify", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var streamingGroup = { name: "🎬 流媒体", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var steamGroup = { name: "🎮 Steam", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var gamesGroup = { name: "🎮 游戏平台", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var pikpakGroup = { name: "📦 PikPak", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var cryptoGroup = { name: "🪙 Crypto", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var educationGroup = { name: "📚 教育资源", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var financeGroup = { name: "💰 金融服务", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [AUTO_NAME, SELECT_NAME], icon: "" };
-  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, geminiGroup, claudeGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, socialGroup, netflixGroup, spotifyGroup, streamingGroup, steamGroup, gamesGroup, pikpakGroup, cryptoGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup];
+  var DEFAULT_NAME = "默认代理";
+  var DIRECT_GROUP = "直连";
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, icon: "" };
+  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, icon: "" };
+  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames), icon: "" };
+  var defaultGroup = { name: DEFAULT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames).concat([SELECT_NAME]), icon: "" };
+  var directGroup = { name: DIRECT_GROUP, type: "select", proxies: ["DIRECT"], icon: "" };
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "" };
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "" };
+  var aiGroup = { name: "💬 AI 服务", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var fcmGroup = { name: "🔔 FCM", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var telegramGroup = { name: "📲 电报消息", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var microsoftGroup = { name: "Ⓜ️ 微软服务", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var appleGroup = { name: "🍏 苹果服务", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var tiktokGroup = { name: "📱 TikTok", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var twitterGroup = { name: "🐦 Twitter", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var metaGroup = { name: "📘 Meta", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var lineGroup = { name: "💬 Line", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var netflixGroup = { name: "📺 Netflix", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var spotifyGroup = { name: "🎵 Spotify", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var steamGroup = { name: "🎮 Steam", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var pikpakGroup = { name: "📦 PikPak", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var cryptoGroup = { name: "🪙 Crypto", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, SELECT_NAME], icon: "" };
+  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, fallbackGroup];
 
 '''
     return text[:start]+block+text[end:]
@@ -311,13 +345,17 @@ def validate_airport(text):
     if text.count('  config = {};')!=1: raise RuntimeError("airport full-overwrite contract must reset config exactly once")
     if text.find('  config = {};')<text.find('  var originalProxies = sourceConfig.proxies || []'): raise RuntimeError("airport proxies must be captured before config reset")
     if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text: raise RuntimeError("airport ad rule is not connected to the ad group")
-    if '"DOMAIN-SUFFIX,claude.ai,🤖 Claude AI"' not in text: raise RuntimeError("Claude.ai rule is missing")
+    if '"DOMAIN-SUFFIX,claude.ai,💬 AI 服务"' not in text: raise RuntimeError("Claude.ai rule is missing")
     if '"RULE-SET,youtube,📹 油管视频"' not in text: raise RuntimeError("YouTube must route to the dedicated YouTube group")
     if '"RULE-SET,google,🔍 谷歌服务"' not in text: raise RuntimeError("Google must route to the dedicated Google group")
+    if BILIBILI_RULE not in text and '"RULE-SET,bilibili,📺 哔哩哔哩"' not in text: raise RuntimeError("Bilibili must route to the dedicated Bilibili group")
     if '"PROCESS-NAME-WILDCARD,*AnyDesk*,🔧 远控工具"' not in text: raise RuntimeError("remote-control processes must stay on the remote-control group")
     for group in REQUIRED_AIRPORT_GROUPS:
         if ('"' + group + '"') not in text and ("'" + group + "'") not in text:
             raise RuntimeError("required airport group missing: " + group)
+    for group in BANNED_AIRPORT_GROUPS:
+        if 'name: "' + group + '"' in text or "name: '" + group + "'" in text:
+            raise RuntimeError("homogeneous/forbidden airport group remains: " + group)
     if 'name: "🔰 节点选择"' in text or 'name: "🤖 AI服务"' in text or 'name: "🌍 国外服务"' in text: raise RuntimeError("legacy airport strategy groups remain")
     if 'exclude-type: vmess' in text: raise RuntimeError("protocol exclusion must not exist")
     if '  // BEGIN AIRPORT NODE SANITIZER' not in text or 'airportChainKey' not in text: raise RuntimeError("airport node chain-field sanitizer is missing")
@@ -332,6 +370,8 @@ def transform(template,airport):
         if key not in template: raise RuntimeError(f"template missing required section: {key}")
         if key == "rules":
             result=upsert_object(result, key, remap_airport_rules(template[key]))
+        elif key == "sub-rules":
+            result=upsert_object(result, key, tune_sub_rules(template[key]))
         else:
             result=upsert_object(result,key,template[key])
     for key in COMMON_SCALARS:
