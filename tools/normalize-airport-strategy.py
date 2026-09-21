@@ -74,14 +74,14 @@ BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
 
   var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "''' + ICON + r'''/Advertising.png" };
   var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "''' + ICON + r'''/Bypass.png" };
-  var aiGroup = serviceGroup("💬 AI 服务", "''' + ICON + r'''/ChatGPT.png", "🇺🇸 美国节点", false, false);
+  var aiGroup = serviceGroup("💬 AI Services", "''' + ICON + r'''/ChatGPT.png", "🇺🇸 美国节点", false, false);
   var fcmGroup = serviceGroup("🔔 FCM", "''' + ICON + r'''/Google_Search.png", DIRECT_GROUP, true, true);
-  var bilibiliGroup = serviceGroup("📺 哔哩哔哩", "''' + ICON + r'''/bilibili.png", DIRECT_GROUP, true, true);
-  var youtubeGroup = serviceGroup("📹 油管视频", "''' + ICON + r'''/YouTube.png", "", false, false);
-  var googleGroup = serviceGroup("🔍 谷歌服务", "''' + ICON + r'''/Google_Search.png", "", false, false);
-  var telegramGroup = serviceGroup("📲 电报消息", "''' + ICON + r'''/Telegram.png", "", false, false);
-  var microsoftGroup = serviceGroup("Ⓜ️ 微软服务", "''' + ICON + r'''/Microsoft.png", "", true, false);
-  var appleGroup = serviceGroup("🍏 苹果服务", "''' + ICON + r'''/Apple.png", "", true, false);
+  var bilibiliGroup = serviceGroup("📺 Bilibili", "''' + ICON + r'''/bilibili.png", DIRECT_GROUP, true, true);
+  var youtubeGroup = serviceGroup("📹 YouTube", "''' + ICON + r'''/YouTube.png", "", false, false);
+  var googleGroup = serviceGroup("🔍 Google", "''' + ICON + r'''/Google_Search.png", "", false, false);
+  var telegramGroup = serviceGroup("📲 Telegram", "''' + ICON + r'''/Telegram.png", "", false, false);
+  var microsoftGroup = serviceGroup("Ⓜ️ Microsoft", "''' + ICON + r'''/Microsoft.png", "", true, false);
+  var appleGroup = serviceGroup("🍏 Apple", "''' + ICON + r'''/Apple.png", "", true, false);
   var tiktokGroup = serviceGroup("📱 TikTok", "''' + ICON + r'''/TikTok.png", "🇯🇵 日本节点", false, false);
   var twitterGroup = serviceGroup("🐦 Twitter", "''' + ICON + r'''/Twitter.png", "", false, false);
   var metaGroup = serviceGroup("📘 Meta", "''' + ICON + r'''/Facebook.png", "", false, false);
@@ -93,7 +93,7 @@ BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
   var pikpakGroup = serviceGroup("📦 PikPak", "''' + ICON + r'''/Cloud.png", "", true, false);
   var cryptoGroup = serviceGroup("🪙 Crypto", "''' + ICON + r'''/Bitcoin.png", "🇯🇵 日本节点", false, false);
   var ehentaiGroup = serviceGroup("📖 EHentai", "''' + MYCLASH_ICON + r'''/Ehentai.svg", "🇺🇸 美国节点", true, false);
-  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "''' + ICON + r'''/Stack.png" };
+  var fallbackGroup = { name: "🐟 Final", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "''' + ICON + r'''/Stack.png" };
 
   config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
 
@@ -106,7 +106,10 @@ def main() -> None:
     end = text.find(END, start)
     if start < 0 or end < 0:
         raise SystemExit("airport strategy-group block not found")
-    AIRPORT.write_text(text[:start] + BLOCK + text[end:], encoding="utf-8")
+    normalized = text[:start] + BLOCK + text[end:]
+    # Keep the Airport strategy rule target aligned with the canonical YouTube group.
+    normalized = normalized.replace(",📹 YouTube", ",📹 YouTube")
+    AIRPORT.write_text(normalized, encoding="utf-8")
 
 
 if __name__ == "__main__":

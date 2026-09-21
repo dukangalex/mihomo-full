@@ -167,7 +167,7 @@ def extract_json_assignment(text: str, marker: str):
                 except json.JSONDecodeError as exc: raise ValueError(f"airport assignment is not strict JSON: {marker}: {exc}")
     raise ValueError(f"unterminated airport assignment: {marker}")
 
-RULE_TARGET_REVERSE = {"🤖 AI服务":"@AI","AI服务":"@AI","💬 AI 服务":"@AI","✨ Gemini":"@AI","🤖 Claude AI":"@AI","🌍 国外服务":"@NONCN","国外服务":"@NONCN","🌐 非中国":"@NONCN","默认代理":"@NONCN","📺 Media":"@STREAM","流媒体":"@STREAM","🎬 流媒体":"@STREAM","📺 Netflix":"@STREAM","🎵 Spotify":"@STREAM","🐟 漏网之鱼":"@FALLBACK","漏网之鱼":"@FALLBACK","🔧 远控工具":"@REMOTE","远控工具":"@REMOTE","🛑 广告拦截":"@AD","广告拦截":"@AD","🏠 私有网络":"@PRIVATE","私有网络":"@PRIVATE","🔒 国内服务":"@DOMESTIC","国内服务":"@DOMESTIC","📺 哔哩哔哩":"@BILIBILI","哔哩哔哩":"@BILIBILI","📹 油管视频":"@YOUTUBE","油管视频":"@YOUTUBE","YouTube":"@YOUTUBE","🔍 谷歌服务":"@GOOGLE","谷歌服务":"@GOOGLE","Google":"@GOOGLE","🔔 FCM":"@GOOGLE","🐱 Github":"@GITHUB","Github":"@GITHUB","GitHub":"@GITHUB","📲 电报消息":"@TELEGRAM","Telegram":"@TELEGRAM","Ⓜ️ 微软服务":"@MICROSOFT","微软服务":"@MICROSOFT","🍏 苹果服务":"@APPLE","苹果服务":"@APPLE","🌐 社交媒体":"@SOCIAL","社交媒体":"@SOCIAL","📱 TikTok":"@SOCIAL","🐦 Twitter":"@SOCIAL","📘 Meta":"@SOCIAL","💬 Line":"@SOCIAL","🎮 游戏平台":"@GAMES","游戏平台":"@GAMES","🎮 Steam":"@GAMES","📚 教育资源":"@EDUCATION","教育资源":"@EDUCATION","💰 金融服务":"@FINANCE","金融服务":"@FINANCE","🪙 Crypto":"@FINANCE","☁️ 云服务":"@CLOUD","云服务":"@CLOUD","📦 PikPak":"@CLOUD","Spotify":"@STREAM","奈飞视频":"@STREAM","Netflix":"@STREAM","直连":"@DIRECT"}
+RULE_TARGET_REVERSE = {"🤖 AI服务":"@AI","AI服务":"@AI","💬 AI Services":"@AI","✨ Gemini":"@AI","🤖 Claude AI":"@AI","🌍 国外服务":"@NONCN","国外服务":"@NONCN","🌐 非中国":"@NONCN","默认代理":"@NONCN","📺 Media":"@STREAM","流媒体":"@STREAM","🎬 流媒体":"@STREAM","📺 Netflix":"@STREAM","🎵 Spotify":"@STREAM","🐟 Final":"@FALLBACK","漏网之鱼":"@FALLBACK","🔧 远控工具":"@REMOTE","远控工具":"@REMOTE","🛑 广告拦截":"@AD","广告拦截":"@AD","🏠 私有网络":"@PRIVATE","私有网络":"@PRIVATE","🔒 国内服务":"@DOMESTIC","国内服务":"@DOMESTIC","📺 Bilibili":"@BILIBILI","哔哩哔哩":"@BILIBILI","📹 YouTube":"@YOUTUBE","油管视频":"@YOUTUBE","YouTube":"@YOUTUBE","🔍 Google":"@GOOGLE","谷歌服务":"@GOOGLE","Google":"@GOOGLE","🔔 FCM":"@GOOGLE","🐱 Github":"@GITHUB","Github":"@GITHUB","GitHub":"@GITHUB","📲 Telegram":"@TELEGRAM","Telegram":"@TELEGRAM","Ⓜ️ Microsoft":"@MICROSOFT","微软服务":"@MICROSOFT","🍏 Apple":"@APPLE","苹果服务":"@APPLE","🌐 社交媒体":"@SOCIAL","社交媒体":"@SOCIAL","📱 TikTok":"@SOCIAL","🐦 Twitter":"@SOCIAL","📘 Meta":"@SOCIAL","💬 Line":"@SOCIAL","🎮 游戏平台":"@GAMES","游戏平台":"@GAMES","🎮 Steam":"@GAMES","📚 教育资源":"@EDUCATION","教育资源":"@EDUCATION","💰 金融服务":"@FINANCE","金融服务":"@FINANCE","🪙 Crypto":"@FINANCE","☁️ 云服务":"@CLOUD","云服务":"@CLOUD","📦 PikPak":"@CLOUD","Spotify":"@STREAM","奈飞视频":"@STREAM","Netflix":"@STREAM","直连":"@DIRECT"}
 def canonicalize_airport_rules(rules):
     out = []
     for rule in rules or []:
@@ -188,7 +188,7 @@ try:
     template_sub = template.get("sub-rules") or {}
     expected_sub = {}
     for name, rules in (template_sub.items() if isinstance(template_sub, dict) else []):
-        expected_sub[name] = [r for r in (rules or []) if r not in ("RULE-SET,bilibili,DIRECT", "RULE-SET,bilibili,📺 哔哩哔哩")]
+        expected_sub[name] = [r for r in (rules or []) if r not in ("RULE-SET,bilibili,DIRECT", "RULE-SET,bilibili,📺 Bilibili")]
     if airport_sub != expected_sub:
         errors.append("airport common object drift: sub-rules (Bilibili must leave DOMESTIC_DOMAIN DIRECT)")
 except ValueError as exc: errors.append(str(exc))
