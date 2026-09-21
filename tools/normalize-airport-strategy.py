@@ -16,15 +16,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 AIRPORT = ROOT / "airport_overwrite.js"
 
-START = '  var AUTO_NAME = "自动选择";'
+START = '  var AUTO_NAME = "⚡ 自动选择";'
 END = '  var ruleProviderCommonDomain ='
 
 ICON = "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color"
 MYCLASH_ICON = "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg"
 
-BLOCK = r'''  var AUTO_NAME = "自动选择";
-  var LB_NAME = "负载均衡";
-  var SELECT_NAME = "节点选择";
+BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
+  var LB_NAME = "⚖️ 负载均衡";
+  var SELECT_NAME = "🚀 节点选择";
   var DEFAULT_NAME = "默认代理";
   var DIRECT_GROUP = "直连";
 
@@ -72,8 +72,8 @@ BLOCK = r'''  var AUTO_NAME = "自动选择";
     return g;
   }
 
-  var adBlockGroup = { name: "广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "''' + ICON + r'''/Advertising.png" };
-  var remoteToolGroup = { name: "远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "''' + ICON + r'''/Bypass.png" };
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "''' + ICON + r'''/Advertising.png" };
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "''' + ICON + r'''/Bypass.png" };
   var aiGroup = serviceGroup("AI Services", "''' + ICON + r'''/ChatGPT.png", "🇺🇸 美国节点", false, false);
   var fcmGroup = serviceGroup("FCM", "''' + ICON + r'''/Google_Search.png", DIRECT_GROUP, true, true);
   var bilibiliGroup = serviceGroup("Bilibili", "''' + ICON + r'''/bilibili.png", DIRECT_GROUP, true, true);
