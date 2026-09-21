@@ -184,11 +184,11 @@ RULESET_TARGET = {
 }
 GROUP_TARGET = {
     "AI服务": "AI Services",
-    "广告拦截": "广告拦截",
+    "广告拦截": "🛑 广告拦截",
     "国外服务": "默认代理",
     "流媒体": "默认代理",
     "漏网之鱼": "Final",
-    "远控工具": "远控工具",
+    "远控工具": "🔧 远控工具",
 }
 DOMAIN_TARGET = {
     "claude.ai": "AI Services",
@@ -204,7 +204,7 @@ PROCESS_TARGET = {
 }
 REQUIRED_AIRPORT_GROUPS = (
     "默认代理", "节点选择", "自动选择", "负载均衡", "直连",
-    "广告拦截", "远控工具", "AI Services", "FCM", "Bilibili",
+    "🛑 广告拦截", "🔧 远控工具", "AI Services", "FCM", "Bilibili",
     "YouTube", "Google", "Telegram", "Microsoft", "Apple",
     "TikTok", "Twitter", "Meta", "Line", "Netflix", "Emby",
     "Spotify", "Steam", "PikPak", "Crypto", "EHentai", "Final",
@@ -320,12 +320,12 @@ def tune_sub_rules(sub):
 def apply_airport_strategy_groups(text):
     start=text.find('  var AUTO_NAME = "♻️ 自动选择";')
     if start < 0:
-        start=text.find('  var AUTO_NAME = "自动选择";')
+        start=text.find('  var AUTO_NAME = "⚡ 自动选择";')
     end=text.find('  var ruleProviderCommonDomain =',start)
     if start<0 or end<0: raise RuntimeError("airport strategy-group block not found")
-    block='''  var AUTO_NAME = "自动选择";
-  var LB_NAME = "负载均衡";
-  var SELECT_NAME = "节点选择";
+    block='''  var AUTO_NAME = "⚡ 自动选择";
+  var LB_NAME = "⚖️ 负载均衡";
+  var SELECT_NAME = "🚀 节点选择";
   var DEFAULT_NAME = "默认代理";
   var DIRECT_GROUP = "直连";
   var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, icon: "" };
@@ -333,8 +333,8 @@ def apply_airport_strategy_groups(text):
   var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames), icon: "" };
   var defaultGroup = { name: DEFAULT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames).concat([SELECT_NAME]), icon: "" };
   var directGroup = { name: DIRECT_GROUP, type: "select", proxies: ["DIRECT"], icon: "" };
-  var adBlockGroup = { name: "广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "" };
-  var remoteToolGroup = { name: "远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "" };
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "" };
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "" };
   var aiGroup = { name: "AI Services", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
   var fcmGroup = { name: "FCM", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
   var bilibiliGroup = { name: "Bilibili", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
