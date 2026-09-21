@@ -16,12 +16,6 @@
 
 下面「1. 安装」章节说明的是**方案 A（链式）**；只想用机场节点、不想折腾 VPS 的，直接跳到「2. 方案 B」。
 
-## 致谢
-
-本项目部分策略组设计、规则组织方式以及机场覆写思路参考并借鉴了 [MyClash](https://github.com/AIsouler/MyClash)。感谢 [AIsouler/MyClash](https://github.com/AIsouler/MyClash) 项目的开源实践与思路贡献。
-
-本项目在此基础上根据自身的链式代理、机场覆写和安全策略需求进行调整与维护。
-
 ## 1. 安装（方案 A：链式代理）
 
 ### 1.1 使用前必须完成的准备（按顺序做）
@@ -775,6 +769,7 @@ mff
 - [Let's Encrypt](https://letsencrypt.org/) / [certbot](https://certbot.eff.org/) — 免费 HTTPS 证书
 - [Cloudflare EdgeTunnel (cmliu/edgetunnel)](https://github.com/cmliu/edgetunnel) — 文档中引用的 Cloudflare 免费机场进阶玩法
 - [Cloudflare Country-Specific IP Filter](https://github.com/alienwaregf/Cloudflare-Country-Specific-IP-Filter) — 文档中引用的 Cloudflare 优选 IP 进阶玩法
+- 本项目部分策略组设计、规则组织方式以及机场覆写思路参考并借鉴了 [MyClash](https://github.com/AIsouler/MyClash)。感谢 [AIsouler/MyClash](https://github.com/AIsouler/MyClash) 项目的开源实践与思路贡献。本项目在此基础上根据自身的链式代理、机场覆写和安全策略需求进行调整与维护。
 - 规则集与社区贡献者（广告/地理/防钓鱼等公开规则源）
 - 所有提交 Issue、建议与测试反馈的用户
 
