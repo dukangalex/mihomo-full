@@ -344,6 +344,43 @@ rule-providers:
     url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/openai.mrs"
     path: ./ruleset/openai.mrs
 
+  # Current MetaCubeX names. Do NOT use geosite/gemini.mrs or geosite/claude.mrs
+  # (renamed) or geoip/youtube.mrs (never existed) — those 404.
+  google-gemini:
+    <<: *DA
+    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google-gemini.mrs"
+    path: ./ruleset/google-gemini.mrs
+
+  anthropic:
+    <<: *DA
+    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/anthropic.mrs"
+    path: ./ruleset/anthropic.mrs
+
+  googlefcm:
+    <<: *DA
+    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/googlefcm.mrs"
+    path: ./ruleset/googlefcm.mrs
+
+  telegram:
+    <<: *DA
+    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/telegram.mrs"
+    path: ./ruleset/telegram.mrs
+
+  line:
+    <<: *DA
+    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/line.mrs"
+    path: ./ruleset/line.mrs
+
+  pikpak:
+    <<: *DA
+    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/pikpak.mrs"
+    path: ./ruleset/pikpak.mrs
+
+  meta:
+    <<: *DA
+    url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/meta.mrs"
+    path: ./ruleset/meta.mrs
+
   bilibili:
     <<: *DA
     url: "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/bilibili.mrs"
@@ -1457,6 +1494,9 @@ sub-rules:
 
 rules:
   - DOMAIN-SUFFIX,claude.ai,AI服务
+  - DOMAIN-SUFFIX,anthropic.com,AI服务
+  - DOMAIN-SUFFIX,gemini.google.com,AI服务
+  - DOMAIN-SUFFIX,aistudio.google.com,AI服务
 
   # P0. TUN 私有 IP 快速通道
   - AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT
@@ -1839,6 +1879,8 @@ rules:
   - RULE-SET,microsoft,国外服务
 
   # P14. AI 服务
+  - RULE-SET,google-gemini,AI服务
+  - RULE-SET,anthropic,AI服务
   - RULE-SET,openai,AI服务
   - RULE-SET,category-ai-!cn,AI服务
 
@@ -1858,10 +1900,12 @@ rules:
   - RULE-SET,spotify,流媒体
 
   # P16. 国外平台
+  - RULE-SET,googlefcm,国外服务
   - RULE-SET,google,国外服务
   - RULE-SET,google-ip,国外服务,no-resolve
   - RULE-SET,github,国外服务
   - RULE-SET,gitlab,国外服务
+  - RULE-SET,meta,国外服务
   - RULE-SET,facebook,国外服务
   - RULE-SET,instagram,国外服务
   - RULE-SET,twitter,国外服务
@@ -1869,6 +1913,8 @@ rules:
   - RULE-SET,linkedin,国外服务
   - RULE-SET,discord,国外服务
   - RULE-SET,snapchat,国外服务
+  - RULE-SET,line,国外服务
+  - RULE-SET,telegram,国外服务
   - RULE-SET,telegram-ip,国外服务,no-resolve
   - RULE-SET,facebook-ip,国外服务,no-resolve
   - RULE-SET,cloudflare-ip,国外服务,no-resolve
@@ -1890,6 +1936,7 @@ rules:
   - RULE-SET,azure,国外服务
   - RULE-SET,dropbox,国外服务
   - RULE-SET,onedrive,国外服务
+  - RULE-SET,pikpak,国外服务
   - RULE-SET,cryptocurrency,国外服务   # 加密货币交易所(含OKX)，之前完全靠P20兜底覆盖，无专门规则
 
   # P19. 学术
