@@ -129,6 +129,7 @@ RULESET_TARGET = {
     "anthropic": "AI Services",
     "openai": "AI Services",
     "category-ai-!cn": "AI Services",
+    "category-ads-all": "Ad Block",
     "youtube": "YouTube",
     "google": "Google",
     "google-ip": "Google",
@@ -183,6 +184,7 @@ RULESET_TARGET = {
 }
 GROUP_TARGET = {
     "AI服务": "AI Services",
+    "广告拦截": "Ad Block",
     "国外服务": "Default Proxy",
     "流媒体": "Default Proxy",
     "漏网之鱼": "Final",
