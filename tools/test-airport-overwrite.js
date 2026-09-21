@@ -39,10 +39,10 @@ if (JSON.stringify(output).includes("CI Forbidden Chain")) fail("forbidden chain
 const groups = Array.isArray(output["proxy-groups"]) ? output["proxy-groups"] : [];
 const requiredGroups = [
   "默认代理", "🚀 节点选择", "⚡ 自动选择", "⚖️ 负载均衡", "直连",
-  "🛑 广告拦截", "🔧 远控工具", "💬 AI 服务", "🔔 FCM", "📺 哔哩哔哩",
-  "📹 油管视频", "🔍 谷歌服务", "📲 电报消息", "Ⓜ️ 微软服务", "🍏 苹果服务",
+  "🛑 广告拦截", "🔧 远控工具", "💬 AI Services", "🔔 FCM", "📺 Bilibili",
+  "📹 YouTube", "🔍 Google", "📲 Telegram", "Ⓜ️ Microsoft", "🍏 Apple",
   "📱 TikTok", "🐦 Twitter", "📘 Meta", "💬 Line", "📺 Netflix", "🎬 Emby",
-  "🎵 Spotify", "🎮 Steam", "📦 PikPak", "🪙 Crypto", "📖 EHentai", "🐟 漏网之鱼",
+  "🎵 Spotify", "🎮 Steam", "📦 PikPak", "🪙 Crypto", "📖 EHentai", "🐟 Final",
 ];
 for (const name of requiredGroups) {
   if (!groups.some(g => g && g.name === name)) fail(`required strategy group missing: ${name}`);
@@ -55,10 +55,10 @@ const bannedGroups = [
 for (const name of bannedGroups) {
   if (groups.some(g => g && g.name === name)) fail(`homogeneous group was not removed: ${name}`);
 }
-if (!output.rules.some(rule => rule === "DOMAIN-SUFFIX,claude.ai,💬 AI 服务")) fail("Claude.ai is not routed to the unified AI group");
-if (!output.rules.some(rule => rule === "RULE-SET,youtube,📹 油管视频")) fail("YouTube is not routed to the dedicated YouTube group");
-if (!output.rules.some(rule => rule === "RULE-SET,google,🔍 谷歌服务")) fail("Google is not routed to the dedicated Google group");
-if (!output.rules.some(rule => rule === "RULE-SET,bilibili,📺 哔哩哔哩")) fail("Bilibili is not routed to the dedicated Bilibili group");
+if (!output.rules.some(rule => rule === "DOMAIN-SUFFIX,claude.ai,💬 AI Services")) fail("Claude.ai is not routed to the unified AI group");
+if (!output.rules.some(rule => rule === "RULE-SET,youtube,📹 YouTube")) fail("YouTube is not routed to the dedicated YouTube group");
+if (!output.rules.some(rule => rule === "RULE-SET,google,🔍 Google")) fail("Google is not routed to the dedicated Google group");
+if (!output.rules.some(rule => rule === "RULE-SET,bilibili,📺 Bilibili")) fail("Bilibili is not routed to the dedicated Bilibili group");
 if (!output.rules.some(rule => rule === "DOMAIN-KEYWORD,emby,🎬 Emby")) fail("Emby is not routed to the dedicated Emby group");
 if (!output.rules.some(rule => rule === "DOMAIN-SUFFIX,e-hentai.org,📖 EHentai")) fail("EHentai is not routed to the dedicated EHentai group");
 if (output.rules.some(rule => rule === "RULE-SET,bilibili,DIRECT")) fail("Bilibili is still hardcoded to bottom-layer DIRECT");
@@ -70,7 +70,7 @@ if (groups.some(g => g && ["🔰 节点选择", "🤖 AI服务", "🌍 国外服
 
 const byName = name => groups.find(g => g && g.name === name);
 const proxyOnlyGroups = [
-  "💬 AI 服务", "📹 油管视频", "🔍 谷歌服务", "📲 电报消息",
+  "💬 AI Services", "📹 YouTube", "🔍 Google", "📲 Telegram",
   "📱 TikTok", "🐦 Twitter", "📘 Meta", "💬 Line", "📺 Netflix", "🪙 Crypto",
 ];
 for (const name of proxyOnlyGroups) {
@@ -80,14 +80,14 @@ for (const name of proxyOnlyGroups) {
   if (group.proxies[0] !== "默认代理") fail(`default proxy must be first: ${name}`);
 }
 
-const withDirectLast = ["Ⓜ️ 微软服务", "🍏 苹果服务", "🎵 Spotify", "🎮 Steam", "📦 PikPak", "🎬 Emby", "📖 EHentai"];
+const withDirectLast = ["Ⓜ️ Microsoft", "🍏 Apple", "🎵 Spotify", "🎮 Steam", "📦 PikPak", "🎬 Emby", "📖 EHentai"];
 for (const name of withDirectLast) {
   const group = byName(name);
   if (!group.proxies.includes("直连")) fail(`MyClash-style 直连 option missing from ${name}`);
   if (group.proxies[0] === "直连") fail(`${name} should stay proxy-first with 直连 last`);
 }
 
-const bili = byName("📺 哔哩哔哩");
+const bili = byName("📺 Bilibili");
 if (!bili.proxies.includes("直连")) fail("哔哩哔哩 group lost 直连 selection");
 if (bili.proxies[0] !== "直连") fail("哔哩哔哩 直连 must be the first/default option, not a bottom-layer hardwire");
 if (bili["default-selected"] !== "直连") fail("哔哩哔哩 default-selected must be 直连");
