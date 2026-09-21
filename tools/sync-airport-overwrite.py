@@ -125,52 +125,51 @@ def restore_airport_exceptions(text):
     return text
 
 RULESET_TARGET = {
-    "google-gemini": "AI Services",
-    "anthropic": "AI Services",
-    "openai": "AI Services",
-    "category-ai-!cn": "AI Services",
-    "category-ads-all": "🛑 广告拦截",
-    "youtube": "YouTube",
-    "google": "Google",
-    "google-ip": "Google",
-    "googlefcm": "FCM",
+    "google-gemini": "💬 AI 服务",
+    "anthropic": "💬 AI 服务",
+    "openai": "💬 AI 服务",
+    "category-ai-!cn": "💬 AI 服务",
+    "youtube": "📹 油管视频",
+    "google": "🔍 谷歌服务",
+    "google-ip": "🔍 谷歌服务",
+    "googlefcm": "🔔 FCM",
     "github": "默认代理",
     "gitlab": "默认代理",
-    "apple": "Apple",
-    "icloud": "Apple",
-    "microsoft": "Microsoft",
-    "telegram": "Telegram",
-    "telegram-ip": "Telegram",
-    "tiktok": "TikTok",
-    "twitter": "Twitter",
-    "twitter-ip": "Twitter",
-    "facebook": "Meta",
-    "facebook-ip": "Meta",
-    "instagram": "Meta",
-    "meta": "Meta",
-    "line": "Line",
+    "apple": "🍏 苹果服务",
+    "icloud": "🍏 苹果服务",
+    "microsoft": "Ⓜ️ 微软服务",
+    "telegram": "📲 电报消息",
+    "telegram-ip": "📲 电报消息",
+    "tiktok": "📱 TikTok",
+    "twitter": "🐦 Twitter",
+    "twitter-ip": "🐦 Twitter",
+    "facebook": "📘 Meta",
+    "facebook-ip": "📘 Meta",
+    "instagram": "📘 Meta",
+    "meta": "📘 Meta",
+    "line": "💬 Line",
     "discord": "默认代理",
     "snapchat": "默认代理",
     "linkedin": "默认代理",
-    "netflix": "Netflix",
-    "netflix-ip": "Netflix",
-    "spotify": "Spotify",
+    "netflix": "📺 Netflix",
+    "netflix-ip": "📺 Netflix",
+    "spotify": "🎵 Spotify",
     "hulu": "默认代理",
     "disney": "默认代理",
     "hbo": "默认代理",
     "amazon": "默认代理",
     "bahamut": "默认代理",
-    "biliintl": "Bilibili",
-    "bilibili": "Bilibili",
+    "biliintl": "📺 哔哩哔哩",
+    "bilibili": "📺 哔哩哔哩",
     "abema": "默认代理",
     "bbc": "默认代理",
-    "steam": "Steam",
-    "epicgames": "Steam",
-    "ea": "Steam",
-    "ubisoft": "Steam",
-    "blizzard": "Steam",
+    "steam": "🎮 Steam",
+    "epicgames": "🎮 Steam",
+    "ea": "🎮 Steam",
+    "ubisoft": "🎮 Steam",
+    "blizzard": "🎮 Steam",
     "paypal": "默认代理",
-    "cryptocurrency": "Crypto",
+    "cryptocurrency": "🪙 Crypto",
     "aws": "默认代理",
     "azure": "默认代理",
     "dropbox": "默认代理",
@@ -179,35 +178,34 @@ RULESET_TARGET = {
     "cloudfront-ip": "默认代理",
     "fastly-ip": "默认代理",
     "category-scholar-!cn": "默认代理",
-    "pikpak": "PikPak",
+    "pikpak": "📦 PikPak",
     "geolocation-!cn": "默认代理",
 }
 GROUP_TARGET = {
-    "AI服务": "AI Services",
-    "广告拦截": "🛑 广告拦截",
+    "AI服务": "💬 AI 服务",
     "国外服务": "默认代理",
     "流媒体": "默认代理",
-    "漏网之鱼": "Final",
+    "漏网之鱼": "🐟 漏网之鱼",
     "远控工具": "🔧 远控工具",
 }
 DOMAIN_TARGET = {
-    "claude.ai": "AI Services",
-    "anthropic.com": "AI Services",
-    "a-cdn.anthropic.com": "AI Services",
-    "assets-proxy.anthropic.com": "AI Services",
-    "gemini.google.com": "AI Services",
-    "aistudio.google.com": "AI Services",
+    "claude.ai": "💬 AI 服务",
+    "anthropic.com": "💬 AI 服务",
+    "a-cdn.anthropic.com": "💬 AI 服务",
+    "assets-proxy.anthropic.com": "💬 AI 服务",
+    "gemini.google.com": "💬 AI 服务",
+    "aistudio.google.com": "💬 AI 服务",
 }
 PROCESS_TARGET = {
-    "*revanced*": "YouTube",
-    "*youtube*": "YouTube",
+    "*revanced*": "📹 油管视频",
+    "*youtube*": "📹 油管视频",
 }
 REQUIRED_AIRPORT_GROUPS = (
-    "默认代理", "节点选择", "自动选择", "负载均衡", "直连",
-    "🛑 广告拦截", "🔧 远控工具", "AI Services", "FCM", "Bilibili",
-    "YouTube", "Google", "Telegram", "Microsoft", "Apple",
-    "TikTok", "Twitter", "Meta", "Line", "Netflix", "Emby",
-    "Spotify", "Steam", "PikPak", "Crypto", "EHentai", "Final",
+    "默认代理", "🚀 节点选择", "⚡ 自动选择", "⚖️ 负载均衡", "直连",
+    "🛑 广告拦截", "🔧 远控工具", "💬 AI 服务", "🔔 FCM", "📺 哔哩哔哩",
+    "📹 油管视频", "🔍 谷歌服务", "📲 电报消息", "Ⓜ️ 微软服务", "🍏 苹果服务",
+    "📱 TikTok", "🐦 Twitter", "📘 Meta", "💬 Line", "📺 Netflix", "🎬 Emby",
+    "🎵 Spotify", "🎮 Steam", "📦 PikPak", "🪙 Crypto", "📖 EHentai", "🐟 漏网之鱼",
 )
 BANNED_AIRPORT_GROUPS = (
     "✨ Gemini", "🤖 Claude AI", "🏠 私有网络", "🔒 国内服务", "🐱 Github",
@@ -219,23 +217,23 @@ DEAD_RULESET_URLS = (
     "/geo/geosite/claude.mrs",
     "/geo/geoip/youtube.mrs",
 )
-BILIBILI_RULE = "RULE-SET,bilibili,Bilibili"
+BILIBILI_RULE = "RULE-SET,bilibili,📺 哔哩哔哩"
 AIRPORT_ONLY_RULES = (
-    "DOMAIN-SUFFIX,mb3admin.com,Emby",
-    "DOMAIN-SUFFIX,nubebelle.com,Emby",
-    "DOMAIN-KEYWORD,emby,Emby",
-    "PROCESS-NAME,com.mb.android,Emby",
-    "PROCESS-NAME,tv.emby.embyatv,Emby",
-    "PROCESS-NAME,com.hush.yamby,Emby",
-    "PROCESS-NAME,com.jellycine.app,Emby",
-    "PROCESS-NAME,com.mountains.hills,Emby",
-    "PROCESS-NAME,RodelPlayer.App.exe,Emby",
-    "PROCESS-NAME,com.feifeiduck.capyplayer,Emby",
-    "DOMAIN-SUFFIX,e-hentai.org,EHentai",
-    "DOMAIN-SUFFIX,exhentai.org,EHentai",
-    "DOMAIN-SUFFIX,ehgt.org,EHentai",
-    "DOMAIN-SUFFIX,hath.network,EHentai",
-    "DOMAIN-SUFFIX,e-hentai.to,EHentai",
+    "DOMAIN-SUFFIX,mb3admin.com,🎬 Emby",
+    "DOMAIN-SUFFIX,nubebelle.com,🎬 Emby",
+    "DOMAIN-KEYWORD,emby,🎬 Emby",
+    "PROCESS-NAME,com.mb.android,🎬 Emby",
+    "PROCESS-NAME,tv.emby.embyatv,🎬 Emby",
+    "PROCESS-NAME,com.hush.yamby,🎬 Emby",
+    "PROCESS-NAME,com.jellycine.app,🎬 Emby",
+    "PROCESS-NAME,com.mountains.hills,🎬 Emby",
+    "PROCESS-NAME,RodelPlayer.App.exe,🎬 Emby",
+    "PROCESS-NAME,com.feifeiduck.capyplayer,🎬 Emby",
+    "DOMAIN-SUFFIX,e-hentai.org,📖 EHentai",
+    "DOMAIN-SUFFIX,exhentai.org,📖 EHentai",
+    "DOMAIN-SUFFIX,ehgt.org,📖 EHentai",
+    "DOMAIN-SUFFIX,hath.network,📖 EHentai",
+    "DOMAIN-SUFFIX,e-hentai.to,📖 EHentai",
 )
 
 
@@ -335,26 +333,26 @@ def apply_airport_strategy_groups(text):
   var directGroup = { name: DIRECT_GROUP, type: "select", proxies: ["DIRECT"], icon: "" };
   var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "" };
   var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "" };
-  var aiGroup = { name: "AI Services", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var fcmGroup = { name: "FCM", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var bilibiliGroup = { name: "Bilibili", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var youtubeGroup = { name: "YouTube", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var googleGroup = { name: "Google", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var telegramGroup = { name: "Telegram", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var microsoftGroup = { name: "Microsoft", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var appleGroup = { name: "Apple", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var tiktokGroup = { name: "TikTok", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var twitterGroup = { name: "Twitter", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var metaGroup = { name: "Meta", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var lineGroup = { name: "Line", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var netflixGroup = { name: "Netflix", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var embyGroup = { name: "Emby", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var spotifyGroup = { name: "Spotify", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var steamGroup = { name: "Steam", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var pikpakGroup = { name: "PikPak", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var cryptoGroup = { name: "Crypto", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var ehentaiGroup = { name: "EHentai", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var fallbackGroup = { name: "Final", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, SELECT_NAME], icon: "" };
+  var aiGroup = { name: "💬 AI 服务", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var fcmGroup = { name: "🔔 FCM", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var telegramGroup = { name: "📲 电报消息", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var microsoftGroup = { name: "Ⓜ️ 微软服务", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var appleGroup = { name: "🍏 苹果服务", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var tiktokGroup = { name: "📱 TikTok", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var twitterGroup = { name: "🐦 Twitter", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var metaGroup = { name: "📘 Meta", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var lineGroup = { name: "💬 Line", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var netflixGroup = { name: "📺 Netflix", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var embyGroup = { name: "🎬 Emby", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var spotifyGroup = { name: "🎵 Spotify", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var steamGroup = { name: "🎮 Steam", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var pikpakGroup = { name: "📦 PikPak", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var cryptoGroup = { name: "🪙 Crypto", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var ehentaiGroup = { name: "📖 EHentai", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
+  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, SELECT_NAME], icon: "" };
   config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup];
 
 '''
@@ -382,13 +380,13 @@ def validate_airport(text):
     if text.count('  config = {};')!=1: raise RuntimeError("airport full-overwrite contract must reset config exactly once")
     if text.find('  config = {};')<text.find('  var originalProxies = sourceConfig.proxies || []'): raise RuntimeError("airport proxies must be captured before config reset")
     if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text: raise RuntimeError("airport ad rule is not connected to the ad group")
-    if '"DOMAIN-SUFFIX,claude.ai,AI Services"' not in text: raise RuntimeError("Claude.ai rule is missing")
-    if '"RULE-SET,youtube,YouTube"' not in text: raise RuntimeError("YouTube must route to the dedicated YouTube group")
-    if '"RULE-SET,google,Google"' not in text: raise RuntimeError("Google must route to the dedicated Google group")
-    if BILIBILI_RULE not in text and '"RULE-SET,bilibili,Bilibili"' not in text: raise RuntimeError("Bilibili must route to the dedicated Bilibili group")
-    if '"DOMAIN-KEYWORD,emby,Emby"' not in text: raise RuntimeError("Emby must route to the dedicated Emby group")
-    if '"DOMAIN-SUFFIX,e-hentai.org,EHentai"' not in text: raise RuntimeError("EHentai must route to the dedicated EHentai group")
-    if '"PROCESS-NAME-WILDCARD,*AnyDesk*,远控工具"' not in text: raise RuntimeError("remote-control processes must stay on the remote-control group")
+    if '"DOMAIN-SUFFIX,claude.ai,💬 AI 服务"' not in text: raise RuntimeError("Claude.ai rule is missing")
+    if '"RULE-SET,youtube,📹 油管视频"' not in text: raise RuntimeError("YouTube must route to the dedicated YouTube group")
+    if '"RULE-SET,google,🔍 谷歌服务"' not in text: raise RuntimeError("Google must route to the dedicated Google group")
+    if BILIBILI_RULE not in text and '"RULE-SET,bilibili,📺 哔哩哔哩"' not in text: raise RuntimeError("Bilibili must route to the dedicated Bilibili group")
+    if '"DOMAIN-KEYWORD,emby,🎬 Emby"' not in text: raise RuntimeError("Emby must route to the dedicated Emby group")
+    if '"DOMAIN-SUFFIX,e-hentai.org,📖 EHentai"' not in text: raise RuntimeError("EHentai must route to the dedicated EHentai group")
+    if '"PROCESS-NAME-WILDCARD,*AnyDesk*,🔧 远控工具"' not in text: raise RuntimeError("remote-control processes must stay on the remote-control group")
     for group in REQUIRED_AIRPORT_GROUPS:
         if ('"' + group + '"') not in text and ("'" + group + "'") not in text:
             raise RuntimeError("required airport group missing: " + group)
