@@ -367,12 +367,12 @@ function main(config) {
   var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bypass.png" };
   var aiGroup = serviceGroup("💬 AI 服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png", "🇺🇸 美国节点", false, false);
   var fcmGroup = serviceGroup("🔔 FCM", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", DIRECT_GROUP, true, true);
-  var bilibiliGroup = serviceGroup("📺 哔哩哔哩", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/bilibili.png", DIRECT_GROUP, true, true);
-  var youtubeGroup = serviceGroup("📹 油管视频", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/YouTube.png", "", false, false);
-  var googleGroup = serviceGroup("🔍 谷歌服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", "", false, false);
-  var telegramGroup = serviceGroup("📲 电报消息", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png", "", false, false);
-  var microsoftGroup = serviceGroup("Ⓜ️ 微软服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Microsoft.png", "", true, false);
-  var appleGroup = serviceGroup("🍏 苹果服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Apple.png", "", true, false);
+  var bilibiliGroup = serviceGroup("📺 bilibili", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/bilibili.png", DIRECT_GROUP, true, true);
+  var youtubeGroup = serviceGroup("📹 YouTube", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/YouTube.png", "", false, false);
+  var googleGroup = serviceGroup("🔍 Google", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", "", false, false);
+  var telegramGroup = serviceGroup("📲 aTelegram", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png", "", false, false);
+  var microsoftGroup = serviceGroup("Ⓜ️ Microsoft", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Microsoft.png", "", true, false);
+  var appleGroup = serviceGroup("🍏 Apple", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Apple.png", "", true, false);
   var tiktokGroup = serviceGroup("📱 TikTok", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/TikTok.png", "🇯🇵 日本节点", false, false);
   var twitterGroup = serviceGroup("🐦 Twitter", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Twitter.png", "", false, false);
   var metaGroup = serviceGroup("📘 Meta", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Facebook.png", "", false, false);
@@ -1184,13 +1184,13 @@ function main(config) {
   "DOMAIN-SUFFIX,challenges.cloudflare.com,默认代理",
   "DOMAIN-SUFFIX,recaptcha.net,默认代理",
   "DOMAIN,recaptcha.google.com,默认代理",
-  "RULE-SET,bilibili,📺 哔哩哔哩",
+  "RULE-SET,bilibili,📺 Bilibili",
   "SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN",
   "SUB-RULE,(NETWORK,udp),DOMESTIC_DOMAIN",
   "SUB-RULE,(NETWORK,tcp),DOMESTIC_IP",
   "SUB-RULE,(NETWORK,udp),DOMESTIC_IP",
-  "PROCESS-NAME-WILDCARD,*revanced*,📹 油管视频",
-  "PROCESS-NAME-WILDCARD,*youtube*,📹 油管视频",
+  "PROCESS-NAME-WILDCARD,*revanced*,📹 YouTube",
+  "PROCESS-NAME-WILDCARD,*youtube*,📹 YouTube",
   "PROCESS-NAME-WILDCARD,*com.android.bank*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.icbc*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.ccb*,DIRECT",
@@ -1243,9 +1243,9 @@ function main(config) {
   "PROCESS-NAME-WILDCARD,*cloudflared*,🔧 远控工具",
   "PROCESS-NAME-WILDCARD,*natapp*,🔧 远控工具",
   "PROCESS-NAME-WILDCARD,*nblink*,🔧 远控工具",
-  "RULE-SET,icloud,🍏 苹果服务",
-  "RULE-SET,apple,🍏 苹果服务",
-  "RULE-SET,microsoft,Ⓜ️ 微软服务",
+  "RULE-SET,icloud,🍏 Apple",
+  "RULE-SET,apple,🍏 Apple",
+  "RULE-SET,microsoft,Ⓜ️ Microsoft",
   "RULE-SET,google-gemini,💬 AI 服务",
   "RULE-SET,anthropic,💬 AI 服务",
   "RULE-SET,openai,💬 AI 服务",
@@ -1257,15 +1257,15 @@ function main(config) {
   "RULE-SET,hbo,默认代理",
   "RULE-SET,amazon,默认代理",
   "RULE-SET,bahamut,默认代理",
-  "RULE-SET,youtube,📹 油管视频",
+  "RULE-SET,youtube,📹 YouTube",
   "RULE-SET,tiktok,📱 TikTok",
-  "RULE-SET,biliintl,📺 哔哩哔哩",
+  "RULE-SET,biliintl,📺 Bilibili",
   "RULE-SET,abema,默认代理",
   "RULE-SET,bbc,默认代理",
   "RULE-SET,spotify,🎵 Spotify",
   "RULE-SET,googlefcm,🔔 FCM",
-  "RULE-SET,google,🔍 谷歌服务",
-  "RULE-SET,google-ip,🔍 谷歌服务,no-resolve",
+  "RULE-SET,google,🔍 Google",
+  "RULE-SET,google-ip,🔍 Google,no-resolve",
   "RULE-SET,github,默认代理",
   "RULE-SET,gitlab,默认代理",
   "RULE-SET,meta,📘 Meta",
@@ -1277,8 +1277,8 @@ function main(config) {
   "RULE-SET,discord,默认代理",
   "RULE-SET,snapchat,默认代理",
   "RULE-SET,line,💬 Line",
-  "RULE-SET,telegram,📲 电报消息",
-  "RULE-SET,telegram-ip,📲 电报消息,no-resolve",
+  "RULE-SET,telegram,📲 Telegram",
+  "RULE-SET,telegram-ip,📲 Telegram,no-resolve",
   "RULE-SET,facebook-ip,📘 Meta,no-resolve",
   "RULE-SET,cloudflare-ip,默认代理,no-resolve",
   "RULE-SET,cloudfront-ip,默认代理,no-resolve",
@@ -2580,17 +2580,17 @@ function main(config) {
     "anthropic": "💬 AI 服务",
     "openai": "💬 AI 服务",
     "category-ai-!cn": "💬 AI 服务",
-    "youtube": "📹 油管视频",
-    "google": "🔍 谷歌服务",
-    "google-ip": "🔍 谷歌服务",
+    "youtube": "📹 YouTube",
+    "google": "🔍 Google",
+    "google-ip": "🔍 Google",
     "googlefcm": "🔔 FCM",
     "github": "默认代理",
     "gitlab": "默认代理",
-    "apple": "🍏 苹果服务",
-    "icloud": "🍏 苹果服务",
-    "microsoft": "Ⓜ️ 微软服务",
-    "telegram": "📲 电报消息",
-    "telegram-ip": "📲 电报消息",
+    "apple": "🍏 Apple",
+    "icloud": "🍏 Apple",
+    "microsoft": "Ⓜ️ Microsoft",
+    "telegram": "📲 Telegram",
+    "telegram-ip": "📲 Telegram",
     "tiktok": "📱 TikTok",
     "twitter": "🐦 Twitter",
     "twitter-ip": "🐦 Twitter",
@@ -2621,8 +2621,8 @@ function main(config) {
     "fastly-ip": "默认代理",
     "category-scholar-!cn": "默认代理",
     "pikpak": "📦 PikPak",
-    "bilibili": "📺 哔哩哔哩",
-    "biliintl": "📺 哔哩哔哩",
+    "bilibili": "📺 Bilibili",
+    "biliintl": "📺 Bilibili",
     "geolocation-!cn": "默认代理"
   };
   var DOMAIN_MAP = {
