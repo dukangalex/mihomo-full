@@ -80,8 +80,8 @@ for (const name of proxyOnlyGroups) {
   if (group.proxies[0] !== "默认代理") fail(`default proxy must be first: ${name}`);
 }
 
-const with直连Last = ["Microsoft", "Apple", "Spotify", "Steam", "PikPak", "Emby", "EHentai"];
-for (const name of with直连Last) {
+const withDirectLast = ["Microsoft", "Apple", "Spotify", "Steam", "PikPak", "Emby", "EHentai"];
+for (const name of withDirectLast) {
   const group = byName(name);
   if (!group.proxies.includes("直连")) fail(`MyClash-style 直连 option missing from ${name}`);
   if (group.proxies[0] === "直连") fail(`${name} should stay proxy-first with 直连 last`);
