@@ -5,10 +5,10 @@ Airport UI policy after the MyClash merge:
 
 - MY 100+ region three-layer groups stay (auto-detect + hidden url-test/load-balance)
 - MY security baseline stays (ads, remote tools, phishing, STUN/QUIC)
-- Service groups follow MyClash: dedicated exits, Direct only on CN-like apps
+- Service groups follow MyClash: dedicated exits, 直连 only on CN-like apps
 - Homogeneous catch-alls (Gemini/Claude clones, 流媒体, 社交媒体, 游戏平台,
   云服务, 教育资源, 金融服务, 非中国, 私有网络, 国内服务, Github) are removed
-- 哔哩哔哩 is a real group with Direct first (not a dead bottom-layer DIRECT)
+- 哔哩哔哩 is a real group with 直连 first (not a dead bottom-layer DIRECT)
 - Emby / EHentai come from MyClash (no extra MRS files; domain/process rules)
 """
 from pathlib import Path
@@ -16,24 +16,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 AIRPORT = ROOT / "airport_overwrite.js"
 
-START = '  var AUTO_NAME = "Auto Select";'
+START = '  var AUTO_NAME = "自动选择";'
 END = '  var ruleProviderCommonDomain ='
 
 ICON = "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color"
 MYCLASH_ICON = "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg"
 
-BLOCK = r'''  var AUTO_NAME = "Auto Select";
-  var LB_NAME = "Load Balance";
-  var SELECT_NAME = "Node Select";
-  var DEFAULT_NAME = "Default Proxy";
-  var DIRECT_GROUP = "Direct";
+BLOCK = r'''  var AUTO_NAME = "自动选择";
+  var LB_NAME = "负载均衡";
+  var SELECT_NAME = "节点选择";
+  var DEFAULT_NAME = "默认代理";
+  var DIRECT_GROUP = "直连";
 
   var DIRECT_NODES = [
-    { name: "🇨🇳 Direct | 双栈", type: "direct" },
-    { name: "🇨🇳 Direct | IPv4优先", type: "direct", "ip-version": "ipv4-prefer" },
-    { name: "🇨🇳 Direct | IPv6优先", type: "direct", "ip-version": "ipv6-prefer" },
-    { name: "🇨🇳 Direct | 仅IPv4", type: "direct", "ip-version": "ipv4" },
-    { name: "🇨🇳 Direct | 仅IPv6", type: "direct", "ip-version": "ipv6" }
+    { name: "🇨🇳 直连 | 双栈", type: "direct" },
+    { name: "🇨🇳 直连 | IPv4优先", type: "direct", "ip-version": "ipv4-prefer" },
+    { name: "🇨🇳 直连 | IPv6优先", type: "direct", "ip-version": "ipv6-prefer" },
+    { name: "🇨🇳 直连 | 仅IPv4", type: "direct", "ip-version": "ipv4" },
+    { name: "🇨🇳 直连 | 仅IPv6", type: "direct", "ip-version": "ipv6" }
   ];
   var seenProxyNames = {};
   for (var spi = 0; spi < config.proxies.length; spi++) {
@@ -62,18 +62,18 @@ BLOCK = r'''  var AUTO_NAME = "Auto Select";
     }
     return DEFAULT_NAME;
   }
-  function serviceGroup(name, icon, preferred, withDirect, directFirst) {
+  function serviceGroup(name, icon, preferred, with直连, directFirst) {
     var proxies;
-    if (withDirect && directFirst) proxies = [DIRECT_GROUP].concat(serviceProxies);
-    else if (withDirect) proxies = serviceProxies.concat([DIRECT_GROUP]);
+    if (with直连 && directFirst) proxies = [DIRECT_GROUP].concat(serviceProxies);
+    else if (with直连) proxies = serviceProxies.concat([DIRECT_GROUP]);
     else proxies = serviceProxies.slice();
     var g = { name: name, type: "select", proxies: proxies, icon: icon || "" };
     if (preferred) g["default-selected"] = pickDefault(preferred);
     return g;
   }
 
-  var adBlockGroup = { name: "Ad Block", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "''' + ICON + r'''/Advertising.png" };
-  var remoteToolGroup = { name: "Remote Tools", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "''' + ICON + r'''/Bypass.png" };
+  var adBlockGroup = { name: "广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "''' + ICON + r'''/Advertising.png" };
+  var remoteToolGroup = { name: "远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "''' + ICON + r'''/Bypass.png" };
   var aiGroup = serviceGroup("AI Services", "''' + ICON + r'''/ChatGPT.png", "🇺🇸 美国节点", false, false);
   var fcmGroup = serviceGroup("FCM", "''' + ICON + r'''/Google_Search.png", DIRECT_GROUP, true, true);
   var bilibiliGroup = serviceGroup("Bilibili", "''' + ICON + r'''/bilibili.png", DIRECT_GROUP, true, true);
