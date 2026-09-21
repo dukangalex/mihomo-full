@@ -106,7 +106,10 @@ def main() -> None:
     end = text.find(END, start)
     if start < 0 or end < 0:
         raise SystemExit("airport strategy-group block not found")
-    AIRPORT.write_text(text[:start] + BLOCK + text[end:], encoding="utf-8")
+    normalized = text[:start] + BLOCK + text[end:]
+    # Keep the Airport strategy rule target aligned with the canonical YouTube group.
+    normalized = normalized.replace(",📹 YouTube", ",📹 油管视频")
+    AIRPORT.write_text(normalized, encoding="utf-8")
 
 
 if __name__ == "__main__":
