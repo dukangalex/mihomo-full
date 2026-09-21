@@ -167,7 +167,7 @@ def extract_json_assignment(text: str, marker: str):
                 except json.JSONDecodeError as exc: raise ValueError(f"airport assignment is not strict JSON: {marker}: {exc}")
     raise ValueError(f"unterminated airport assignment: {marker}")
 
-RULE_TARGET_REVERSE = {"🤖 AI服务":"@AI","AI服务":"@AI","💬 AI 服务":"@AI","✨ Gemini":"@AI","🤖 Claude AI":"@AI","🌍 国外服务":"@NONCN","国外服务":"@NONCN","🌐 非中国":"@NONCN","📺 Media":"@STREAM","流媒体":"@STREAM","🎬 流媒体":"@STREAM","📺 Netflix":"@STREAM","🎵 Spotify":"@STREAM","🐟 漏网之鱼":"@FALLBACK","漏网之鱼":"@FALLBACK","🔧 远控工具":"@REMOTE","远控工具":"@REMOTE","🛑 广告拦截":"@AD","广告拦截":"@AD","🏠 私有网络":"@PRIVATE","私有网络":"@PRIVATE","🔒 国内服务":"@DOMESTIC","国内服务":"@DOMESTIC","📺 哔哩哔哩":"@BILIBILI","哔哩哔哩":"@BILIBILI","📹 油管视频":"@YOUTUBE","油管视频":"@YOUTUBE","YouTube":"@YOUTUBE","🔍 谷歌服务":"@GOOGLE","谷歌服务":"@GOOGLE","Google":"@GOOGLE","🔔 FCM":"@GOOGLE","🐱 Github":"@GITHUB","Github":"@GITHUB","GitHub":"@GITHUB","📲 电报消息":"@TELEGRAM","Telegram":"@TELEGRAM","Ⓜ️ 微软服务":"@MICROSOFT","微软服务":"@MICROSOFT","🍏 苹果服务":"@APPLE","苹果服务":"@APPLE","🌐 社交媒体":"@SOCIAL","社交媒体":"@SOCIAL","📱 TikTok":"@SOCIAL","🐦 Twitter":"@SOCIAL","📘 Meta":"@SOCIAL","💬 Line":"@SOCIAL","🎮 游戏平台":"@GAMES","游戏平台":"@GAMES","🎮 Steam":"@GAMES","📚 教育资源":"@EDUCATION","教育资源":"@EDUCATION","💰 金融服务":"@FINANCE","金融服务":"@FINANCE","🪙 Crypto":"@FINANCE","☁️ 云服务":"@CLOUD","云服务":"@CLOUD","📦 PikPak":"@CLOUD","Spotify":"@STREAM","奈飞视频":"@STREAM","Netflix":"@STREAM"}
+RULE_TARGET_REVERSE = {"🤖 AI服务":"@AI","AI服务":"@AI","💬 AI 服务":"@AI","✨ Gemini":"@AI","🤖 Claude AI":"@AI","🌍 国外服务":"@NONCN","国外服务":"@NONCN","🌐 非中国":"@NONCN","默认代理":"@NONCN","📺 Media":"@STREAM","流媒体":"@STREAM","🎬 流媒体":"@STREAM","📺 Netflix":"@STREAM","🎵 Spotify":"@STREAM","🐟 漏网之鱼":"@FALLBACK","漏网之鱼":"@FALLBACK","🔧 远控工具":"@REMOTE","远控工具":"@REMOTE","🛑 广告拦截":"@AD","广告拦截":"@AD","🏠 私有网络":"@PRIVATE","私有网络":"@PRIVATE","🔒 国内服务":"@DOMESTIC","国内服务":"@DOMESTIC","📺 哔哩哔哩":"@BILIBILI","哔哩哔哩":"@BILIBILI","📹 油管视频":"@YOUTUBE","油管视频":"@YOUTUBE","YouTube":"@YOUTUBE","🔍 谷歌服务":"@GOOGLE","谷歌服务":"@GOOGLE","Google":"@GOOGLE","🔔 FCM":"@GOOGLE","🐱 Github":"@GITHUB","Github":"@GITHUB","GitHub":"@GITHUB","📲 电报消息":"@TELEGRAM","Telegram":"@TELEGRAM","Ⓜ️ 微软服务":"@MICROSOFT","微软服务":"@MICROSOFT","🍏 苹果服务":"@APPLE","苹果服务":"@APPLE","🌐 社交媒体":"@SOCIAL","社交媒体":"@SOCIAL","📱 TikTok":"@SOCIAL","🐦 Twitter":"@SOCIAL","📘 Meta":"@SOCIAL","💬 Line":"@SOCIAL","🎮 游戏平台":"@GAMES","游戏平台":"@GAMES","🎮 Steam":"@GAMES","📚 教育资源":"@EDUCATION","教育资源":"@EDUCATION","💰 金融服务":"@FINANCE","金融服务":"@FINANCE","🪙 Crypto":"@FINANCE","☁️ 云服务":"@CLOUD","云服务":"@CLOUD","📦 PikPak":"@CLOUD","Spotify":"@STREAM","奈飞视频":"@STREAM","Netflix":"@STREAM","直连":"@DIRECT"}
 def canonicalize_airport_rules(rules):
     out = []
     for rule in rules or []:
@@ -179,10 +179,19 @@ def canonicalize_airport_rules(rules):
         out.append(rule)
     return out
 
-for key in ("tun", "dns", "sniffer", "hosts", "rule-providers", "sub-rules"):
+for key in ("tun", "dns", "sniffer", "hosts", "rule-providers"):
     try:
         if extract_json_assignment(airport, key) != template.get(key): errors.append(f"airport common object drift: {key}")
     except ValueError as exc: errors.append(str(exc))
+try:
+    airport_sub = extract_json_assignment(airport, "sub-rules")
+    template_sub = template.get("sub-rules") or {}
+    expected_sub = {}
+    for name, rules in (template_sub.items() if isinstance(template_sub, dict) else []):
+        expected_sub[name] = [r for r in (rules or []) if r not in ("RULE-SET,bilibili,DIRECT", "RULE-SET,bilibili,📺 哔哩哔哩")]
+    if airport_sub != expected_sub:
+        errors.append("airport common object drift: sub-rules (Bilibili must leave DOMESTIC_DOMAIN DIRECT)")
+except ValueError as exc: errors.append(str(exc))
 try:
     if False:
         errors.append("airport common object drift: rules (outside approved target mappings)")
@@ -212,12 +221,12 @@ for forbidden in ("var privateGroup =", "var domesticGroup ="):
 if re.search(r"exclude-type:\s*vmess", airport): errors.append("airport overwrite still contains VMess protocol exclusion")
 if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in airport: errors.append("airport overwrite lost the ad DIRECT exception routing")
 _ad_block_match = re.search(r'var adBlockGroup = \{ name: "🛑 广告拦截", type: "select", proxies: \[([^\]]*)\]', airport)
-if not _ad_block_match or '"DIRECT"' not in _ad_block_match.group(1):
+if not _ad_block_match or ('"DIRECT"' not in _ad_block_match.group(1) and "DIRECT_GROUP" not in _ad_block_match.group(1) and "直连" not in _ad_block_match.group(1)):
     errors.append("airport overwrite lost the ad DIRECT exception group")
 # Airport overwrite is intentionally non-chain: remote-control exception must not
 # require the chain-only landing selector. The chain template is checked separately.
 _remote_tool_match = re.search(r'var remoteToolGroup = \{ name: "🔧 远控工具", type: "select", proxies: \[([^\]]*)\]', airport)
-if not _remote_tool_match or '"DIRECT"' not in _remote_tool_match.group(1):
+if not _remote_tool_match or ('"DIRECT"' not in _remote_tool_match.group(1) and "DIRECT_GROUP" not in _remote_tool_match.group(1) and "直连" not in _remote_tool_match.group(1)):
     errors.append("airport overwrite lost the remote-control DIRECT exception group")
 for raw in (",国外服务", ",AI服务", ",流媒体", ",漏网之鱼"):
     if raw in airport: errors.append(f"airport overwrite contains unmapped common rule target: {raw}")

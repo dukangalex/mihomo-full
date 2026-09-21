@@ -1,8 +1,10 @@
 /**
  * 机场订阅覆写（TUN · 无链式）
  * 兼容旧版客户端脚本引擎（避免 find / ?. / 对象展开 / \\u{} 正则）
- * 公共行为与 template.yaml 同步；分流组吸收 MyClash 全量版的独立出口。
- * 规则按 RULE-SET 打到 YouTube / Google / Gemini / Claude / Telegram 等组。
+ * 公共行为与 template.yaml 同步。
+ * 框架：MyClash 全量分流组；MY 只保留 100+ 地区三层组（自动识别）和安全基线。
+ * 哔哩哔哩是可选组，默认 直连，不再把 B 站钉死在底层 DIRECT。
+ * Emby / EHentai 来自 MyClash，用域名/进程规则，不加新 MRS。
  * 禁止引用已 404 的旧 Gemini/Claude/YouTube-IP 规则集文件名
  */
 function main(config) {
@@ -247,7 +249,7 @@ function main(config) {
   function buildRegionTrio(name, matchField) {
     var autoName = "" + name + "-自动选择";
     var lbName = "" + name + "-负载均衡";
-    var common = { "include-all": true, url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "", hidden: true };
+    var common = { "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "", hidden: true };
     var auto = { name: autoName, type: "url-test", tolerance: 35, "max-failed-times": 2 };
     var lb = { name: lbName, type: "load-balance", strategy: "sticky-sessions" };
     for (var ck in common) { if (Object.prototype.hasOwnProperty.call(common, ck)) { auto[ck] = common[ck]; lb[ck] = common[ck]; } }
@@ -312,60 +314,79 @@ function main(config) {
   }
 
   var AUTO_NAME = "⚡ 自动选择";
+  var LB_NAME = "⚖️ 负载均衡";
   var SELECT_NAME = "🚀 节点选择";
-  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Auto.png" };
-  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Static.png" };
+  var DEFAULT_NAME = "默认代理";
+  var DIRECT_GROUP = "直连";
 
-  // Airport service groups: no DIRECT in non-China traffic groups.
-  // Each group exposes: total-node auto selection -> rate groups -> detected regions -> node selection.
+  var DIRECT_NODES = [
+    { name: "🇨🇳 直连 | 双栈", type: "direct" },
+    { name: "🇨🇳 直连 | IPv4优先", type: "direct", "ip-version": "ipv4-prefer" },
+    { name: "🇨🇳 直连 | IPv6优先", type: "direct", "ip-version": "ipv6-prefer" },
+    { name: "🇨🇳 直连 | 仅IPv4", type: "direct", "ip-version": "ipv4" },
+    { name: "🇨🇳 直连 | 仅IPv6", type: "direct", "ip-version": "ipv6" }
+  ];
+  var seenProxyNames = {};
+  for (var spi = 0; spi < config.proxies.length; spi++) {
+    seenProxyNames[String(config.proxies[spi].name || "")] = true;
+  }
+  for (var dni = 0; dni < DIRECT_NODES.length; dni++) {
+    if (!seenProxyNames[DIRECT_NODES[dni].name]) config.proxies.push(DIRECT_NODES[dni]);
+  }
+  var directNames = [];
+  for (var dnj = 0; dnj < DIRECT_NODES.length; dnj++) directNames.push(DIRECT_NODES[dnj].name);
+
   if (typeof rateNames === "undefined" || !rateNames) rateNames = [];
   if (typeof rateGroups === "undefined" || !rateGroups) rateGroups = [];
-  var serviceProxies = [AUTO_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]);
+
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, timeout: 3000, "expected-status": 204, "max-failed-times": 2, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Auto.png" };
+  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Round_Robin.png" };
+  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Static.png" };
+  var defaultGroup = { name: DEFAULT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png" };
+  var directGroup = { name: DIRECT_GROUP, type: "select", proxies: directNames, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China.png" };
+
+  var serviceProxies = [DEFAULT_NAME, AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]);
   function pickDefault(preferred) {
+    if (preferred === DIRECT_GROUP) return DIRECT_GROUP;
     for (var i = 0; i < regionNames.length; i++) {
       if (regionNames[i] === preferred) return preferred;
     }
-    return AUTO_NAME;
+    return DEFAULT_NAME;
   }
-  function serviceGroup(name, icon, preferred) {
-    var g = { name: name, type: "select", proxies: serviceProxies.slice(), icon: icon || "" };
+  function serviceGroup(name, icon, preferred, withDirect, directFirst) {
+    var proxies;
+    if (withDirect && directFirst) proxies = [DIRECT_GROUP].concat(serviceProxies);
+    else if (withDirect) proxies = serviceProxies.concat([DIRECT_GROUP]);
+    else proxies = serviceProxies.slice();
+    var g = { name: name, type: "select", proxies: proxies, icon: icon || "" };
     if (preferred) g["default-selected"] = pickDefault(preferred);
     return g;
   }
 
-  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", "DIRECT"], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Advertising.png" };
-  var aiGroup = serviceGroup("💬 AI 服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png", "🇺🇸 美国节点");
-  var geminiGroup = serviceGroup("✨ Gemini", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", "🇺🇸 美国节点");
-  var claudeGroup = serviceGroup("🤖 Claude AI", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png", "🇺🇸 美国节点");
-  var fcmGroup = serviceGroup("🔔 FCM", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", "");
-  var bilibiliGroup = serviceGroup("📺 哔哩哔哩", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/bilibili.png", "");
-  var youtubeGroup = serviceGroup("📹 油管视频", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/YouTube.png", "");
-  var googleGroup = serviceGroup("🔍 谷歌服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", "");
-  var privateNetworkGroup = { name: "🏠 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png" };
-  var domesticServiceGroup = { name: "🔒 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China.png" };
-  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bypass.png" };
-  var telegramGroup = serviceGroup("📲 电报消息", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png", "");
-  var githubGroup = serviceGroup("🐱 Github", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/GitHub.png", "");
-  var microsoftGroup = serviceGroup("Ⓜ️ 微软服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Microsoft.png", "");
-  var appleGroup = serviceGroup("🍏 苹果服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Apple.png", "");
-  var tiktokGroup = serviceGroup("📱 TikTok", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/TikTok.png", "🇯🇵 日本节点");
-  var twitterGroup = serviceGroup("🐦 Twitter", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Twitter.png", "");
-  var metaGroup = serviceGroup("📘 Meta", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Facebook.png", "");
-  var lineGroup = serviceGroup("💬 Line", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Line.png", "🇯🇵 日本节点");
-  var socialGroup = serviceGroup("🌐 社交媒体", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Twitter.png", "");
-  var netflixGroup = serviceGroup("📺 Netflix", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png", "");
-  var spotifyGroup = serviceGroup("🎵 Spotify", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Spotify.png", "");
-  var streamingGroup = serviceGroup("🎬 流媒体", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Video.png", "");
-  var steamGroup = serviceGroup("🎮 Steam", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Steam.png", "");
-  var gamesGroup = serviceGroup("🎮 游戏平台", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Game.png", "");
-  var pikpakGroup = serviceGroup("📦 PikPak", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Cloud.png", "");
-  var cryptoGroup = serviceGroup("🪙 Crypto", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bitcoin.png", "🇯🇵 日本节点");
-  var educationGroup = serviceGroup("📚 教育资源", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Scholar.png", "");
-  var financeGroup = serviceGroup("💰 金融服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/PayPal.png", "");
-  var cloudGroup = serviceGroup("☁️ 云服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Cloud.png", "");
-  var nonChinaGroup = serviceGroup("🌐 非中国", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Global.png", "");
-  var fallbackGroup = serviceGroup("🐟 漏网之鱼", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png", "");
-  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, geminiGroup, claudeGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, socialGroup, netflixGroup, spotifyGroup, streamingGroup, steamGroup, gamesGroup, pikpakGroup, cryptoGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Advertising.png" };
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bypass.png" };
+  var aiGroup = serviceGroup("💬 AI 服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png", "🇺🇸 美国节点", false, false);
+  var fcmGroup = serviceGroup("🔔 FCM", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", DIRECT_GROUP, true, true);
+  var bilibiliGroup = serviceGroup("📺 哔哩哔哩", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/bilibili.png", DIRECT_GROUP, true, true);
+  var youtubeGroup = serviceGroup("📹 油管视频", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/YouTube.png", "", false, false);
+  var googleGroup = serviceGroup("🔍 谷歌服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", "", false, false);
+  var telegramGroup = serviceGroup("📲 电报消息", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png", "", false, false);
+  var microsoftGroup = serviceGroup("Ⓜ️ 微软服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Microsoft.png", "", true, false);
+  var appleGroup = serviceGroup("🍏 苹果服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Apple.png", "", true, false);
+  var tiktokGroup = serviceGroup("📱 TikTok", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/TikTok.png", "🇯🇵 日本节点", false, false);
+  var twitterGroup = serviceGroup("🐦 Twitter", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Twitter.png", "", false, false);
+  var metaGroup = serviceGroup("📘 Meta", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Facebook.png", "", false, false);
+  var lineGroup = serviceGroup("💬 Line", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Line.png", "🇯🇵 日本节点", false, false);
+  var netflixGroup = serviceGroup("📺 Netflix", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png", "", false, false);
+  var embyGroup = serviceGroup("🎬 Emby", "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Emby.svg", "", true, false);
+  var spotifyGroup = serviceGroup("🎵 Spotify", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Spotify.png", "", true, false);
+  var steamGroup = serviceGroup("🎮 Steam", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Steam.png", "", true, false);
+  var pikpakGroup = serviceGroup("📦 PikPak", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Cloud.png", "", true, false);
+  var cryptoGroup = serviceGroup("🪙 Crypto", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bitcoin.png", "🇯🇵 日本节点", false, false);
+  var ehentaiGroup = serviceGroup("📖 EHentai", "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Ehentai.svg", "🇺🇸 美国节点", true, false);
+  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png" };
+
+  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
 
   var ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
   var ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
@@ -987,10 +1008,10 @@ function main(config) {
   }
 
   config["rules"] = [
-  "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI",
-  "DOMAIN-SUFFIX,anthropic.com,🤖 Claude AI",
-  "DOMAIN-SUFFIX,gemini.google.com,✨ Gemini",
-  "DOMAIN-SUFFIX,aistudio.google.com,✨ Gemini",
+  "DOMAIN-SUFFIX,claude.ai,💬 AI 服务",
+  "DOMAIN-SUFFIX,anthropic.com,💬 AI 服务",
+  "DOMAIN-SUFFIX,gemini.google.com,💬 AI 服务",
+  "DOMAIN-SUFFIX,aistudio.google.com,💬 AI 服务",
   "AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT",
   "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP",
@@ -1095,22 +1116,22 @@ function main(config) {
   "DOMAIN-SUFFIX,pddpic.com,DIRECT",
   "DOMAIN-SUFFIX,samsunghealth.com,DIRECT",
   "DOMAIN,connectivitycheck.gstatic.com,DIRECT",
-  "DOMAIN,userlocation.googleapis.com,🌐 非中国",
-  "DOMAIN,voilatile-pa.googleapis.com,🌐 非中国",
-  "DOMAIN,geller-pa.googleapis.com,🌐 非中国",
-  "DOMAIN,mobilemaps-pa-gz.googleapis.com,🌐 非中国",
-  "DOMAIN-SUFFIX,app-measurement.com,🌐 非中国",
-  "DOMAIN-SUFFIX,firebaselogging.googleapis.com,🌐 非中国",
-  "DOMAIN-SUFFIX,in.appcenter.ms,🌐 非中国",
-  "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,🌐 非中国",
-  "DOMAIN-SUFFIX,connect.facebook.net,🌐 非中国",
-  "DOMAIN-SUFFIX,a-cdn.anthropic.com,🤖 Claude AI",
-  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,🤖 Claude AI",
-  "DOMAIN-SUFFIX,bing.com,🌐 非中国",
+  "DOMAIN,userlocation.googleapis.com,默认代理",
+  "DOMAIN,voilatile-pa.googleapis.com,默认代理",
+  "DOMAIN,geller-pa.googleapis.com,默认代理",
+  "DOMAIN,mobilemaps-pa-gz.googleapis.com,默认代理",
+  "DOMAIN-SUFFIX,app-measurement.com,默认代理",
+  "DOMAIN-SUFFIX,firebaselogging.googleapis.com,默认代理",
+  "DOMAIN-SUFFIX,in.appcenter.ms,默认代理",
+  "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,默认代理",
+  "DOMAIN-SUFFIX,connect.facebook.net,默认代理",
+  "DOMAIN-SUFFIX,a-cdn.anthropic.com,💬 AI 服务",
+  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,💬 AI 服务",
+  "DOMAIN-SUFFIX,bing.com,默认代理",
   "DOMAIN-SUFFIX,samsungosp.com,DIRECT",
-  "DOMAIN-SUFFIX,crashlytics.com,🌐 非中国",
-  "DOMAIN-SUFFIX,firebase.io,🌐 非中国",
-  "DOMAIN,browser-intake-us5-datadoghq.com,🌐 非中国",
+  "DOMAIN-SUFFIX,crashlytics.com,默认代理",
+  "DOMAIN-SUFFIX,firebase.io,默认代理",
+  "DOMAIN,browser-intake-us5-datadoghq.com,默认代理",
   "RULE-SET,sukka-phishing,REJECT-DROP",
   "RULE-SET,category-ads-all,🛑 广告拦截",
   "DOMAIN,galaxystore.ad-survey.com,REJECT",
@@ -1133,42 +1154,43 @@ function main(config) {
   "AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,443),(RULE-SET,cn-ip)),DIRECT",
   "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "IP-CIDR,54.223.0.0/16,🌐 非中国,no-resolve",
-  "IP-CIDR,52.80.168.0/24,🌐 非中国,no-resolve",
-  "DOMAIN-SUFFIX,browserleaks.com,🌐 非中国",
-  "DOMAIN-SUFFIX,browserleaks.org,🌐 非中国",
-  "DOMAIN-SUFFIX,ipleak.net,🌐 非中国",
-  "DOMAIN-SUFFIX,dnsleaktest.com,🌐 非中国",
-  "DOMAIN-SUFFIX,dnsleak.com,🌐 非中国",
-  "DOMAIN-SUFFIX,whoer.net,🌐 非中国",
-  "DOMAIN-SUFFIX,whatismyipaddress.com,🌐 非中国",
-  "DOMAIN-SUFFIX,ipinfo.io,🌐 非中国",
-  "DOMAIN-SUFFIX,ip-api.com,🌐 非中国",
-  "DOMAIN-SUFFIX,myip.com,🌐 非中国",
-  "DOMAIN-SUFFIX,ifconfig.me,🌐 非中国",
-  "DOMAIN-SUFFIX,ifconfig.co,🌐 非中国",
-  "DOMAIN-SUFFIX,ipecho.net,🌐 非中国",
-  "DOMAIN-SUFFIX,ip.sb,🌐 非中国",
-  "DOMAIN-SUFFIX,ipleak.com,🌐 非中国",
-  "DOMAIN-SUFFIX,dnsleaktest.org,🌐 非中国",
-  "DOMAIN-SUFFIX,browserleaks.info,🌐 非中国",
-  "DOMAIN-SUFFIX,whatismyip.com,🌐 非中国",
-  "DOMAIN-SUFFIX,ipify.org,🌐 非中国",
-  "DOMAIN-SUFFIX,api.ipify.org,🌐 非中国",
-  "DOMAIN-SUFFIX,ipapi.co,🌐 非中国",
-  "DOMAIN-SUFFIX,ipwho.is,🌐 非中国",
-  "DOMAIN-SUFFIX,ident.me,🌐 非中国",
-  "DOMAIN-SUFFIX,cloudflarestorage.com,🌐 非中国",
-  "DOMAIN-SUFFIX,paddle.com,🌐 非中国",
-  "DOMAIN-SUFFIX,challenges.cloudflare.com,🌐 非中国",
-  "DOMAIN-SUFFIX,recaptcha.net,🌐 非中国",
-  "DOMAIN,recaptcha.google.com,🌐 非中国",
+  "IP-CIDR,54.223.0.0/16,默认代理,no-resolve",
+  "IP-CIDR,52.80.168.0/24,默认代理,no-resolve",
+  "DOMAIN-SUFFIX,browserleaks.com,默认代理",
+  "DOMAIN-SUFFIX,browserleaks.org,默认代理",
+  "DOMAIN-SUFFIX,ipleak.net,默认代理",
+  "DOMAIN-SUFFIX,dnsleaktest.com,默认代理",
+  "DOMAIN-SUFFIX,dnsleak.com,默认代理",
+  "DOMAIN-SUFFIX,whoer.net,默认代理",
+  "DOMAIN-SUFFIX,whatismyipaddress.com,默认代理",
+  "DOMAIN-SUFFIX,ipinfo.io,默认代理",
+  "DOMAIN-SUFFIX,ip-api.com,默认代理",
+  "DOMAIN-SUFFIX,myip.com,默认代理",
+  "DOMAIN-SUFFIX,ifconfig.me,默认代理",
+  "DOMAIN-SUFFIX,ifconfig.co,默认代理",
+  "DOMAIN-SUFFIX,ipecho.net,默认代理",
+  "DOMAIN-SUFFIX,ip.sb,默认代理",
+  "DOMAIN-SUFFIX,ipleak.com,默认代理",
+  "DOMAIN-SUFFIX,dnsleaktest.org,默认代理",
+  "DOMAIN-SUFFIX,browserleaks.info,默认代理",
+  "DOMAIN-SUFFIX,whatismyip.com,默认代理",
+  "DOMAIN-SUFFIX,ipify.org,默认代理",
+  "DOMAIN-SUFFIX,api.ipify.org,默认代理",
+  "DOMAIN-SUFFIX,ipapi.co,默认代理",
+  "DOMAIN-SUFFIX,ipwho.is,默认代理",
+  "DOMAIN-SUFFIX,ident.me,默认代理",
+  "DOMAIN-SUFFIX,cloudflarestorage.com,默认代理",
+  "DOMAIN-SUFFIX,paddle.com,默认代理",
+  "DOMAIN-SUFFIX,challenges.cloudflare.com,默认代理",
+  "DOMAIN-SUFFIX,recaptcha.net,默认代理",
+  "DOMAIN,recaptcha.google.com,默认代理",
+  "RULE-SET,bilibili,📺 哔哩哔哩",
   "SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN",
   "SUB-RULE,(NETWORK,udp),DOMESTIC_DOMAIN",
   "SUB-RULE,(NETWORK,tcp),DOMESTIC_IP",
   "SUB-RULE,(NETWORK,udp),DOMESTIC_IP",
-  "PROCESS-NAME-WILDCARD,*revanced*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*youtube*,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*revanced*,📹 油管视频",
+  "PROCESS-NAME-WILDCARD,*youtube*,📹 油管视频",
   "PROCESS-NAME-WILDCARD,*com.android.bank*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.icbc*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.ccb*,DIRECT",
@@ -1224,57 +1246,72 @@ function main(config) {
   "RULE-SET,icloud,🍏 苹果服务",
   "RULE-SET,apple,🍏 苹果服务",
   "RULE-SET,microsoft,Ⓜ️ 微软服务",
-  "RULE-SET,google-gemini,✨ Gemini",
-  "RULE-SET,anthropic,🤖 Claude AI",
+  "RULE-SET,google-gemini,💬 AI 服务",
+  "RULE-SET,anthropic,💬 AI 服务",
   "RULE-SET,openai,💬 AI 服务",
   "RULE-SET,category-ai-!cn,💬 AI 服务",
   "RULE-SET,netflix,📺 Netflix",
   "RULE-SET,netflix-ip,📺 Netflix,no-resolve",
-  "RULE-SET,hulu,🎬 流媒体",
-  "RULE-SET,disney,🎬 流媒体",
-  "RULE-SET,hbo,🎬 流媒体",
-  "RULE-SET,amazon,🎬 流媒体",
-  "RULE-SET,bahamut,🎬 流媒体",
+  "RULE-SET,hulu,默认代理",
+  "RULE-SET,disney,默认代理",
+  "RULE-SET,hbo,默认代理",
+  "RULE-SET,amazon,默认代理",
+  "RULE-SET,bahamut,默认代理",
   "RULE-SET,youtube,📹 油管视频",
   "RULE-SET,tiktok,📱 TikTok",
-  "RULE-SET,biliintl,🎬 流媒体",
-  "RULE-SET,abema,🎬 流媒体",
-  "RULE-SET,bbc,🎬 流媒体",
+  "RULE-SET,biliintl,📺 哔哩哔哩",
+  "RULE-SET,abema,默认代理",
+  "RULE-SET,bbc,默认代理",
   "RULE-SET,spotify,🎵 Spotify",
   "RULE-SET,googlefcm,🔔 FCM",
   "RULE-SET,google,🔍 谷歌服务",
   "RULE-SET,google-ip,🔍 谷歌服务,no-resolve",
-  "RULE-SET,github,🐱 Github",
-  "RULE-SET,gitlab,🐱 Github",
+  "RULE-SET,github,默认代理",
+  "RULE-SET,gitlab,默认代理",
   "RULE-SET,meta,📘 Meta",
   "RULE-SET,facebook,📘 Meta",
   "RULE-SET,instagram,📘 Meta",
   "RULE-SET,twitter,🐦 Twitter",
   "RULE-SET,twitter-ip,🐦 Twitter,no-resolve",
-  "RULE-SET,linkedin,🌐 社交媒体",
-  "RULE-SET,discord,🌐 社交媒体",
-  "RULE-SET,snapchat,🌐 社交媒体",
+  "RULE-SET,linkedin,默认代理",
+  "RULE-SET,discord,默认代理",
+  "RULE-SET,snapchat,默认代理",
   "RULE-SET,line,💬 Line",
   "RULE-SET,telegram,📲 电报消息",
   "RULE-SET,telegram-ip,📲 电报消息,no-resolve",
   "RULE-SET,facebook-ip,📘 Meta,no-resolve",
-  "RULE-SET,cloudflare-ip,☁️ 云服务,no-resolve",
-  "RULE-SET,cloudfront-ip,☁️ 云服务,no-resolve",
-  "RULE-SET,fastly-ip,☁️ 云服务,no-resolve",
+  "RULE-SET,cloudflare-ip,默认代理,no-resolve",
+  "RULE-SET,cloudfront-ip,默认代理,no-resolve",
+  "RULE-SET,fastly-ip,默认代理,no-resolve",
   "RULE-SET,steam,🎮 Steam",
-  "RULE-SET,epicgames,🎮 游戏平台",
-  "RULE-SET,ea,🎮 游戏平台",
-  "RULE-SET,ubisoft,🎮 游戏平台",
-  "RULE-SET,blizzard,🎮 游戏平台",
-  "RULE-SET,paypal,💰 金融服务",
-  "RULE-SET,aws,☁️ 云服务",
-  "RULE-SET,azure,☁️ 云服务",
-  "RULE-SET,dropbox,☁️ 云服务",
-  "RULE-SET,onedrive,☁️ 云服务",
+  "RULE-SET,epicgames,🎮 Steam",
+  "RULE-SET,ea,🎮 Steam",
+  "RULE-SET,ubisoft,🎮 Steam",
+  "RULE-SET,blizzard,🎮 Steam",
+  "RULE-SET,paypal,默认代理",
+  "RULE-SET,aws,默认代理",
+  "RULE-SET,azure,默认代理",
+  "RULE-SET,dropbox,默认代理",
+  "RULE-SET,onedrive,默认代理",
   "RULE-SET,pikpak,📦 PikPak",
   "RULE-SET,cryptocurrency,🪙 Crypto",
-  "RULE-SET,category-scholar-!cn,📚 教育资源",
-  "RULE-SET,geolocation-!cn,🌐 非中国",
+  "RULE-SET,category-scholar-!cn,默认代理",
+  "RULE-SET,geolocation-!cn,默认代理",
+  "DOMAIN-SUFFIX,mb3admin.com,🎬 Emby",
+  "DOMAIN-SUFFIX,nubebelle.com,🎬 Emby",
+  "DOMAIN-KEYWORD,emby,🎬 Emby",
+  "PROCESS-NAME,com.mb.android,🎬 Emby",
+  "PROCESS-NAME,tv.emby.embyatv,🎬 Emby",
+  "PROCESS-NAME,com.hush.yamby,🎬 Emby",
+  "PROCESS-NAME,com.jellycine.app,🎬 Emby",
+  "PROCESS-NAME,com.mountains.hills,🎬 Emby",
+  "PROCESS-NAME,RodelPlayer.App.exe,🎬 Emby",
+  "PROCESS-NAME,com.feifeiduck.capyplayer,🎬 Emby",
+  "DOMAIN-SUFFIX,e-hentai.org,📖 EHentai",
+  "DOMAIN-SUFFIX,exhentai.org,📖 EHentai",
+  "DOMAIN-SUFFIX,ehgt.org,📖 EHentai",
+  "DOMAIN-SUFFIX,hath.network,📖 EHentai",
+  "DOMAIN-SUFFIX,e-hentai.to,📖 EHentai",
   "MATCH,🐟 漏网之鱼"
 ];
 
@@ -2319,6 +2356,12 @@ function main(config) {
     "1.0.0.1",
     "2606:4700:4700::1111",
     "2606:4700:4700::1001"
+  ],
+  "+.mcdn.bilivideo.com": [
+    "0.0.0.0"
+  ],
+  "+.mcdn.bilivideo.cn": [
+    "0.0.0.0"
   ]
 };
 
@@ -2424,7 +2467,6 @@ function main(config) {
     "DOMAIN,register.xmpush.xiaomi.com,DIRECT",
     "RULE-SET,geolocation-cn,DIRECT",
     "RULE-SET,cn,DIRECT",
-    "RULE-SET,bilibili,DIRECT",
     "RULE-SET,apple-cn,DIRECT",
     "RULE-SET,microsoft-cn,DIRECT",
     "GEOSITE,cn,DIRECT",
@@ -2522,27 +2564,28 @@ function main(config) {
   // 机场模式必须保留与主配置一致的远控工具例外：规则层允许该组使用 DIRECT，
   // 但 UI 不额外暴露 DIRECT 作为通用节点选择项。
   // 公共同步只覆盖安全底层配置；机场原有策略组及其名称/节点选择逻辑不再被改写。
-  // 机场模式明确保留：广告拦截 DIRECT、远控工具 DIRECT。
+  // 机场模式明确保留：广告拦截 直连、远控工具 直连。
   // 私有网络/国内服务 DIRECT 只存在于底层规则，不提供用户策略组。
+  // 哔哩哔哩从底层 DIRECT 提升为可选组，默认 直连。
   // 链式模式的功能组名称与机场模式不同，因此仅将公共规则目标映射到现有机场组名。
   var TARGET_MAP = {
     "AI服务": "💬 AI 服务",
-    "国外服务": "🌐 非中国",
-    "流媒体": "🎬 流媒体",
+    "国外服务": "默认代理",
+    "流媒体": "默认代理",
     "漏网之鱼": "🐟 漏网之鱼",
     "远控工具": "🔧 远控工具"
   };
   var RULESET_MAP = {
-    "google-gemini": "✨ Gemini",
-    "anthropic": "🤖 Claude AI",
+    "google-gemini": "💬 AI 服务",
+    "anthropic": "💬 AI 服务",
     "openai": "💬 AI 服务",
     "category-ai-!cn": "💬 AI 服务",
     "youtube": "📹 油管视频",
     "google": "🔍 谷歌服务",
     "google-ip": "🔍 谷歌服务",
     "googlefcm": "🔔 FCM",
-    "github": "🐱 Github",
-    "gitlab": "🐱 Github",
+    "github": "默认代理",
+    "gitlab": "默认代理",
     "apple": "🍏 苹果服务",
     "icloud": "🍏 苹果服务",
     "microsoft": "Ⓜ️ 微软服务",
@@ -2556,37 +2599,39 @@ function main(config) {
     "instagram": "📘 Meta",
     "meta": "📘 Meta",
     "line": "💬 Line",
-    "discord": "🌐 社交媒体",
-    "snapchat": "🌐 社交媒体",
-    "linkedin": "🌐 社交媒体",
+    "discord": "默认代理",
+    "snapchat": "默认代理",
+    "linkedin": "默认代理",
     "netflix": "📺 Netflix",
     "netflix-ip": "📺 Netflix",
     "spotify": "🎵 Spotify",
     "steam": "🎮 Steam",
-    "epicgames": "🎮 游戏平台",
-    "ea": "🎮 游戏平台",
-    "ubisoft": "🎮 游戏平台",
-    "blizzard": "🎮 游戏平台",
-    "paypal": "💰 金融服务",
+    "epicgames": "🎮 Steam",
+    "ea": "🎮 Steam",
+    "ubisoft": "🎮 Steam",
+    "blizzard": "🎮 Steam",
+    "paypal": "默认代理",
     "cryptocurrency": "🪙 Crypto",
-    "aws": "☁️ 云服务",
-    "azure": "☁️ 云服务",
-    "dropbox": "☁️ 云服务",
-    "onedrive": "☁️ 云服务",
-    "cloudflare-ip": "☁️ 云服务",
-    "cloudfront-ip": "☁️ 云服务",
-    "fastly-ip": "☁️ 云服务",
-    "category-scholar-!cn": "📚 教育资源",
+    "aws": "默认代理",
+    "azure": "默认代理",
+    "dropbox": "默认代理",
+    "onedrive": "默认代理",
+    "cloudflare-ip": "默认代理",
+    "cloudfront-ip": "默认代理",
+    "fastly-ip": "默认代理",
+    "category-scholar-!cn": "默认代理",
     "pikpak": "📦 PikPak",
-    "geolocation-!cn": "🌐 非中国"
+    "bilibili": "📺 哔哩哔哩",
+    "biliintl": "📺 哔哩哔哩",
+    "geolocation-!cn": "默认代理"
   };
   var DOMAIN_MAP = {
-    "claude.ai": "🤖 Claude AI",
-    "anthropic.com": "🤖 Claude AI",
-    "a-cdn.anthropic.com": "🤖 Claude AI",
-    "assets-proxy.anthropic.com": "🤖 Claude AI",
-    "gemini.google.com": "✨ Gemini",
-    "aistudio.google.com": "✨ Gemini"
+    "claude.ai": "💬 AI 服务",
+    "anthropic.com": "💬 AI 服务",
+    "a-cdn.anthropic.com": "💬 AI 服务",
+    "assets-proxy.anthropic.com": "💬 AI 服务",
+    "gemini.google.com": "💬 AI 服务",
+    "aistudio.google.com": "💬 AI 服务"
   };
   function mapRuleTargets(list) {
     if (!list || !list.map) return list;
