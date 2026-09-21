@@ -313,9 +313,9 @@ function main(config) {
     });
   }
 
-  var AUTO_NAME = "自动选择";
-  var LB_NAME = "负载均衡";
-  var SELECT_NAME = "节点选择";
+  var AUTO_NAME = "⚡ 自动选择";
+  var LB_NAME = "⚖️ 负载均衡";
+  var SELECT_NAME = "🚀 节点选择";
   var DEFAULT_NAME = "默认代理";
   var DIRECT_GROUP = "直连";
 
@@ -363,8 +363,8 @@ function main(config) {
     return g;
   }
 
-  var adBlockGroup = { name: "广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Advertising.png" };
-  var remoteToolGroup = { name: "远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bypass.png" };
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Advertising.png" };
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bypass.png" };
   var aiGroup = serviceGroup("AI Services", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png", "🇺🇸 美国节点", false, false);
   var fcmGroup = serviceGroup("FCM", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", DIRECT_GROUP, true, true);
   var bilibiliGroup = serviceGroup("Bilibili", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/bilibili.png", DIRECT_GROUP, true, true);
@@ -2573,7 +2573,7 @@ function main(config) {
     "国外服务": "默认代理",
     "流媒体": "默认代理",
     "漏网之鱼": "Final",
-    "远控工具": "远控工具"
+    "远控工具": "🔧 远控工具"
   };
   var RULESET_MAP = {
     "google-gemini": "AI Services",
