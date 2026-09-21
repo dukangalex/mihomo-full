@@ -3,7 +3,7 @@
  * 兼容旧版客户端脚本引擎（避免 find / ?. / 对象展开 / \\u{} 正则）
  * 公共行为与 template.yaml 同步。
  * 框架：MyClash 全量分流组；MY 只保留 100+ 地区三层组（自动识别）和安全基线。
- * 哔哩哔哩是可选组，默认 Direct，不再把 B 站钉死在底层 DIRECT。
+ * 哔哩哔哩是可选组，默认 直连，不再把 B 站钉死在底层 DIRECT。
  * Emby / EHentai 来自 MyClash，用域名/进程规则，不加新 MRS。
  * 禁止引用已 404 的旧 Gemini/Claude/YouTube-IP 规则集文件名
  */
@@ -313,18 +313,18 @@ function main(config) {
     });
   }
 
-  var AUTO_NAME = "Auto Select";
-  var LB_NAME = "Load Balance";
-  var SELECT_NAME = "Node Select";
-  var DEFAULT_NAME = "Default Proxy";
-  var DIRECT_GROUP = "Direct";
+  var AUTO_NAME = "自动选择";
+  var LB_NAME = "负载均衡";
+  var SELECT_NAME = "节点选择";
+  var DEFAULT_NAME = "默认代理";
+  var DIRECT_GROUP = "直连";
 
   var DIRECT_NODES = [
-    { name: "🇨🇳 Direct | 双栈", type: "direct" },
-    { name: "🇨🇳 Direct | IPv4优先", type: "direct", "ip-version": "ipv4-prefer" },
-    { name: "🇨🇳 Direct | IPv6优先", type: "direct", "ip-version": "ipv6-prefer" },
-    { name: "🇨🇳 Direct | 仅IPv4", type: "direct", "ip-version": "ipv4" },
-    { name: "🇨🇳 Direct | 仅IPv6", type: "direct", "ip-version": "ipv6" }
+    { name: "🇨🇳 直连 | 双栈", type: "direct" },
+    { name: "🇨🇳 直连 | IPv4优先", type: "direct", "ip-version": "ipv4-prefer" },
+    { name: "🇨🇳 直连 | IPv6优先", type: "direct", "ip-version": "ipv6-prefer" },
+    { name: "🇨🇳 直连 | 仅IPv4", type: "direct", "ip-version": "ipv4" },
+    { name: "🇨🇳 直连 | 仅IPv6", type: "direct", "ip-version": "ipv6" }
   ];
   var seenProxyNames = {};
   for (var spi = 0; spi < config.proxies.length; spi++) {
@@ -353,18 +353,18 @@ function main(config) {
     }
     return DEFAULT_NAME;
   }
-  function serviceGroup(name, icon, preferred, withDirect, directFirst) {
+  function serviceGroup(name, icon, preferred, with直连, directFirst) {
     var proxies;
-    if (withDirect && directFirst) proxies = [DIRECT_GROUP].concat(serviceProxies);
-    else if (withDirect) proxies = serviceProxies.concat([DIRECT_GROUP]);
+    if (with直连 && directFirst) proxies = [DIRECT_GROUP].concat(serviceProxies);
+    else if (with直连) proxies = serviceProxies.concat([DIRECT_GROUP]);
     else proxies = serviceProxies.slice();
     var g = { name: name, type: "select", proxies: proxies, icon: icon || "" };
     if (preferred) g["default-selected"] = pickDefault(preferred);
     return g;
   }
 
-  var adBlockGroup = { name: "Ad Block", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Advertising.png" };
-  var remoteToolGroup = { name: "Remote Tools", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bypass.png" };
+  var adBlockGroup = { name: "广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Advertising.png" };
+  var remoteToolGroup = { name: "远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bypass.png" };
   var aiGroup = serviceGroup("AI Services", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png", "🇺🇸 美国节点", false, false);
   var fcmGroup = serviceGroup("FCM", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", DIRECT_GROUP, true, true);
   var bilibiliGroup = serviceGroup("Bilibili", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/bilibili.png", DIRECT_GROUP, true, true);
@@ -1116,24 +1116,24 @@ function main(config) {
   "DOMAIN-SUFFIX,pddpic.com,DIRECT",
   "DOMAIN-SUFFIX,samsunghealth.com,DIRECT",
   "DOMAIN,connectivitycheck.gstatic.com,DIRECT",
-  "DOMAIN,userlocation.googleapis.com,Default Proxy",
-  "DOMAIN,voilatile-pa.googleapis.com,Default Proxy",
-  "DOMAIN,geller-pa.googleapis.com,Default Proxy",
-  "DOMAIN,mobilemaps-pa-gz.googleapis.com,Default Proxy",
-  "DOMAIN-SUFFIX,app-measurement.com,Default Proxy",
-  "DOMAIN-SUFFIX,firebaselogging.googleapis.com,Default Proxy",
-  "DOMAIN-SUFFIX,in.appcenter.ms,Default Proxy",
-  "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,Default Proxy",
-  "DOMAIN-SUFFIX,connect.facebook.net,Default Proxy",
+  "DOMAIN,userlocation.googleapis.com,默认代理",
+  "DOMAIN,voilatile-pa.googleapis.com,默认代理",
+  "DOMAIN,geller-pa.googleapis.com,默认代理",
+  "DOMAIN,mobilemaps-pa-gz.googleapis.com,默认代理",
+  "DOMAIN-SUFFIX,app-measurement.com,默认代理",
+  "DOMAIN-SUFFIX,firebaselogging.googleapis.com,默认代理",
+  "DOMAIN-SUFFIX,in.appcenter.ms,默认代理",
+  "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,默认代理",
+  "DOMAIN-SUFFIX,connect.facebook.net,默认代理",
   "DOMAIN-SUFFIX,a-cdn.anthropic.com,AI Services",
   "DOMAIN-SUFFIX,assets-proxy.anthropic.com,AI Services",
-  "DOMAIN-SUFFIX,bing.com,Default Proxy",
+  "DOMAIN-SUFFIX,bing.com,默认代理",
   "DOMAIN-SUFFIX,samsungosp.com,DIRECT",
-  "DOMAIN-SUFFIX,crashlytics.com,Default Proxy",
-  "DOMAIN-SUFFIX,firebase.io,Default Proxy",
-  "DOMAIN,browser-intake-us5-datadoghq.com,Default Proxy",
+  "DOMAIN-SUFFIX,crashlytics.com,默认代理",
+  "DOMAIN-SUFFIX,firebase.io,默认代理",
+  "DOMAIN,browser-intake-us5-datadoghq.com,默认代理",
   "RULE-SET,sukka-phishing,REJECT-DROP",
-  "RULE-SET,category-ads-all,Ad Block",
+  "RULE-SET,category-ads-all,广告拦截",
   "DOMAIN,galaxystore.ad-survey.com,REJECT",
   "DOMAIN,dls2.bigdata.samsung.com.cn,REJECT",
   "DOMAIN-REGEX,^(stun|turn|stuns|turns)\\.,REJECT-DROP",
@@ -1154,36 +1154,36 @@ function main(config) {
   "AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,443),(RULE-SET,cn-ip)),DIRECT",
   "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "IP-CIDR,54.223.0.0/16,Default Proxy,no-resolve",
-  "IP-CIDR,52.80.168.0/24,Default Proxy,no-resolve",
-  "DOMAIN-SUFFIX,browserleaks.com,Default Proxy",
-  "DOMAIN-SUFFIX,browserleaks.org,Default Proxy",
-  "DOMAIN-SUFFIX,ipleak.net,Default Proxy",
-  "DOMAIN-SUFFIX,dnsleaktest.com,Default Proxy",
-  "DOMAIN-SUFFIX,dnsleak.com,Default Proxy",
-  "DOMAIN-SUFFIX,whoer.net,Default Proxy",
-  "DOMAIN-SUFFIX,whatismyipaddress.com,Default Proxy",
-  "DOMAIN-SUFFIX,ipinfo.io,Default Proxy",
-  "DOMAIN-SUFFIX,ip-api.com,Default Proxy",
-  "DOMAIN-SUFFIX,myip.com,Default Proxy",
-  "DOMAIN-SUFFIX,ifconfig.me,Default Proxy",
-  "DOMAIN-SUFFIX,ifconfig.co,Default Proxy",
-  "DOMAIN-SUFFIX,ipecho.net,Default Proxy",
-  "DOMAIN-SUFFIX,ip.sb,Default Proxy",
-  "DOMAIN-SUFFIX,ipleak.com,Default Proxy",
-  "DOMAIN-SUFFIX,dnsleaktest.org,Default Proxy",
-  "DOMAIN-SUFFIX,browserleaks.info,Default Proxy",
-  "DOMAIN-SUFFIX,whatismyip.com,Default Proxy",
-  "DOMAIN-SUFFIX,ipify.org,Default Proxy",
-  "DOMAIN-SUFFIX,api.ipify.org,Default Proxy",
-  "DOMAIN-SUFFIX,ipapi.co,Default Proxy",
-  "DOMAIN-SUFFIX,ipwho.is,Default Proxy",
-  "DOMAIN-SUFFIX,ident.me,Default Proxy",
-  "DOMAIN-SUFFIX,cloudflarestorage.com,Default Proxy",
-  "DOMAIN-SUFFIX,paddle.com,Default Proxy",
-  "DOMAIN-SUFFIX,challenges.cloudflare.com,Default Proxy",
-  "DOMAIN-SUFFIX,recaptcha.net,Default Proxy",
-  "DOMAIN,recaptcha.google.com,Default Proxy",
+  "IP-CIDR,54.223.0.0/16,默认代理,no-resolve",
+  "IP-CIDR,52.80.168.0/24,默认代理,no-resolve",
+  "DOMAIN-SUFFIX,browserleaks.com,默认代理",
+  "DOMAIN-SUFFIX,browserleaks.org,默认代理",
+  "DOMAIN-SUFFIX,ipleak.net,默认代理",
+  "DOMAIN-SUFFIX,dnsleaktest.com,默认代理",
+  "DOMAIN-SUFFIX,dnsleak.com,默认代理",
+  "DOMAIN-SUFFIX,whoer.net,默认代理",
+  "DOMAIN-SUFFIX,whatismyipaddress.com,默认代理",
+  "DOMAIN-SUFFIX,ipinfo.io,默认代理",
+  "DOMAIN-SUFFIX,ip-api.com,默认代理",
+  "DOMAIN-SUFFIX,myip.com,默认代理",
+  "DOMAIN-SUFFIX,ifconfig.me,默认代理",
+  "DOMAIN-SUFFIX,ifconfig.co,默认代理",
+  "DOMAIN-SUFFIX,ipecho.net,默认代理",
+  "DOMAIN-SUFFIX,ip.sb,默认代理",
+  "DOMAIN-SUFFIX,ipleak.com,默认代理",
+  "DOMAIN-SUFFIX,dnsleaktest.org,默认代理",
+  "DOMAIN-SUFFIX,browserleaks.info,默认代理",
+  "DOMAIN-SUFFIX,whatismyip.com,默认代理",
+  "DOMAIN-SUFFIX,ipify.org,默认代理",
+  "DOMAIN-SUFFIX,api.ipify.org,默认代理",
+  "DOMAIN-SUFFIX,ipapi.co,默认代理",
+  "DOMAIN-SUFFIX,ipwho.is,默认代理",
+  "DOMAIN-SUFFIX,ident.me,默认代理",
+  "DOMAIN-SUFFIX,cloudflarestorage.com,默认代理",
+  "DOMAIN-SUFFIX,paddle.com,默认代理",
+  "DOMAIN-SUFFIX,challenges.cloudflare.com,默认代理",
+  "DOMAIN-SUFFIX,recaptcha.net,默认代理",
+  "DOMAIN,recaptcha.google.com,默认代理",
   "RULE-SET,bilibili,Bilibili",
   "SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN",
   "SUB-RULE,(NETWORK,udp),DOMESTIC_DOMAIN",
@@ -1229,20 +1229,20 @@ function main(config) {
   "PROCESS-NAME-WILDCARD,*com.czbank*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.bjrcb*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.android.mobilebank*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*AnyDesk*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*ToDesk*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*TeamViewer*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*RustDesk*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*rustdesk*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*tailscale*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*tailscaled*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*zerotier*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*ngrok*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*frpc*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*frps*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*cloudflared*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*natapp*,Remote Tools",
-  "PROCESS-NAME-WILDCARD,*nblink*,Remote Tools",
+  "PROCESS-NAME-WILDCARD,*AnyDesk*,远控工具",
+  "PROCESS-NAME-WILDCARD,*ToDesk*,远控工具",
+  "PROCESS-NAME-WILDCARD,*TeamViewer*,远控工具",
+  "PROCESS-NAME-WILDCARD,*RustDesk*,远控工具",
+  "PROCESS-NAME-WILDCARD,*rustdesk*,远控工具",
+  "PROCESS-NAME-WILDCARD,*tailscale*,远控工具",
+  "PROCESS-NAME-WILDCARD,*tailscaled*,远控工具",
+  "PROCESS-NAME-WILDCARD,*zerotier*,远控工具",
+  "PROCESS-NAME-WILDCARD,*ngrok*,远控工具",
+  "PROCESS-NAME-WILDCARD,*frpc*,远控工具",
+  "PROCESS-NAME-WILDCARD,*frps*,远控工具",
+  "PROCESS-NAME-WILDCARD,*cloudflared*,远控工具",
+  "PROCESS-NAME-WILDCARD,*natapp*,远控工具",
+  "PROCESS-NAME-WILDCARD,*nblink*,远控工具",
   "RULE-SET,icloud,Apple",
   "RULE-SET,apple,Apple",
   "RULE-SET,microsoft,Microsoft",
@@ -1252,51 +1252,51 @@ function main(config) {
   "RULE-SET,category-ai-!cn,AI Services",
   "RULE-SET,netflix,Netflix",
   "RULE-SET,netflix-ip,Netflix,no-resolve",
-  "RULE-SET,hulu,Default Proxy",
-  "RULE-SET,disney,Default Proxy",
-  "RULE-SET,hbo,Default Proxy",
-  "RULE-SET,amazon,Default Proxy",
-  "RULE-SET,bahamut,Default Proxy",
+  "RULE-SET,hulu,默认代理",
+  "RULE-SET,disney,默认代理",
+  "RULE-SET,hbo,默认代理",
+  "RULE-SET,amazon,默认代理",
+  "RULE-SET,bahamut,默认代理",
   "RULE-SET,youtube,YouTube",
   "RULE-SET,tiktok,TikTok",
   "RULE-SET,biliintl,Bilibili",
-  "RULE-SET,abema,Default Proxy",
-  "RULE-SET,bbc,Default Proxy",
+  "RULE-SET,abema,默认代理",
+  "RULE-SET,bbc,默认代理",
   "RULE-SET,spotify,Spotify",
   "RULE-SET,googlefcm,FCM",
   "RULE-SET,google,Google",
   "RULE-SET,google-ip,Google,no-resolve",
-  "RULE-SET,github,Default Proxy",
-  "RULE-SET,gitlab,Default Proxy",
+  "RULE-SET,github,默认代理",
+  "RULE-SET,gitlab,默认代理",
   "RULE-SET,meta,Meta",
   "RULE-SET,facebook,Meta",
   "RULE-SET,instagram,Meta",
   "RULE-SET,twitter,Twitter",
   "RULE-SET,twitter-ip,Twitter,no-resolve",
-  "RULE-SET,linkedin,Default Proxy",
-  "RULE-SET,discord,Default Proxy",
-  "RULE-SET,snapchat,Default Proxy",
+  "RULE-SET,linkedin,默认代理",
+  "RULE-SET,discord,默认代理",
+  "RULE-SET,snapchat,默认代理",
   "RULE-SET,line,Line",
   "RULE-SET,telegram,Telegram",
   "RULE-SET,telegram-ip,Telegram,no-resolve",
   "RULE-SET,facebook-ip,Meta,no-resolve",
-  "RULE-SET,cloudflare-ip,Default Proxy,no-resolve",
-  "RULE-SET,cloudfront-ip,Default Proxy,no-resolve",
-  "RULE-SET,fastly-ip,Default Proxy,no-resolve",
+  "RULE-SET,cloudflare-ip,默认代理,no-resolve",
+  "RULE-SET,cloudfront-ip,默认代理,no-resolve",
+  "RULE-SET,fastly-ip,默认代理,no-resolve",
   "RULE-SET,steam,Steam",
   "RULE-SET,epicgames,Steam",
   "RULE-SET,ea,Steam",
   "RULE-SET,ubisoft,Steam",
   "RULE-SET,blizzard,Steam",
-  "RULE-SET,paypal,Default Proxy",
-  "RULE-SET,aws,Default Proxy",
-  "RULE-SET,azure,Default Proxy",
-  "RULE-SET,dropbox,Default Proxy",
-  "RULE-SET,onedrive,Default Proxy",
+  "RULE-SET,paypal,默认代理",
+  "RULE-SET,aws,默认代理",
+  "RULE-SET,azure,默认代理",
+  "RULE-SET,dropbox,默认代理",
+  "RULE-SET,onedrive,默认代理",
   "RULE-SET,pikpak,PikPak",
   "RULE-SET,cryptocurrency,Crypto",
-  "RULE-SET,category-scholar-!cn,Default Proxy",
-  "RULE-SET,geolocation-!cn,Default Proxy",
+  "RULE-SET,category-scholar-!cn,默认代理",
+  "RULE-SET,geolocation-!cn,默认代理",
   "DOMAIN-SUFFIX,mb3admin.com,Emby",
   "DOMAIN-SUFFIX,nubebelle.com,Emby",
   "DOMAIN-KEYWORD,emby,Emby",
@@ -2175,7 +2175,7 @@ function main(config) {
   }
 };
 
-  // （比如App硬编码IPDirect）的情况下依然能按域名正确分流，
+  // （比如App硬编码IP直连）的情况下依然能按域名正确分流，
   // 提升规则匹配准确度，减少误判进国内/境外分组
   config["sniffer"] = {
   "enable": true,
@@ -2564,16 +2564,16 @@ function main(config) {
   // 机场模式必须保留与主配置一致的远控工具例外：规则层允许该组使用 DIRECT，
   // 但 UI 不额外暴露 DIRECT 作为通用节点选择项。
   // 公共同步只覆盖安全底层配置；机场原有策略组及其名称/节点选择逻辑不再被改写。
-  // 机场模式明确保留：广告拦截 Direct、远控工具 Direct。
+  // 机场模式明确保留：广告拦截 直连、远控工具 直连。
   // 私有网络/国内服务 DIRECT 只存在于底层规则，不提供用户策略组。
-  // 哔哩哔哩从底层 DIRECT 提升为可选组，默认 Direct。
+  // 哔哩哔哩从底层 DIRECT 提升为可选组，默认 直连。
   // 链式模式的功能组名称与机场模式不同，因此仅将公共规则目标映射到现有机场组名。
   var TARGET_MAP = {
     "AI服务": "AI Services",
-    "国外服务": "Default Proxy",
-    "流媒体": "Default Proxy",
+    "国外服务": "默认代理",
+    "流媒体": "默认代理",
     "漏网之鱼": "Final",
-    "远控工具": "Remote Tools"
+    "远控工具": "远控工具"
   };
   var RULESET_MAP = {
     "google-gemini": "AI Services",
@@ -2584,8 +2584,8 @@ function main(config) {
     "google": "Google",
     "google-ip": "Google",
     "googlefcm": "FCM",
-    "github": "Default Proxy",
-    "gitlab": "Default Proxy",
+    "github": "默认代理",
+    "gitlab": "默认代理",
     "apple": "Apple",
     "icloud": "Apple",
     "microsoft": "Microsoft",
@@ -2599,38 +2599,38 @@ function main(config) {
     "instagram": "Meta",
     "meta": "Meta",
     "line": "Line",
-    "discord": "Default Proxy",
-    "snapchat": "Default Proxy",
-    "linkedin": "Default Proxy",
+    "discord": "默认代理",
+    "snapchat": "默认代理",
+    "linkedin": "默认代理",
     "netflix": "Netflix",
     "netflix-ip": "Netflix",
     "spotify": "Spotify",
-    "hulu": "Default Proxy",
-    "disney": "Default Proxy",
-    "hbo": "Default Proxy",
-    "amazon": "Default Proxy",
-    "bahamut": "Default Proxy",
+    "hulu": "默认代理",
+    "disney": "默认代理",
+    "hbo": "默认代理",
+    "amazon": "默认代理",
+    "bahamut": "默认代理",
     "biliintl": "Bilibili",
     "bilibili": "Bilibili",
-    "abema": "Default Proxy",
-    "bbc": "Default Proxy",
+    "abema": "默认代理",
+    "bbc": "默认代理",
     "steam": "Steam",
     "epicgames": "Steam",
     "ea": "Steam",
     "ubisoft": "Steam",
     "blizzard": "Steam",
-    "paypal": "Default Proxy",
+    "paypal": "默认代理",
     "cryptocurrency": "Crypto",
-    "aws": "Default Proxy",
-    "azure": "Default Proxy",
-    "dropbox": "Default Proxy",
-    "onedrive": "Default Proxy",
-    "cloudflare-ip": "Default Proxy",
-    "cloudfront-ip": "Default Proxy",
-    "fastly-ip": "Default Proxy",
-    "category-scholar-!cn": "Default Proxy",
+    "aws": "默认代理",
+    "azure": "默认代理",
+    "dropbox": "默认代理",
+    "onedrive": "默认代理",
+    "cloudflare-ip": "默认代理",
+    "cloudfront-ip": "默认代理",
+    "fastly-ip": "默认代理",
+    "category-scholar-!cn": "默认代理",
     "pikpak": "PikPak",
-    "geolocation-!cn": "Default Proxy"
+    "geolocation-!cn": "默认代理"
   };
   var DOMAIN_MAP = {
     "claude.ai": "AI Services",
