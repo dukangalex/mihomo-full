@@ -54,6 +54,8 @@
 
 哔哩哔哩例外：国内 B 站不再钉死在 `DOMESTIC_DOMAIN` 底层 DIRECT。机场模式提供 `📺 哔哩哔哩` 组，**默认 `直连`**，需要走代理（港澳台内容、国际版）时再手动切换。`biliintl` 也进该组。PCDN（`mcdn.bilivideo.com` / `mcdn.bilivideo.cn`）仍在 hosts 层黑洞。
 
+MyClash 独立出口一并带上 `🎬 Emby` 和 `📖 EHentai`（可选手动直连，不向链式模板加新规则集）。
+
 ### 6. 节点协议
 
 机场模式**不按协议名称自动排除节点**。VMess、Shadowsocks、Trojan、VLESS、Hysteria/Hysteria2、TUIC 等均保留。
