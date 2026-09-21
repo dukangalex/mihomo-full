@@ -1,7 +1,9 @@
 /**
  * 机场订阅覆写（TUN · 无链式）
  * 兼容旧版客户端脚本引擎（避免 find / ?. / 对象展开 / \\u{} 正则）
- * 公共规则目标由末尾同步层映射到机场现有策略组，禁止创建重复组
+ * 公共行为与 template.yaml 同步；分流组吸收 MyClash 全量版的独立出口。
+ * 规则按 RULE-SET 打到 YouTube / Google / Gemini / Claude / Telegram 等组。
+ * 禁止引用已 404 的旧 Gemini/Claude/YouTube-IP 规则集文件名
  */
 function main(config) {
   function assign(target) {
@@ -186,7 +188,7 @@ function main(config) {
   // 排除明显非节点的「公告/说明/营销」行（机场订阅常见垃圾项）。
   // 与早期「误杀真实节点」的激进过滤不同：本正则针对群/客服/流量/到期/
   var excludeFilter =
-    /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|防失联|⚠️|@|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/i;
+    /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|福利|优惠|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|防失联|⚠️|@|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/i;
 
   // 1) 去掉 direct/reject/rematch 占位类型
   // 2) 去掉名称命中 excludeFilter 的公告伪节点
@@ -269,36 +271,101 @@ function main(config) {
   if (hasOtherRegionNodes) regionNames.push(OTHER_REGION_NAME);
   var regionNamesNoHK = regionNames.filter(function(n) { return n !== "🇭🇰 香港节点" && n !== "🇹🇼 台湾节点"; });
 
+  // 倍率组：只归类，不删除节点（MyClash 的倍率识别，ES5 正则）
+  var RATE_DEFS = [
+    { name: "📉 低倍率", jsPattern: "低倍|免费|\\b0\\.[0-5]\\s*[xX倍]\\b|[xX]\\s*0\\.[0-5]|\\bfree\\b" },
+    { name: "📈 高倍率", jsPattern: "高倍|[2-9](?:\\.\\d+)?\\s*倍|[xX×]\\s*[2-9]" }
+  ];
+  var rateNames = [];
+  var rateGroups = [];
+  var rateProbeNames = [];
+  for (var rpi = 0; rpi < config.proxies.length; rpi++) {
+    rateProbeNames.push(String(config.proxies[rpi].name || ""));
+  }
+  for (var rdi = 0; rdi < RATE_DEFS.length; rdi++) {
+    var rd = RATE_DEFS[rdi];
+    var rdRe;
+    try { rdRe = new RegExp(rd.jsPattern, "i"); } catch (e) { continue; }
+    var rdMatched = [];
+    for (var rpn = 0; rpn < rateProbeNames.length; rpn++) {
+      if (rdRe.test(rateProbeNames[rpn])) rdMatched.push(rateProbeNames[rpn]);
+    }
+    if (!rdMatched.length) continue;
+    rateNames.push(rd.name);
+    var rdAuto = rd.name + "-自动选择";
+    rateGroups.push({
+      name: rdAuto,
+      type: "url-test",
+      proxies: rdMatched.slice(),
+      url: "https://www.gstatic.com/generate_204",
+      interval: 180,
+      tolerance: 50,
+      hidden: true,
+      icon: ""
+    });
+    rateGroups.push({
+      name: rd.name,
+      type: "select",
+      proxies: [rdAuto].concat(rdMatched),
+      icon: ""
+    });
+  }
+
   var AUTO_NAME = "⚡ 自动选择";
   var SELECT_NAME = "🚀 节点选择";
-  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, icon: "" };
-  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "" };
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, url: "http://www.gstatic.com/generate_204", interval: 300, tolerance: 50, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Auto.png" };
+  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, "DIRECT"].concat(config.proxies.map(function(p) { return p.name; })), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Static.png" };
 
   // Airport service groups: no DIRECT in non-China traffic groups.
-  // Each group exposes: total-node auto selection -> detected region groups -> node selection.
-  var serviceProxies = [AUTO_NAME].concat(regionNames).concat([SELECT_NAME]);
-  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", "DIRECT"], icon: "" };
-  var aiGroup = { name: "💬 AI 服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var claudeGroup = { name: "🤖 Claude AI", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var bilibiliGroup = { name: "📺 哔哩哔哩", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var youtubeGroup = { name: "📹 油管视频", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var googleGroup = { name: "🔍 谷歌服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var privateNetworkGroup = { name: "🏠 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
-  var domesticServiceGroup = { name: "🔒 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "" };
-  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "" };
-  var telegramGroup = { name: "📲 电报消息", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var githubGroup = { name: "🐱 Github", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var microsoftGroup = { name: "Ⓜ️ 微软服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var appleGroup = { name: "🍏 苹果服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var socialGroup = { name: "🌐 社交媒体", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var streamingGroup = { name: "🎬 流媒体", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var gamesGroup = { name: "🎮 游戏平台", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var educationGroup = { name: "📚 教育资源", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var financeGroup = { name: "💰 金融服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var cloudGroup = { name: "☁️ 云服务", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var nonChinaGroup = { name: "🌐 非中国", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  var fallbackGroup = { name: "🐟 漏网之鱼", type: "select", proxies: serviceProxies.slice(), icon: "" };
-  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, claudeGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, socialGroup, streamingGroup, gamesGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup].concat(regionGroups);
+  // Each group exposes: total-node auto selection -> rate groups -> detected regions -> node selection.
+  if (typeof rateNames === "undefined" || !rateNames) rateNames = [];
+  if (typeof rateGroups === "undefined" || !rateGroups) rateGroups = [];
+  var serviceProxies = [AUTO_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]);
+  function pickDefault(preferred) {
+    for (var i = 0; i < regionNames.length; i++) {
+      if (regionNames[i] === preferred) return preferred;
+    }
+    return AUTO_NAME;
+  }
+  function serviceGroup(name, icon, preferred) {
+    var g = { name: name, type: "select", proxies: serviceProxies.slice(), icon: icon || "" };
+    if (preferred) g["default-selected"] = pickDefault(preferred);
+    return g;
+  }
+
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", "DIRECT"], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Advertising.png" };
+  var aiGroup = serviceGroup("💬 AI 服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png", "🇺🇸 美国节点");
+  var geminiGroup = serviceGroup("✨ Gemini", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", "🇺🇸 美国节点");
+  var claudeGroup = serviceGroup("🤖 Claude AI", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png", "🇺🇸 美国节点");
+  var fcmGroup = serviceGroup("🔔 FCM", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", "");
+  var bilibiliGroup = serviceGroup("📺 哔哩哔哩", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/bilibili.png", "");
+  var youtubeGroup = serviceGroup("📹 油管视频", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/YouTube.png", "");
+  var googleGroup = serviceGroup("🔍 谷歌服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", "");
+  var privateNetworkGroup = { name: "🏠 私有网络", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png" };
+  var domesticServiceGroup = { name: "🔒 国内服务", type: "select", proxies: ["DIRECT", SELECT_NAME], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China.png" };
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", "DIRECT"], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bypass.png" };
+  var telegramGroup = serviceGroup("📲 电报消息", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png", "");
+  var githubGroup = serviceGroup("🐱 Github", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/GitHub.png", "");
+  var microsoftGroup = serviceGroup("Ⓜ️ 微软服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Microsoft.png", "");
+  var appleGroup = serviceGroup("🍏 苹果服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Apple.png", "");
+  var tiktokGroup = serviceGroup("📱 TikTok", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/TikTok.png", "🇯🇵 日本节点");
+  var twitterGroup = serviceGroup("🐦 Twitter", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Twitter.png", "");
+  var metaGroup = serviceGroup("📘 Meta", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Facebook.png", "");
+  var lineGroup = serviceGroup("💬 Line", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Line.png", "🇯🇵 日本节点");
+  var socialGroup = serviceGroup("🌐 社交媒体", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Twitter.png", "");
+  var netflixGroup = serviceGroup("📺 Netflix", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png", "");
+  var spotifyGroup = serviceGroup("🎵 Spotify", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Spotify.png", "");
+  var streamingGroup = serviceGroup("🎬 流媒体", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Video.png", "");
+  var steamGroup = serviceGroup("🎮 Steam", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Steam.png", "");
+  var gamesGroup = serviceGroup("🎮 游戏平台", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Game.png", "");
+  var pikpakGroup = serviceGroup("📦 PikPak", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Cloud.png", "");
+  var cryptoGroup = serviceGroup("🪙 Crypto", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bitcoin.png", "🇯🇵 日本节点");
+  var educationGroup = serviceGroup("📚 教育资源", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Scholar.png", "");
+  var financeGroup = serviceGroup("💰 金融服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/PayPal.png", "");
+  var cloudGroup = serviceGroup("☁️ 云服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Cloud.png", "");
+  var nonChinaGroup = serviceGroup("🌐 非中国", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Global.png", "");
+  var fallbackGroup = serviceGroup("🐟 漏网之鱼", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png", "");
+  config["proxy-groups"] = [selectGroup, autoGroup, adBlockGroup, aiGroup, geminiGroup, claudeGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, privateNetworkGroup, domesticServiceGroup, remoteToolGroup, telegramGroup, githubGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, socialGroup, netflixGroup, spotifyGroup, streamingGroup, steamGroup, gamesGroup, pikpakGroup, cryptoGroup, educationGroup, financeGroup, cloudGroup, nonChinaGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
 
   var ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
   var ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
@@ -335,6 +402,69 @@ function main(config) {
     "proxy": "DIRECT",
     "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/openai.mrs",
     "path": "./ruleset/openai.mrs"
+  },
+  "google-gemini": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "proxy": "DIRECT",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google-gemini.mrs",
+    "path": "./ruleset/google-gemini.mrs"
+  },
+  "anthropic": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "proxy": "DIRECT",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/anthropic.mrs",
+    "path": "./ruleset/anthropic.mrs"
+  },
+  "googlefcm": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "proxy": "DIRECT",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/googlefcm.mrs",
+    "path": "./ruleset/googlefcm.mrs"
+  },
+  "telegram": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "proxy": "DIRECT",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/telegram.mrs",
+    "path": "./ruleset/telegram.mrs"
+  },
+  "line": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "proxy": "DIRECT",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/line.mrs",
+    "path": "./ruleset/line.mrs"
+  },
+  "pikpak": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "proxy": "DIRECT",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/pikpak.mrs",
+    "path": "./ruleset/pikpak.mrs"
+  },
+  "meta": {
+    "type": "http",
+    "format": "mrs",
+    "behavior": "domain",
+    "interval": 604800,
+    "proxy": "DIRECT",
+    "url": "https://gcore.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/meta.mrs",
+    "path": "./ruleset/meta.mrs"
   },
   "bilibili": {
     "type": "http",
@@ -858,7 +988,9 @@ function main(config) {
 
   config["rules"] = [
   "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI",
-  "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI",
+  "DOMAIN-SUFFIX,anthropic.com,🤖 Claude AI",
+  "DOMAIN-SUFFIX,gemini.google.com,✨ Gemini",
+  "DOMAIN-SUFFIX,aistudio.google.com,✨ Gemini",
   "AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT",
   "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP",
@@ -972,8 +1104,8 @@ function main(config) {
   "DOMAIN-SUFFIX,in.appcenter.ms,🌐 非中国",
   "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,🌐 非中国",
   "DOMAIN-SUFFIX,connect.facebook.net,🌐 非中国",
-  "DOMAIN-SUFFIX,a-cdn.anthropic.com,💬 AI 服务",
-  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,💬 AI 服务",
+  "DOMAIN-SUFFIX,a-cdn.anthropic.com,🤖 Claude AI",
+  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,🤖 Claude AI",
   "DOMAIN-SUFFIX,bing.com,🌐 非中国",
   "DOMAIN-SUFFIX,samsungosp.com,DIRECT",
   "DOMAIN-SUFFIX,crashlytics.com,🌐 非中国",
@@ -983,7 +1115,6 @@ function main(config) {
   "RULE-SET,category-ads-all,🛑 广告拦截",
   "DOMAIN,galaxystore.ad-survey.com,REJECT",
   "DOMAIN,dls2.bigdata.samsung.com.cn,REJECT",
-  "RULE-SET,private-ip,DIRECT,no-resolve",
   "DOMAIN-REGEX,^(stun|turn|stuns|turns)\\.,REJECT-DROP",
   "DOMAIN-REGEX,[-.]stun[-.],REJECT-DROP",
   "DOMAIN-REGEX,[-.]turn[-.],REJECT-DROP",
@@ -998,12 +1129,6 @@ function main(config) {
   "AND,((NETWORK,TCP),(DST-PORT,25),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
   "AND,((NETWORK,TCP),(DST-PORT,110),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
   "AND,((NETWORK,TCP),(DST-PORT,143),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP",
-  "AND,((NETWORK,UDP),(DST-PORT,19302-19305)),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,3478-3480)),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,5349-5355)),REJECT-DROP",
-  "AND,((NETWORK,TCP),(DST-PORT,19302-19305)),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,1900),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,5353),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,443),(RULE-SET,cn-ip)),DIRECT",
@@ -1082,66 +1207,73 @@ function main(config) {
   "PROCESS-NAME-WILDCARD,*com.czbank*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.bjrcb*,DIRECT",
   "PROCESS-NAME-WILDCARD,*com.android.mobilebank*,DIRECT",
-  "PROCESS-NAME-WILDCARD,*AnyDesk*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*ToDesk*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*TeamViewer*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*RustDesk*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*rustdesk*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*tailscale*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*tailscaled*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*zerotier*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*ngrok*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*frpc*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*frps*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*cloudflared*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*natapp*,🌐 非中国",
-  "PROCESS-NAME-WILDCARD,*nblink*,🌐 非中国",
-  "RULE-SET,icloud,🌐 非中国",
-  "RULE-SET,apple,🌐 非中国",
-  "RULE-SET,microsoft,🌐 非中国",
+  "PROCESS-NAME-WILDCARD,*AnyDesk*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*ToDesk*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*TeamViewer*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*RustDesk*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*rustdesk*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*tailscale*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*tailscaled*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*zerotier*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*ngrok*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*frpc*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*frps*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*cloudflared*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*natapp*,🔧 远控工具",
+  "PROCESS-NAME-WILDCARD,*nblink*,🔧 远控工具",
+  "RULE-SET,icloud,🍏 苹果服务",
+  "RULE-SET,apple,🍏 苹果服务",
+  "RULE-SET,microsoft,Ⓜ️ 微软服务",
+  "RULE-SET,google-gemini,✨ Gemini",
+  "RULE-SET,anthropic,🤖 Claude AI",
   "RULE-SET,openai,💬 AI 服务",
   "RULE-SET,category-ai-!cn,💬 AI 服务",
-  "RULE-SET,netflix,🎬 流媒体",
-  "RULE-SET,netflix-ip,🎬 流媒体,no-resolve",
+  "RULE-SET,netflix,📺 Netflix",
+  "RULE-SET,netflix-ip,📺 Netflix,no-resolve",
   "RULE-SET,hulu,🎬 流媒体",
   "RULE-SET,disney,🎬 流媒体",
   "RULE-SET,hbo,🎬 流媒体",
   "RULE-SET,amazon,🎬 流媒体",
   "RULE-SET,bahamut,🎬 流媒体",
-  "RULE-SET,youtube,🎬 流媒体",
-  "RULE-SET,tiktok,🎬 流媒体",
+  "RULE-SET,youtube,📹 油管视频",
+  "RULE-SET,tiktok,📱 TikTok",
   "RULE-SET,biliintl,🎬 流媒体",
   "RULE-SET,abema,🎬 流媒体",
   "RULE-SET,bbc,🎬 流媒体",
-  "RULE-SET,spotify,🎬 流媒体",
-  "RULE-SET,google,🌐 非中国",
-  "RULE-SET,google-ip,🌐 非中国,no-resolve",
-  "RULE-SET,github,🌐 非中国",
-  "RULE-SET,gitlab,🌐 非中国",
-  "RULE-SET,facebook,🌐 非中国",
-  "RULE-SET,instagram,🌐 非中国",
-  "RULE-SET,twitter,🌐 非中国",
-  "RULE-SET,twitter-ip,🌐 非中国,no-resolve",
-  "RULE-SET,linkedin,🌐 非中国",
-  "RULE-SET,discord,🌐 非中国",
-  "RULE-SET,snapchat,🌐 非中国",
-  "RULE-SET,telegram-ip,🌐 非中国,no-resolve",
-  "RULE-SET,facebook-ip,🌐 非中国,no-resolve",
-  "RULE-SET,cloudflare-ip,🌐 非中国,no-resolve",
-  "RULE-SET,cloudfront-ip,🌐 非中国,no-resolve",
-  "RULE-SET,fastly-ip,🌐 非中国,no-resolve",
-  "RULE-SET,steam,🌐 非中国",
-  "RULE-SET,epicgames,🌐 非中国",
-  "RULE-SET,ea,🌐 非中国",
-  "RULE-SET,ubisoft,🌐 非中国",
-  "RULE-SET,blizzard,🌐 非中国",
-  "RULE-SET,paypal,🌐 非中国",
-  "RULE-SET,aws,🌐 非中国",
-  "RULE-SET,azure,🌐 非中国",
-  "RULE-SET,dropbox,🌐 非中国",
-  "RULE-SET,onedrive,🌐 非中国",
-  "RULE-SET,cryptocurrency,🌐 非中国",
-  "RULE-SET,category-scholar-!cn,🌐 非中国",
+  "RULE-SET,spotify,🎵 Spotify",
+  "RULE-SET,googlefcm,🔔 FCM",
+  "RULE-SET,google,🔍 谷歌服务",
+  "RULE-SET,google-ip,🔍 谷歌服务,no-resolve",
+  "RULE-SET,github,🐱 Github",
+  "RULE-SET,gitlab,🐱 Github",
+  "RULE-SET,meta,📘 Meta",
+  "RULE-SET,facebook,📘 Meta",
+  "RULE-SET,instagram,📘 Meta",
+  "RULE-SET,twitter,🐦 Twitter",
+  "RULE-SET,twitter-ip,🐦 Twitter,no-resolve",
+  "RULE-SET,linkedin,🌐 社交媒体",
+  "RULE-SET,discord,🌐 社交媒体",
+  "RULE-SET,snapchat,🌐 社交媒体",
+  "RULE-SET,line,💬 Line",
+  "RULE-SET,telegram,📲 电报消息",
+  "RULE-SET,telegram-ip,📲 电报消息,no-resolve",
+  "RULE-SET,facebook-ip,📘 Meta,no-resolve",
+  "RULE-SET,cloudflare-ip,☁️ 云服务,no-resolve",
+  "RULE-SET,cloudfront-ip,☁️ 云服务,no-resolve",
+  "RULE-SET,fastly-ip,☁️ 云服务,no-resolve",
+  "RULE-SET,steam,🎮 Steam",
+  "RULE-SET,epicgames,🎮 游戏平台",
+  "RULE-SET,ea,🎮 游戏平台",
+  "RULE-SET,ubisoft,🎮 游戏平台",
+  "RULE-SET,blizzard,🎮 游戏平台",
+  "RULE-SET,paypal,💰 金融服务",
+  "RULE-SET,aws,☁️ 云服务",
+  "RULE-SET,azure,☁️ 云服务",
+  "RULE-SET,dropbox,☁️ 云服务",
+  "RULE-SET,onedrive,☁️ 云服务",
+  "RULE-SET,pikpak,📦 PikPak",
+  "RULE-SET,cryptocurrency,🪙 Crypto",
+  "RULE-SET,category-scholar-!cn,📚 教育资源",
   "RULE-SET,geolocation-!cn,🌐 非中国",
   "MATCH,🐟 漏网之鱼"
 ];
@@ -2394,11 +2526,67 @@ function main(config) {
   // 私有网络/国内服务 DIRECT 只存在于底层规则，不提供用户策略组。
   // 链式模式的功能组名称与机场模式不同，因此仅将公共规则目标映射到现有机场组名。
   var TARGET_MAP = {
-    "AI服务": "🤖 AI服务",
-    "国外服务": "🌍 国外服务",
-    "流媒体": "📺 Media",
+    "AI服务": "💬 AI 服务",
+    "国外服务": "🌐 非中国",
+    "流媒体": "🎬 流媒体",
     "漏网之鱼": "🐟 漏网之鱼",
     "远控工具": "🔧 远控工具"
+  };
+  var RULESET_MAP = {
+    "google-gemini": "✨ Gemini",
+    "anthropic": "🤖 Claude AI",
+    "openai": "💬 AI 服务",
+    "category-ai-!cn": "💬 AI 服务",
+    "youtube": "📹 油管视频",
+    "google": "🔍 谷歌服务",
+    "google-ip": "🔍 谷歌服务",
+    "googlefcm": "🔔 FCM",
+    "github": "🐱 Github",
+    "gitlab": "🐱 Github",
+    "apple": "🍏 苹果服务",
+    "icloud": "🍏 苹果服务",
+    "microsoft": "Ⓜ️ 微软服务",
+    "telegram": "📲 电报消息",
+    "telegram-ip": "📲 电报消息",
+    "tiktok": "📱 TikTok",
+    "twitter": "🐦 Twitter",
+    "twitter-ip": "🐦 Twitter",
+    "facebook": "📘 Meta",
+    "facebook-ip": "📘 Meta",
+    "instagram": "📘 Meta",
+    "meta": "📘 Meta",
+    "line": "💬 Line",
+    "discord": "🌐 社交媒体",
+    "snapchat": "🌐 社交媒体",
+    "linkedin": "🌐 社交媒体",
+    "netflix": "📺 Netflix",
+    "netflix-ip": "📺 Netflix",
+    "spotify": "🎵 Spotify",
+    "steam": "🎮 Steam",
+    "epicgames": "🎮 游戏平台",
+    "ea": "🎮 游戏平台",
+    "ubisoft": "🎮 游戏平台",
+    "blizzard": "🎮 游戏平台",
+    "paypal": "💰 金融服务",
+    "cryptocurrency": "🪙 Crypto",
+    "aws": "☁️ 云服务",
+    "azure": "☁️ 云服务",
+    "dropbox": "☁️ 云服务",
+    "onedrive": "☁️ 云服务",
+    "cloudflare-ip": "☁️ 云服务",
+    "cloudfront-ip": "☁️ 云服务",
+    "fastly-ip": "☁️ 云服务",
+    "category-scholar-!cn": "📚 教育资源",
+    "pikpak": "📦 PikPak",
+    "geolocation-!cn": "🌐 非中国"
+  };
+  var DOMAIN_MAP = {
+    "claude.ai": "🤖 Claude AI",
+    "anthropic.com": "🤖 Claude AI",
+    "a-cdn.anthropic.com": "🤖 Claude AI",
+    "assets-proxy.anthropic.com": "🤖 Claude AI",
+    "gemini.google.com": "✨ Gemini",
+    "aistudio.google.com": "✨ Gemini"
   };
   function mapRuleTargets(list) {
     if (!list || !list.map) return list;
@@ -2408,6 +2596,14 @@ function main(config) {
       if (parts.length < 2) return rule;
       var targetIndex = parts.length - 1;
       if (parts[targetIndex] === "no-resolve" && parts.length >= 3) targetIndex--;
+      if (parts[0] === "RULE-SET" && RULESET_MAP[parts[1]]) {
+        parts[targetIndex] = RULESET_MAP[parts[1]];
+        return parts.join(",");
+      }
+      if ((parts[0] === "DOMAIN" || parts[0] === "DOMAIN-SUFFIX" || parts[0] === "DOMAIN-KEYWORD") && DOMAIN_MAP[parts[1]]) {
+        parts[targetIndex] = DOMAIN_MAP[parts[1]];
+        return parts.join(",");
+      }
       var target = parts[targetIndex];
       if (TARGET_MAP[target]) parts[targetIndex] = TARGET_MAP[target];
       return parts.join(",");

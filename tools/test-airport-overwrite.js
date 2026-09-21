@@ -38,24 +38,29 @@ if (JSON.stringify(output).includes("CI Forbidden Chain")) fail("forbidden chain
 
 const groups = Array.isArray(output["proxy-groups"]) ? output["proxy-groups"] : [];
 const requiredGroups = [
-  "🚀 节点选择", "⚡ 自动选择", "🛑 广告拦截", "💬 AI 服务", "🤖 Claude AI",
-  "📺 哔哩哔哩", "📹 油管视频", "🔍 谷歌服务", "🏠 私有网络", "🔒 国内服务",
-  "🔧 远控工具", "📲 电报消息", "🐱 Github", "Ⓜ️ 微软服务", "🍏 苹果服务",
-  "🌐 社交媒体", "🎬 流媒体", "🎮 游戏平台", "📚 教育资源", "💰 金融服务",
-  "☁️ 云服务", "🌐 非中国", "🐟 漏网之鱼"
+  "🚀 节点选择", "⚡ 自动选择", "🛑 广告拦截", "💬 AI 服务", "✨ Gemini", "🤖 Claude AI",
+  "🔔 FCM", "📺 哔哩哔哩", "📹 油管视频", "🔍 谷歌服务", "🏠 私有网络", "🔒 国内服务",
+  "🔧 远控工具", "📲 电报消息", "🐱 Github", "Ⓜ️ 微软服务", "🍏 苹果服务", "📱 TikTok",
+  "🐦 Twitter", "📘 Meta", "💬 Line", "🌐 社交媒体", "📺 Netflix", "🎵 Spotify",
+  "🎬 流媒体", "🎮 Steam", "🎮 游戏平台", "📦 PikPak", "🪙 Crypto", "📚 教育资源",
+  "💰 金融服务", "☁️ 云服务", "🌐 非中国", "🐟 漏网之鱼"
 ];
 for (const name of requiredGroups) {
   if (!groups.some(g => g && g.name === name)) fail(`required strategy group missing: ${name}`);
 }
 if (!output.rules.some(rule => rule === "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI")) fail("Claude.ai is not routed to the dedicated Claude AI group");
+if (!output.rules.some(rule => rule === "RULE-SET,youtube,📹 油管视频")) fail("YouTube is not routed to the dedicated YouTube group");
+if (!output.rules.some(rule => rule === "RULE-SET,google,🔍 谷歌服务")) fail("Google is not routed to the dedicated Google group");
+if (!output.rules.some(rule => rule === "PROCESS-NAME-WILDCARD,*AnyDesk*,🔧 远控工具")) fail("AnyDesk is not routed to the remote-control group");
 if (groups.some(g => g && ["🔰 节点选择", "🤖 AI服务", "🌍 国外服务"].includes(g.name))) fail("legacy strategy group remains");
 
 const byName = name => groups.find(g => g && g.name === name);
 const serviceGroups = [
-  "💬 AI 服务", "🤖 Claude AI", "📺 哔哩哔哩", "📹 油管视频", "🔍 谷歌服务",
-  "📲 电报消息", "🐱 Github", "Ⓜ️ 微软服务", "🍏 苹果服务", "🌐 社交媒体",
-  "🎬 流媒体", "🎮 游戏平台", "📚 教育资源", "💰 金融服务", "☁️ 云服务",
-  "🌐 非中国", "🐟 漏网之鱼"
+  "💬 AI 服务", "✨ Gemini", "🤖 Claude AI", "🔔 FCM", "📺 哔哩哔哩", "📹 油管视频",
+  "🔍 谷歌服务", "📲 电报消息", "🐱 Github", "Ⓜ️ 微软服务", "🍏 苹果服务", "📱 TikTok",
+  "🐦 Twitter", "📘 Meta", "💬 Line", "🌐 社交媒体", "📺 Netflix", "🎵 Spotify",
+  "🎬 流媒体", "🎮 Steam", "🎮 游戏平台", "📦 PikPak", "🪙 Crypto", "📚 教育资源",
+  "💰 金融服务", "☁️ 云服务", "🌐 非中国", "🐟 漏网之鱼"
 ];
 for (const name of serviceGroups) {
   const group = byName(name);
@@ -74,20 +79,37 @@ if (!remote.proxies.includes("DIRECT")) fail("DIRECT exception missing from remo
 const select = byName("🚀 节点选择");
 if (!select.proxies.includes("DIRECT")) fail("node selection group lost DIRECT fallback");
 
+const providers = output["rule-providers"] || {};
+if (!providers["google-gemini"] || !String(providers["google-gemini"].url || "").includes("google-gemini.mrs")) {
+  fail("google-gemini provider missing or not using google-gemini.mrs");
+}
+if (!providers.anthropic || !String(providers.anthropic.url || "").includes("anthropic.mrs")) {
+  fail("anthropic provider missing or not using anthropic.mrs");
+}
+const dumped = JSON.stringify(output);
+for (const dead of ["geosite/gemini.mrs", "geosite/claude.mrs", "geoip/youtube.mrs"]) {
+  if (dumped.includes(dead)) fail(`dead MetaCubeX ruleset leaked into output: ${dead}`);
+}
+
 const numbered = sandbox.__airportMain({
   proxies: [
     { name: "HK1", type: "vless", server: "198.51.100.21", port: 443 },
     { name: "US03", type: "vless", server: "198.51.100.22", port: 443 },
+    { name: "日本 0.2x", type: "vless", server: "198.51.100.23", port: 443 },
   ],
 });
 const numberedGroups = Array.isArray(numbered["proxy-groups"]) ? numbered["proxy-groups"] : [];
 if (!numberedGroups.some(g => g && g.name === "🇭🇰 香港节点")) fail("HK1 should match Hong Kong");
 if (!numberedGroups.some(g => g && g.name === "🇺🇸 美国节点")) fail("US03 should match United States");
+if (!numberedGroups.some(g => g && g.name === "📉 低倍率")) fail("0.2x node should create the low-rate group");
 
 ok("full-overwrite input isolation");
 ok("airport proxy preservation");
 ok("chain field isolation");
 ok("strategy-group contract");
+ok("dedicated RULE-SET routing");
 ok("non-China groups exclude DIRECT");
 ok("ad/remote DIRECT exceptions preserved");
 ok("numbered region node tags");
+ok("live MetaCubeX AI providers, no 404 rulesets");
+ok("rate multiplier grouping");
