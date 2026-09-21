@@ -367,10 +367,10 @@ function main(config) {
   var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bypass.png" };
   var aiGroup = serviceGroup("💬 AI 服务", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png", "🇺🇸 美国节点", false, false);
   var fcmGroup = serviceGroup("🔔 FCM", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", DIRECT_GROUP, true, true);
-  var bilibiliGroup = serviceGroup("📺 bilibili", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/bilibili.png", DIRECT_GROUP, true, true);
+  var bilibiliGroup = serviceGroup("📺 Bilibili", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/bilibili.png", DIRECT_GROUP, true, true);
   var youtubeGroup = serviceGroup("📹 YouTube", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/YouTube.png", "", false, false);
   var googleGroup = serviceGroup("🔍 Google", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", "", false, false);
-  var telegramGroup = serviceGroup("📲 aTelegram", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png", "", false, false);
+  var telegramGroup = serviceGroup("📲 Telegram", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png", "", false, false);
   var microsoftGroup = serviceGroup("Ⓜ️ Microsoft", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Microsoft.png", "", true, false);
   var appleGroup = serviceGroup("🍏 Apple", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Apple.png", "", true, false);
   var tiktokGroup = serviceGroup("📱 TikTok", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/TikTok.png", "🇯🇵 日本节点", false, false);
