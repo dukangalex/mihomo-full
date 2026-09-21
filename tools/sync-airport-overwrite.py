@@ -129,7 +129,7 @@ RULESET_TARGET = {
     "anthropic": "AI Services",
     "openai": "AI Services",
     "category-ai-!cn": "AI Services",
-    "category-ads-all": "广告拦截",
+    "category-ads-all": "🛑 广告拦截",
     "youtube": "YouTube",
     "google": "Google",
     "google-ip": "Google",
