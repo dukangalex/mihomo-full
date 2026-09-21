@@ -38,8 +38,8 @@ if (JSON.stringify(output).includes("CI Forbidden Chain")) fail("forbidden chain
 
 const groups = Array.isArray(output["proxy-groups"]) ? output["proxy-groups"] : [];
 const requiredGroups = [
-  "Default Proxy", "Node Select", "Auto Select", "Load Balance", "Direct",
-  "Ad Block", "Remote Tools", "AI Services", "FCM", "Bilibili",
+  "默认代理", "节点选择", "自动选择", "负载均衡", "直连",
+  "广告拦截", "远控工具", "AI Services", "FCM", "Bilibili",
   "YouTube", "Google", "Telegram", "Microsoft", "Apple",
   "TikTok", "Twitter", "Meta", "Line", "Netflix", "Emby",
   "Spotify", "Steam", "PikPak", "Crypto", "EHentai", "Final",
@@ -65,7 +65,7 @@ if (output.rules.some(rule => rule === "RULE-SET,bilibili,DIRECT")) fail("Bilibi
 if ((output["sub-rules"] || {}).DOMESTIC_DOMAIN && output["sub-rules"].DOMESTIC_DOMAIN.includes("RULE-SET,bilibili,DIRECT")) {
   fail("Bilibili still sits in DOMESTIC_DOMAIN bottom-layer DIRECT");
 }
-if (!output.rules.some(rule => rule === "PROCESS-NAME-WILDCARD,*AnyDesk*,Remote Tools")) fail("AnyDesk is not routed to the remote-control group");
+if (!output.rules.some(rule => rule === "PROCESS-NAME-WILDCARD,*AnyDesk*,远控工具")) fail("AnyDesk is not routed to the remote-control group");
 if (groups.some(g => g && ["🔰 节点选择", "🤖 AI服务", "🌍 国外服务"].includes(g.name))) fail("legacy strategy group remains");
 
 const byName = name => groups.find(g => g && g.name === name);
@@ -77,43 +77,43 @@ for (const name of proxyOnlyGroups) {
   const group = byName(name);
   if (!group || !Array.isArray(group.proxies)) fail(`service group has no proxy list: ${name}`);
   if (group.proxies.includes("DIRECT")) fail(`kernel DIRECT must not appear in non-China service group: ${name}`);
-  if (group.proxies[0] !== "Default Proxy") fail(`default proxy must be first: ${name}`);
+  if (group.proxies[0] !== "默认代理") fail(`default proxy must be first: ${name}`);
 }
 
-const withDirectLast = ["Microsoft", "Apple", "Spotify", "Steam", "PikPak", "Emby", "EHentai"];
-for (const name of withDirectLast) {
+const with直连Last = ["Microsoft", "Apple", "Spotify", "Steam", "PikPak", "Emby", "EHentai"];
+for (const name of with直连Last) {
   const group = byName(name);
-  if (!group.proxies.includes("Direct")) fail(`MyClash-style Direct option missing from ${name}`);
-  if (group.proxies[0] === "Direct") fail(`${name} should stay proxy-first with Direct last`);
+  if (!group.proxies.includes("直连")) fail(`MyClash-style 直连 option missing from ${name}`);
+  if (group.proxies[0] === "直连") fail(`${name} should stay proxy-first with 直连 last`);
 }
 
 const bili = byName("Bilibili");
-if (!bili.proxies.includes("Direct")) fail("哔哩哔哩 group lost Direct selection");
-if (bili.proxies[0] !== "Direct") fail("哔哩哔哩 Direct must be the first/default option, not a bottom-layer hardwire");
-if (bili["default-selected"] !== "Direct") fail("哔哩哔哩 default-selected must be Direct");
+if (!bili.proxies.includes("直连")) fail("哔哩哔哩 group lost 直连 selection");
+if (bili.proxies[0] !== "直连") fail("哔哩哔哩 直连 must be the first/default option, not a bottom-layer hardwire");
+if (bili["default-selected"] !== "直连") fail("哔哩哔哩 default-selected must be 直连");
 
 const fcm = byName("FCM");
-if (fcm.proxies[0] !== "Direct") fail("FCM should default to Direct like MyClash");
+if (fcm.proxies[0] !== "直连") fail("FCM should default to 直连 like MyClash");
 
 const ehentai = byName("EHentai");
-if (ehentai["default-selected"] !== "Default Proxy" && ehentai["default-selected"] !== "🇺🇸 美国节点") {
+if (ehentai["default-selected"] !== "默认代理" && ehentai["default-selected"] !== "🇺🇸 美国节点") {
   fail("EHentai should prefer US nodes when present, otherwise default proxy");
 }
 
-const ad = byName("Ad Block");
-if (!ad.proxies.includes("Direct") && !ad.proxies.includes("DIRECT")) fail("DIRECT exception missing from ad blocking group");
+const ad = byName("广告拦截");
+if (!ad.proxies.includes("直连") && !ad.proxies.includes("DIRECT")) fail("DIRECT exception missing from ad blocking group");
 if (!ad.proxies.includes("REJECT-DROP")) fail("REJECT-DROP default missing from ad blocking group");
-const remote = byName("Remote Tools");
-if (!remote.proxies.includes("Direct") && !remote.proxies.includes("DIRECT")) fail("DIRECT exception missing from remote-control group");
+const remote = byName("远控工具");
+if (!remote.proxies.includes("直连") && !remote.proxies.includes("DIRECT")) fail("DIRECT exception missing from remote-control group");
 
-const select = byName("Node Select");
+const select = byName("节点选择");
 if (select.proxies.includes("DIRECT")) fail("node selection must not be a global DIRECT switch");
-if (!select.proxies.includes("Auto Select") || !select.proxies.includes("Load Balance")) {
+if (!select.proxies.includes("自动选择") || !select.proxies.includes("负载均衡")) {
   fail("node selection lost auto/load-balance trio entries");
 }
 
-const direct = byName("Direct");
-if (!direct.proxies.some(n => String(n).includes("双栈"))) fail("Direct group lost MyClash dual-stack node");
+const direct = byName("直连");
+if (!direct.proxies.some(n => String(n).includes("双栈"))) fail("直连 group lost MyClash dual-stack node");
 
 const providers = output["rule-providers"] || {};
 if (!providers["google-gemini"] || !String(providers["google-gemini"].url || "").includes("google-gemini.mrs")) {
@@ -149,8 +149,8 @@ ok("chain field isolation");
 ok("strategy-group contract");
 ok("homogeneous groups removed");
 ok("dedicated RULE-SET routing");
-ok("Bilibili group has selectable Direct and is actually wired");
-ok("MyClash CN-like groups keep Direct");
+ok("Bilibili group has selectable 直连 and is actually wired");
+ok("MyClash CN-like groups keep 直连");
 ok("ad/remote DIRECT exceptions preserved");
 ok("numbered region node tags");
 ok("live MetaCubeX AI providers, no 404 rulesets");
