@@ -320,11 +320,11 @@ function main(config) {
   var DIRECT_GROUP = "直连";
 
   var DIRECT_NODES = [
-    { name: "🇨🇳 直连 | 双栈", type: "direct" },
-    { name: "🇨🇳 直连 | IPv4优先", type: "direct", "ip-version": "ipv4-prefer" },
-    { name: "🇨🇳 直连 | IPv6优先", type: "direct", "ip-version": "ipv6-prefer" },
-    { name: "🇨🇳 直连 | 仅IPv4", type: "direct", "ip-version": "ipv4" },
-    { name: "🇨🇳 直连 | 仅IPv6", type: "direct", "ip-version": "ipv6" }
+    { name: "🇨🇳 Direct | 双栈", type: "direct" },
+    { name: "🇨🇳 Direct | IPv4优先", type: "direct", "ip-version": "ipv4-prefer" },
+    { name: "🇨🇳 Direct | IPv6优先", type: "direct", "ip-version": "ipv6-prefer" },
+    { name: "🇨🇳 Direct | 仅IPv4", type: "direct", "ip-version": "ipv4" },
+    { name: "🇨🇳 Direct | 仅IPv6", type: "direct", "ip-version": "ipv6" }
   ];
   var seenProxyNames = {};
   for (var spi = 0; spi < config.proxies.length; spi++) {
@@ -353,10 +353,10 @@ function main(config) {
     }
     return DEFAULT_NAME;
   }
-  function serviceGroup(name, icon, preferred, with直连, directFirst) {
+  function serviceGroup(name, icon, preferred, withDirect, directFirst) {
     var proxies;
-    if (with直连 && directFirst) proxies = [DIRECT_GROUP].concat(serviceProxies);
-    else if (with直连) proxies = serviceProxies.concat([DIRECT_GROUP]);
+    if (withDirect && directFirst) proxies = [DIRECT_GROUP].concat(serviceProxies);
+    else if (withDirect) proxies = serviceProxies.concat([DIRECT_GROUP]);
     else proxies = serviceProxies.slice();
     var g = { name: name, type: "select", proxies: proxies, icon: icon || "" };
     if (preferred) g["default-selected"] = pickDefault(preferred);
