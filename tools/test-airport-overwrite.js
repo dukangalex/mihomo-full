@@ -39,7 +39,7 @@ if (JSON.stringify(output).includes("CI Forbidden Chain")) fail("forbidden chain
 const groups = Array.isArray(output["proxy-groups"]) ? output["proxy-groups"] : [];
 const requiredGroups = [
   "默认代理", "节点选择", "自动选择", "负载均衡", "直连",
-  "广告拦截", "远控工具", "AI Services", "FCM", "Bilibili",
+  "🛑 广告拦截", "🔧 远控工具", "AI Services", "FCM", "Bilibili",
   "YouTube", "Google", "Telegram", "Microsoft", "Apple",
   "TikTok", "Twitter", "Meta", "Line", "Netflix", "Emby",
   "Spotify", "Steam", "PikPak", "Crypto", "EHentai", "Final",
