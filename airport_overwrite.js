@@ -4,6 +4,7 @@
  * 公共行为与 template.yaml 同步。
  * 框架：MyClash 全量分流组；MY 只保留 100+ 地区三层组（自动识别）和安全基线。
  * 哔哩哔哩是可选组，默认 直连，不再把 B 站钉死在底层 DIRECT。
+ * 健康检查默认 lazy、间隔 300 秒、url-test 容差 50；另有 Fallback，挂了才换。
  * Emby / EHentai 来自 MyClash，用域名/进程规则，不加新 MRS。
  * 禁止引用已 404 的旧 Gemini/Claude/YouTube-IP 规则集文件名
  */
@@ -249,8 +250,8 @@ function main(config) {
   function buildRegionTrio(name, matchField) {
     var autoName = "" + name + "-自动选择";
     var lbName = "" + name + "-负载均衡";
-    var common = { "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "", hidden: true };
-    var auto = { name: autoName, type: "url-test", tolerance: 35, "max-failed-times": 2 };
+    var common = { "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 300, timeout: 3000, "expected-status": 204, icon: "", hidden: true, lazy: true };
+    var auto = { name: autoName, type: "url-test", tolerance: 50, "max-failed-times": 2 };
     var lb = { name: lbName, type: "load-balance", strategy: "sticky-sessions" };
     for (var ck in common) { if (Object.prototype.hasOwnProperty.call(common, ck)) { auto[ck] = common[ck]; lb[ck] = common[ck]; } }
     for (var mk in matchField) { if (Object.prototype.hasOwnProperty.call(matchField, mk)) { auto[mk] = matchField[mk]; lb[mk] = matchField[mk]; } }
@@ -300,8 +301,9 @@ function main(config) {
       type: "url-test",
       proxies: rdMatched.slice(),
       url: "https://www.gstatic.com/generate_204",
-      interval: 180,
+      interval: 300,
       tolerance: 50,
+      lazy: true,
       hidden: true,
       icon: ""
     });
@@ -315,6 +317,7 @@ function main(config) {
 
   var AUTO_NAME = "⚡ 自动选择";
   var LB_NAME = "⚖️ 负载均衡";
+  var FAILOVER_NAME = "🔁 Fallback";
   var SELECT_NAME = "🚀 节点选择";
   var DEFAULT_NAME = "默认代理";
   var DIRECT_GROUP = "直连";
@@ -339,13 +342,14 @@ function main(config) {
   if (typeof rateNames === "undefined" || !rateNames) rateNames = [];
   if (typeof rateGroups === "undefined" || !rateGroups) rateGroups = [];
 
-  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, timeout: 3000, "expected-status": 204, "max-failed-times": 2, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Auto.png" };
-  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Round_Robin.png" };
-  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Static.png" };
-  var defaultGroup = { name: DEFAULT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png" };
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, tolerance: 50, timeout: 3000, "expected-status": 204, "max-failed-times": 2, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Auto.png" };
+  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, timeout: 3000, "expected-status": 204, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Round_Robin.png" };
+  var failoverGroup = { name: FAILOVER_NAME, type: "fallback", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, timeout: 5000, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png" };
+  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Static.png" };
+  var defaultGroup = { name: DEFAULT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png" };
   var directGroup = { name: DIRECT_GROUP, type: "select", proxies: directNames, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China.png" };
 
-  var serviceProxies = [DEFAULT_NAME, AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]);
+  var serviceProxies = [DEFAULT_NAME, AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]);
   function pickDefault(preferred) {
     if (preferred === DIRECT_GROUP) return DIRECT_GROUP;
     for (var i = 0; i < regionNames.length; i++) {
@@ -384,9 +388,9 @@ function main(config) {
   var pikpakGroup = serviceGroup("📦 PikPak", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Cloud.png", "", true, false);
   var cryptoGroup = serviceGroup("🪙 Crypto", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bitcoin.png", "🇯🇵 日本节点", false, false);
   var ehentaiGroup = serviceGroup("📖 EHentai", "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Ehentai.svg", "🇺🇸 美国节点", true, false);
-  var fallbackGroup = { name: "🐟 Final", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png" };
+  var fallbackGroup = { name: "🐟 Final", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png" };
 
-  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
+  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, failoverGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
 
   var ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
   var ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };

@@ -52,7 +52,7 @@
 
 国内服务优先依据规则集和 CN IP 判定走底层 `DIRECT`。未知目标不能因为缺少国内分类而默认直连。
 
-哔哩哔哩例外：国内 B 站不再钉死在 `DOMESTIC_DOMAIN` 底层 DIRECT。机场模式提供 `📺 哔哩哔哩` 组，**默认 `直连`**，需要走代理（港澳台内容、国际版）时再手动切换。`biliintl` 也进该组。PCDN（`mcdn.bilivideo.com` / `mcdn.bilivideo.cn`）仍在 hosts 层黑洞。
+哔哩哔哩例外：国内 B 站不再钉死在 `DOMESTIC_DOMAIN` 底层 DIRECT。机场模式提供 `📺 Bilibili` 组，**默认 `直连`**，需要走代理（港澳台内容、国际版）时再手动切换。`biliintl` 也进该组。PCDN（`mcdn.bilivideo.com` / `mcdn.bilivideo.cn`）仍在 hosts 层黑洞。
 
 MyClash 独立出口一并带上 `🎬 Emby` 和 `📖 EHentai`（可选手动直连，不向链式模板加新规则集）。
 
@@ -61,6 +61,12 @@ MyClash 独立出口一并带上 `🎬 Emby` 和 `📖 EHentai`（可选手动�
 机场模式**不按协议名称自动排除节点**。VMess、Shadowsocks、Trojan、VLESS、Hysteria/Hysteria2、TUIC 等均保留。
 
 协议名称本身不足以准确判断实际安全性；服务端配置、加密/传输方式和节点来源同样重要。
+
+### 7. 健康检查与故障转移
+
+地区三层的 url-test / 负载均衡，以及全局自动选择、负载均衡，默认 `lazy: true`、间隔 300 秒。url-test 容差为 50。手机客户端不会在这些组未被选中时全量探测，避免一百多个地区组把电量和流量打光，也减少视频或通话中途因为延迟抖动被切走。
+
+另有 `🔁 Fallback`（`type: fallback`，同样 lazy，排除 DIRECT 类型节点）。需要「当前节点挂了才换、不要按延迟来回跳」时再手动选择。默认代理的第一项仍是自动选择，不改变现有默认出口。
 
 ## 同步安全规则
 
