@@ -24,6 +24,7 @@ MYCLASH_ICON = "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg"
 
 BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
   var LB_NAME = "⚖️ 负载均衡";
+  var FAILOVER_NAME = "🔁 Fallback";
   var SELECT_NAME = "🚀 节点选择";
   var DEFAULT_NAME = "默认代理";
   var DIRECT_GROUP = "直连";
@@ -48,13 +49,14 @@ BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
   if (typeof rateNames === "undefined" || !rateNames) rateNames = [];
   if (typeof rateGroups === "undefined" || !rateGroups) rateGroups = [];
 
-  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, timeout: 3000, "expected-status": 204, "max-failed-times": 2, icon: "''' + ICON + r'''/Auto.png" };
-  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, timeout: 3000, "expected-status": 204, icon: "''' + ICON + r'''/Round_Robin.png" };
-  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames), icon: "''' + ICON + r'''/Static.png" };
-  var defaultGroup = { name: DEFAULT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "''' + ICON + r'''/Proxy.png" };
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, tolerance: 50, timeout: 3000, "expected-status": 204, "max-failed-times": 2, icon: "''' + ICON + r'''/Auto.png" };
+  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, timeout: 3000, "expected-status": 204, icon: "''' + ICON + r'''/Round_Robin.png" };
+  var failoverGroup = { name: FAILOVER_NAME, type: "fallback", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, timeout: 5000, icon: "''' + ICON + r'''/Available.png" };
+  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames), icon: "''' + ICON + r'''/Static.png" };
+  var defaultGroup = { name: DEFAULT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "''' + ICON + r'''/Proxy.png" };
   var directGroup = { name: DIRECT_GROUP, type: "select", proxies: directNames, icon: "''' + ICON + r'''/China.png" };
 
-  var serviceProxies = [DEFAULT_NAME, AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]);
+  var serviceProxies = [DEFAULT_NAME, AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]);
   function pickDefault(preferred) {
     if (preferred === DIRECT_GROUP) return DIRECT_GROUP;
     for (var i = 0; i < regionNames.length; i++) {
@@ -93,9 +95,9 @@ BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
   var pikpakGroup = serviceGroup("📦 PikPak", "''' + ICON + r'''/Cloud.png", "", true, false);
   var cryptoGroup = serviceGroup("🪙 Crypto", "''' + ICON + r'''/Bitcoin.png", "🇯🇵 日本节点", false, false);
   var ehentaiGroup = serviceGroup("📖 EHentai", "''' + MYCLASH_ICON + r'''/Ehentai.svg", "🇺🇸 美国节点", true, false);
-  var fallbackGroup = { name: "🐟 Final", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "''' + ICON + r'''/Stack.png" };
+  var fallbackGroup = { name: "🐟 Final", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "''' + ICON + r'''/Stack.png" };
 
-  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
+  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, failoverGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
 
 '''
 
