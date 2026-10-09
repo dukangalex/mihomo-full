@@ -126,7 +126,7 @@ def restore_airport_exceptions(text):
 
 RULESET_TARGET = {
     "google-gemini": "💬 AI Services",
-    "anthropic": "💬 AI Services",
+    "anthropic": "🤖 Claude",
     "openai": "💬 AI Services",
     "category-ai-!cn": "💬 AI Services",
     "category-ads-all": "🛑 广告拦截",
@@ -184,18 +184,38 @@ RULESET_TARGET = {
 }
 GROUP_TARGET = {
     "AI服务": "💬 AI Services",
+    "Claude": "🤖 Claude",
     "国外服务": "默认代理",
     "流媒体": "默认代理",
     "漏网之鱼": "🐟 Final",
     "远控工具": "🔧 远控工具",
 }
-DOMAIN_TARGET = {
-    "claude.ai": "💬 AI Services",
-    "anthropic.com": "💬 AI Services",
-    "a-cdn.anthropic.com": "💬 AI Services",
-    "assets-proxy.anthropic.com": "💬 AI Services",
+CLAUDE_GROUP = "🤖 Claude"
+CLAUDE_DOMAINS = (
+    "claude.ai", "anthropic.com", "claude.com", "clau.de", "claudemcpclient.com",
+    "claudeusercontent.com", "a-cdn.anthropic.com", "assets-proxy.anthropic.com",
+    "servd-anthropic-website.b-cdn.net", "anthropic.com.cdn.cloudflare.net",
+    "anthropic.auth0.com", "anthropic-com.ghost.io", "sentry.io", "statsigapi.net",
+    "datadoghq.com", "browser-intake-datadoghq.com",
+    "sift.com", "siftscience.com", "intercom.io", "intercomcdn.com", "cdn.usefathom.com",
+)
+DOMAIN_TARGET = {d: CLAUDE_GROUP for d in CLAUDE_DOMAINS}
+DOMAIN_TARGET.update({
     "gemini.google.com": "💬 AI Services",
     "aistudio.google.com": "💬 AI Services",
+    # OpenAI tenant host under sentry.io: stays with ChatGPT, not the Claude suffix.
+    "o33249.ingest.sentry.io": "💬 AI Services",
+    # Copilot endpoints: AI exit, not the Microsoft group.
+    "copilot.microsoft.com": "💬 AI Services",
+    "sydney.bing.com": "💬 AI Services",
+    "edgeservices.bing.com": "💬 AI Services",
+    "copilot.cloud.microsoft": "💬 AI Services",
+})
+CRYPTO_EXTRA = ("binance.info", "bitget.com", "mexc.com", "kucoin.com", "gate.io", "gate.com", "htx.com", "coinbase.com", "kraken.com")
+DOMAIN_TARGET.update({d: "🪙 Crypto" for d in CRYPTO_EXTRA})
+IP_TARGET = {
+    "160.79.104.0/21": CLAUDE_GROUP,
+    "2607:6bc0::/32": CLAUDE_GROUP,
 }
 PROCESS_TARGET = {
     "*revanced*": "📹 YouTube",
@@ -203,7 +223,7 @@ PROCESS_TARGET = {
 }
 REQUIRED_AIRPORT_GROUPS = (
     "默认代理", "🚀 节点选择", "⚡ 自动选择", "⚖️ 负载均衡", "直连",
-    "🛑 广告拦截", "🔧 远控工具", "💬 AI Services", "🔔 FCM", "📺 Bilibili",
+    "🛑 广告拦截", "🔧 远控工具", "💬 AI Services", "🤖 Claude", "🔔 FCM", "📺 Bilibili",
     "📹 YouTube", "🔍 Google", "📲 Telegram", "Ⓜ️ Microsoft", "🍏 Apple",
     "📱 TikTok", "🐦 Twitter", "📘 Meta", "💬 Line", "📺 Netflix", "🎬 Emby",
     "🎵 Spotify", "🎮 Steam", "📦 PikPak", "🪙 Crypto", "📖 EHentai", "🐟 Final",
@@ -252,6 +272,9 @@ def remap_one_rule(rule):
         return ",".join(parts)
     if kind in ("DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD") and len(parts) >= 3 and parts[1] in DOMAIN_TARGET:
         parts[target_idx] = DOMAIN_TARGET[parts[1]]
+        return ",".join(parts)
+    if kind in ("IP-CIDR", "IP-CIDR6") and len(parts) >= 3 and parts[1] in IP_TARGET:
+        parts[target_idx] = IP_TARGET[parts[1]]
         return ",".join(parts)
     if kind.startswith("PROCESS-NAME") and len(parts) >= 3 and parts[1] in PROCESS_TARGET:
         parts[target_idx] = PROCESS_TARGET[parts[1]]
@@ -335,6 +358,7 @@ def apply_airport_strategy_groups(text):
   var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "" };
   var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "" };
   var aiGroup = { name: "💬 AI Services", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
+  var claudeGroup = { name: "🤖 Claude", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
   var fcmGroup = { name: "🔔 FCM", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
   var bilibiliGroup = { name: "📺 Bilibili", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
   var youtubeGroup = { name: "📹 YouTube", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
@@ -354,7 +378,7 @@ def apply_airport_strategy_groups(text):
   var cryptoGroup = { name: "🪙 Crypto", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
   var ehentaiGroup = { name: "📖 EHentai", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
   var fallbackGroup = { name: "🐟 Final", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, SELECT_NAME], icon: "" };
-  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup];
+  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, claudeGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup];
 
 '''
     return text[:start]+block+text[end:]
@@ -381,7 +405,8 @@ def validate_airport(text):
     if text.count('  config = {};')!=1: raise RuntimeError("airport full-overwrite contract must reset config exactly once")
     if text.find('  config = {};')<text.find('  var originalProxies = sourceConfig.proxies || []'): raise RuntimeError("airport proxies must be captured before config reset")
     if '"RULE-SET,category-ads-all,🛑 广告拦截"' not in text: raise RuntimeError("airport ad rule is not connected to the ad group")
-    if '"DOMAIN-SUFFIX,claude.ai,💬 AI Services"' not in text: raise RuntimeError("Claude.ai rule is missing")
+    if '"DOMAIN-SUFFIX,claude.ai,🤖 Claude"' not in text: raise RuntimeError("Claude.ai must route to the dedicated Claude group")
+    if '"IP-CIDR,160.79.104.0/21,🤖 Claude,no-resolve"' not in text: raise RuntimeError("Anthropic IP range must route to the dedicated Claude group")
     if '"RULE-SET,youtube,📹 YouTube"' not in text: raise RuntimeError("YouTube must route to the dedicated YouTube group")
     if '"RULE-SET,google,🔍 Google"' not in text: raise RuntimeError("Google must route to the dedicated Google group")
     if BILIBILI_RULE not in text and '"RULE-SET,bilibili,📺 Bilibili"' not in text: raise RuntimeError("Bilibili must route to the dedicated Bilibili group")
@@ -402,6 +427,18 @@ def validate_airport(text):
         if dead in text: raise RuntimeError("dead MetaCubeX ruleset URL remains: " + dead)
     assert_no_chain_features(text)
 
+def sync_runtime_maps(text):
+    """Keep the runtime JS remap tables identical to the Python tables above."""
+    for var, table in (("DOMAIN_MAP", DOMAIN_TARGET), ("IP_MAP", IP_TARGET)):
+        head = "  var " + var + " = "
+        i = text.find(head)
+        if i < 0: raise RuntimeError("runtime map not found: " + var)
+        j = text.find(";\n", i)
+        if j < 0: raise RuntimeError("runtime map unterminated: " + var)
+        body = json.dumps(table, ensure_ascii=False, indent=2).replace("\n", "\n  ")
+        text = text[:i] + head + body + text[j:]
+    return text
+
 def transform(template,airport):
     result=enforce_full_overwrite_contract(airport)
     for key in COMMON_OBJECTS:
@@ -419,6 +456,7 @@ def transform(template,airport):
     result=apply_airport_strategy_groups(result)
     result=map_airport_targets(result)
     result=ensure_airport_node_sanitizer(result)
+    result=sync_runtime_maps(result)
     validate_airport(result)
     return result
 

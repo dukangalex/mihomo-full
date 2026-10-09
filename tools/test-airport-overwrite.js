@@ -39,7 +39,7 @@ if (JSON.stringify(output).includes("CI Forbidden Chain")) fail("forbidden chain
 const groups = Array.isArray(output["proxy-groups"]) ? output["proxy-groups"] : [];
 const requiredGroups = [
   "默认代理", "🚀 节点选择", "⚡ 自动选择", "⚖️ 负载均衡", "🔁 Fallback", "直连",
-  "🛑 广告拦截", "🔧 远控工具", "💬 AI Services", "🔔 FCM", "📺 Bilibili",
+  "🛑 广告拦截", "🔧 远控工具", "💬 AI Services", "🤖 Claude", "🔔 FCM", "📺 Bilibili",
   "📹 YouTube", "🔍 Google", "📲 Telegram", "Ⓜ️ Microsoft", "🍏 Apple",
   "📱 TikTok", "🐦 Twitter", "📘 Meta", "💬 Line", "📺 Netflix", "🎬 Emby",
   "🎵 Spotify", "🎮 Steam", "📦 PikPak", "🪙 Crypto", "📖 EHentai", "🐟 Final",
@@ -55,7 +55,30 @@ const bannedGroups = [
 for (const name of bannedGroups) {
   if (groups.some(g => g && g.name === name)) fail(`homogeneous group was not removed: ${name}`);
 }
-if (!output.rules.some(rule => rule === "DOMAIN-SUFFIX,claude.ai,💬 AI Services")) fail("Claude.ai is not routed to the unified AI group");
+if (!output.rules.some(rule => rule === "DOMAIN-SUFFIX,claude.ai,🤖 Claude")) fail("Claude.ai is not routed to the dedicated Claude group");
+if (!output.rules.some(rule => rule === "RULE-SET,anthropic,🤖 Claude")) fail("anthropic rule-set is not routed to the dedicated Claude group");
+if (!output.rules.some(rule => rule === "IP-CIDR,160.79.104.0/21,🤖 Claude,no-resolve")) fail("Anthropic IPv4 range is not routed to the Claude group");
+if (!output.rules.some(rule => rule === "IP-CIDR6,2607:6bc0::/32,🤖 Claude,no-resolve")) fail("Anthropic IPv6 range is not routed to the Claude group");
+{
+  const r = output.rules;
+  const at = x => r.indexOf(x);
+  const sub = r.findIndex(x => x.indexOf("SUB-RULE,") === 0);
+  for (const must of ["RULE-SET,tiktok,📱 TikTok", "RULE-SET,netflix,📺 Netflix", "RULE-SET,openai,💬 AI Services",
+                      "RULE-SET,google-gemini,💬 AI Services", "RULE-SET,category-ai-!cn,💬 AI Services", "RULE-SET,cryptocurrency,🪙 Crypto"]) {
+    if (at(must) < 0 || at(must) > sub) fail(`anti-ban closed loop: ${must} must precede the domestic SUB-RULE layer`);
+  }
+  if (at("DOMAIN,copilot.microsoft.com,💬 AI Services") < 0 || at("DOMAIN,copilot.microsoft.com,💬 AI Services") > at("RULE-SET,microsoft,Ⓜ️ Microsoft")) fail("Copilot must reach the AI group before the Microsoft rule-set");
+  if (at("DOMAIN,o33249.ingest.sentry.io,💬 AI Services") < 0 || at("DOMAIN,o33249.ingest.sentry.io,💬 AI Services") > at("DOMAIN-SUFFIX,sentry.io,🤖 Claude")) fail("OpenAI Sentry tenant must not be captured by the Claude sentry.io suffix");
+  if (at("DOMAIN-SUFFIX,bitget.com,🪙 Crypto") < 0) fail("crypto exchange supplements must route to the Crypto group");
+  const ffi = (output.dns && output.dns["fake-ip-filter"]) || [];
+  if (ffi.indexOf("RULE-SET,tiktok,fake-ip") < 0 || ffi.indexOf("RULE-SET,tiktok,fake-ip") > ffi.indexOf("RULE-SET,cn,real-ip")) fail("TikTok must stay fake-ip ahead of the cn real-ip filter");
+}
+if (output.rules.some(rule => /DOMAIN-KEYWORD,(datadog|sift),/.test(rule))) fail("over-broad datadog/sift keyword rules must not exist");
+{
+  const ci = output.rules.findIndex(rule => rule === "DOMAIN-SUFFIX,claude.ai,🤖 Claude");
+  const p0 = output.rules.findIndex(rule => rule.indexOf("AND,((IN-TYPE,TUN)") === 0);
+  if (ci < 0 || p0 < 0 || ci > p0) fail("Claude rules must be evaluated before every other rule");
+}
 if (!output.rules.some(rule => rule === "RULE-SET,youtube,📹 YouTube")) fail("YouTube is not routed to the dedicated YouTube group");
 if (!output.rules.some(rule => rule === "RULE-SET,google,🔍 Google")) fail("Google is not routed to the dedicated Google group");
 if (!output.rules.some(rule => rule === "RULE-SET,bilibili,📺 Bilibili")) fail("Bilibili is not routed to the dedicated Bilibili group");
@@ -70,7 +93,7 @@ if (groups.some(g => g && ["🔰 节点选择", "🤖 AI服务", "🌍 国外服
 
 const byName = name => groups.find(g => g && g.name === name);
 const proxyOnlyGroups = [
-  "💬 AI Services", "📹 YouTube", "🔍 Google", "📲 Telegram",
+  "💬 AI Services", "🤖 Claude", "📹 YouTube", "🔍 Google", "📲 Telegram",
   "📱 TikTok", "🐦 Twitter", "📘 Meta", "💬 Line", "📺 Netflix", "🪙 Crypto",
 ];
 for (const name of proxyOnlyGroups) {
@@ -164,6 +187,24 @@ if (!lowRate || !lowRate.lazy || lowRate.interval !== 300) fail("rate url-test m
 const numberedEhentai = numberedGroups.find(g => g && g.name === "📖 EHentai");
 if (!numberedEhentai || numberedEhentai["default-selected"] !== "🇺🇸 美国节点") fail("EHentai should prefer US when US nodes exist");
 
+const tricky = sandbox.__airportMain({
+  proxies: [
+    "in-transit 台湾 01", "No.1 新加坡", "内蒙古-香港 02", "IT 01 意大利", "Dubai 01", "澳门 01", "Lima PE1",
+  ].map((name, i) => ({ name, type: "ss", server: "198.51.100." + (30 + i), port: 8388, cipher: "aes-128-gcm", password: "x" })),
+});
+const trickyNames = (tricky["proxy-groups"] || []).map(g => g && g.name);
+for (const bad of ["🇮🇳 印度节点", "🇳🇴 挪威节点", "🇲🇳 蒙古节点"]) {
+  if (trickyNames.includes(bad)) fail(`English word / 内蒙古 false positive created ${bad}`);
+}
+for (const good of ["🇹🇼 台湾节点", "🇸🇬 新加坡节点", "🇭🇰 香港节点", "🇮🇹 意大利节点", "🇦🇪 阿联酋节点", "🇲🇴 澳门节点", "🇵🇪 秘鲁节点"]) {
+  if (!trickyNames.includes(good)) fail(`expected region group missing: ${good}`);
+}
+for (const g of tricky["proxy-groups"]) {
+  if (g && typeof g.filter === "string" && /\\b/.test(g.filter)) fail(`kernel filter must not use \\b (regexp2 treats CJK as word chars): ${g.name}`);
+}
+const regionCount = (src => (src.match(/\{ key: "[a-z]{2}", name: "/g) || []).length)(source);
+if (regionCount < 170) fail(`expected 170+ regions, got ${regionCount}`);
+
 ok("full-overwrite input isolation");
 ok("airport proxy preservation");
 ok("chain field isolation");
@@ -176,5 +217,7 @@ ok("ad/remote DIRECT exceptions preserved");
 ok("numbered region node tags");
 ok("live MetaCubeX AI providers, no 404 rulesets");
 ok("rate multiplier grouping");
-ok("100+ region three-layer groups");
+ok("170+ region three-layer groups, kernel/JS regex parity, no English-word false positives");
+ok("dedicated Claude group with Anthropic domains and IP ranges");
+ok("anti-ban closed loop: AI/TikTok/Netflix/Crypto precede domestic sub-rules");
 ok("lazy health checks and Fallback group");
