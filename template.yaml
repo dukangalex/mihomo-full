@@ -1,4 +1,4 @@
-# Clash Meta (Mihomo) 配置 · FINAL v7 (Mihomo v1.19.31 · IPv6 Dual-Stack)
+# Clash Meta (Mihomo) 配置 · FINAL v7.1 (Mihomo v1.19.32 · IPv6 Dual-Stack)
 # 目标：中国大陆用户 · 境内全直连 · 境外链式代理（机场入口 + 自建VPS落地）
 # 零泄露（宁可断网也不泄露） · 零误判 · 零风控隐患 · 高隐匿 · 国内流量无感
 # IPv6 全面双栈支持（v6 变更：ipv6=true, dns.ipv6=true,
@@ -153,7 +153,7 @@ tun:
   # reallocates"问题——该问题会导致过期/损坏的 DNS 应答被用于路由分类
   # 判断，后果不是断网而是可能把本该走代理的境外域名误判直连，属于真实
   # 泄露风险而非单纯故障，因此当时关闭 GSO 换正确性优先于吞吐量。
-  # 现状：该问题已在 mihomo v1.19.31 的官方修复列表中确认修复
+  # 现状：该问题已在 mihomo v1.19.30 的官方修复列表中确认修复（v1.19.31/32 均包含）
   # （fix: tun dns hijack sending zero-filled or stale packets when
   # PackBuffer reallocates, PR #3037）。三端（Android/Apple 系/Windows）
   # 核心均已确认升级到 v1.19.31，前提已满足，重新开启 GSO 拿回吞吐量。
@@ -868,11 +868,6 @@ hosts:
     - "223.6.6.6"
     - "2400:3200::1"
     - "2400:3200:baba::1"
-  "doh.pub":
-    - "1.12.12.12"
-    - "120.53.53.53"
-    - "2402:4e00::"
-    - "2402:4e00:1::"
   "dns.google":
     - "8.8.8.8"
     - "8.8.4.4"
@@ -897,23 +892,22 @@ dns:
   fake-ip-range: 198.18.0.1/16
   # fake-ip-range6：IPv6 fake-ip 地址池，与 fake-ip-range 配合实现 IPv6 双栈 fake-ip
   fake-ip-range6: fc00::/18
-  fake-ip-cache-size: 4096
+  # [2026-10 内核对齐 v1.19.32] 以下字段已按 mihomo 源码 config.RawDNS 核对：
+  # 原来的 fake-ip-cache-size / ttl / min-ttl / max-ttl / cache-size /
+  # disable-qtype-65 在 mihomo 中都不存在（来自其他内核/客户端的写法），
+  # 一直被内核静默忽略、从未生效，注释里描述的"min-ttl 60s 跟随 CDN 调度"
+  # 等效果实际并不存在。已删除这些死字段，只保留 mihomo 真正支持的：
+  #   cache-max-size（原 cache-size 的正确字段名）、cache-algorithm、prefer-h3。
+  # mihomo 的 DNS 缓存 TTL 直接遵循上游应答，没有 min/max TTL 钳制选项；
+  # 也没有屏蔽 HTTPS(type 65) 记录的开关，不要再把这些字段加回来。
   # fake-ip 持久化只由 profile.store-fake-ip 一个开关控制（见文件头部 profile 段），
   # 原来这里的 dns.fake-ip-persist 字段实测不生效、且与 profile.store-fake-ip:false
   # 相矛盾，已删除避免误导——不要在这里重新加回来。
-  ttl: 600
-  # "国内流量无感"优化：300s→60s
-  # 国内CDN（短视频/直播/下载）常用30-60s短TTL做节点负载均衡和故障切换
-  # min-ttl过高会让 mihomo 缓存旧节点IP超过CDN调度周期，
-  # 60s 在"减少DNS查询频率"与"及时跟随CDN调度"间取得平衡
-  min-ttl: 60
-  max-ttl: 3600
-  cache-size: 8192
+  cache-max-size: 8192
   cache-algorithm: arc
   prefer-h3: false
   use-hosts: true              # 开启后 hosts 预解析生效（消除冷启动循环依赖）
   use-system-hosts: false
-  disable-qtype-65: true
 
   # fake-ip-filter rule 模式
   # 顺序：mrs 规则集（最快）→ geosite → 手工精细条目 → MATCH 兜底
@@ -1492,8 +1486,8 @@ sub-rules:
     - IP-CIDR,140.207.0.0/16,DIRECT,no-resolve
     - RULE-SET,cn-ip,DIRECT,no-resolve
     - GEOIP,CN,DIRECT,no-resolve
-    # IPv6 中国大陆 IP 直连
-    - RULE-SET,cn-ip,DIRECT,no-resolve
+    # cn-ip 规则集本身同时包含 IPv4/IPv6 段，上面一条已覆盖 IPv6 中国大陆 IP，
+    # 原来这里重复的第二条 RULE-SET,cn-ip 已删除。
     - IP-CIDR6,fe80::/10,DIRECT,no-resolve     # IPv6 链路本地
     - IP-CIDR6,fc00::/7,DIRECT,no-resolve       # IPv6 ULA（含 fake-ip-range6，由 fake-ip-filter 处理例外）
 
@@ -1504,7 +1498,12 @@ rules:
   - DOMAIN-SUFFIX,aistudio.google.com,AI服务
 
   # P0. TUN 私有 IP 快速通道
-  - AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT
+  # [2026-10] 必须带 no-resolve：AND 内的 ipcidr 规则集没有 no-resolve 时，
+  # 每一条 TUN 域名连接都会在规则匹配的第一步被强制做一次本地 DNS 解析，
+  # 抵消 fake-ip 的意义、给所有新连接增加一次 DoH 往返，并让后续所有
+  # no-resolve 的 IP 规则提前拿到解析结果。私有地址域名由后面的
+  # DOMAIN-SUFFIX,lan/local 等规则和 RULE-SET,private-ip 覆盖。
+  - AND,((IN-TYPE,TUN),(RULE-SET,private-ip,no-resolve)),DIRECT
 
   # P0.5. STUN/TURN 端口无条件封堵（必须在任何 IP-CIDR/cn-ip 强制直连之前）
   # 起因：2026-09 用户用 IPPure WebRTC 泄露测试实测发现，B站/芒果TV/小米WiFi
