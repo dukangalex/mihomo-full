@@ -810,6 +810,15 @@ proxy-groups:
       - 落地负载均衡
       - 落地手动选择
 
+  - name: "Claude"
+    type: select
+    # Claude / Anthropic 独立出口（防封）：可与「AI服务」选不同落地，
+    # 但建议两者保持同一地区（Datadog 遥测主机两家共用，归 Claude 组）。
+    proxies:
+      - 落地优选出口
+      - 落地负载均衡
+      - 落地手动选择
+
   - name: "国外服务"
     type: select
     proxies:
@@ -1512,28 +1521,28 @@ rules:
   # 链式模式下统一进入 AI服务。
   # 注意：原始 Surge 版本里的 DOMAIN-KEYWORD,datadog / DOMAIN-KEYWORD,sift
   # 太宽（会误伤任何包含这两个子串的国内域名），这里收窄为 DOMAIN-SUFFIX。
-  - DOMAIN-SUFFIX,claude.ai,AI服务
-  - DOMAIN-SUFFIX,anthropic.com,AI服务
-  - DOMAIN-SUFFIX,claude.com,AI服务
-  - DOMAIN-SUFFIX,clau.de,AI服务
-  - DOMAIN-SUFFIX,claudemcpclient.com,AI服务
-  - DOMAIN-SUFFIX,claudeusercontent.com,AI服务
-  - DOMAIN,servd-anthropic-website.b-cdn.net,AI服务      # 官网静态资源 CDN
-  - DOMAIN,anthropic.com.cdn.cloudflare.net,AI服务       # Cloudflare CNAME
-  - DOMAIN,anthropic.auth0.com,AI服务                    # 登录认证
-  - DOMAIN,anthropic-com.ghost.io,AI服务                 # 博客内容
-  - DOMAIN-SUFFIX,sentry.io,AI服务                       # 错误上报
-  - DOMAIN-SUFFIX,statsigapi.net,AI服务                  # 功能开关/实验
-  - DOMAIN-SUFFIX,datadoghq.com,AI服务                   # 浏览器遥测（含 browser-intake-*）
-  - DOMAIN-SUFFIX,browser-intake-datadoghq.com,AI服务
-  - DOMAIN-SUFFIX,sift.com,AI服务                        # Sift 反欺诈风控
-  - DOMAIN-SUFFIX,siftscience.com,AI服务
-  - DOMAIN-SUFFIX,intercom.io,AI服务                     # 客服 widget
-  - DOMAIN-SUFFIX,intercomcdn.com,AI服务
-  - DOMAIN,cdn.usefathom.com,AI服务                      # 访问统计
+  - DOMAIN-SUFFIX,claude.ai,Claude
+  - DOMAIN-SUFFIX,anthropic.com,Claude
+  - DOMAIN-SUFFIX,claude.com,Claude
+  - DOMAIN-SUFFIX,clau.de,Claude
+  - DOMAIN-SUFFIX,claudemcpclient.com,Claude
+  - DOMAIN-SUFFIX,claudeusercontent.com,Claude
+  - DOMAIN,servd-anthropic-website.b-cdn.net,Claude      # 官网静态资源 CDN
+  - DOMAIN,anthropic.com.cdn.cloudflare.net,Claude       # Cloudflare CNAME
+  - DOMAIN,anthropic.auth0.com,Claude                    # 登录认证
+  - DOMAIN,anthropic-com.ghost.io,Claude                 # 博客内容
+  - DOMAIN-SUFFIX,sentry.io,Claude                       # 错误上报
+  - DOMAIN-SUFFIX,statsigapi.net,Claude                  # 功能开关/实验
+  - DOMAIN-SUFFIX,datadoghq.com,Claude                   # 浏览器遥测（含 browser-intake-*）
+  - DOMAIN-SUFFIX,browser-intake-datadoghq.com,Claude
+  - DOMAIN-SUFFIX,sift.com,Claude                        # Sift 反欺诈风控
+  - DOMAIN-SUFFIX,siftscience.com,Claude
+  - DOMAIN-SUFFIX,intercom.io,Claude                     # 客服 widget
+  - DOMAIN-SUFFIX,intercomcdn.com,Claude
+  - DOMAIN,cdn.usefathom.com,Claude                      # 访问统计
   # Anthropic 自有地址段（ARIN 登记：160.79.104.0/21、2607:6bc0::/32，AS399358）
-  - IP-CIDR,160.79.104.0/21,AI服务,no-resolve
-  - IP-CIDR6,2607:6bc0::/32,AI服务,no-resolve
+  - IP-CIDR,160.79.104.0/21,Claude,no-resolve
+  - IP-CIDR6,2607:6bc0::/32,Claude,no-resolve
   - DOMAIN-SUFFIX,gemini.google.com,AI服务
   - DOMAIN-SUFFIX,aistudio.google.com,AI服务
 
@@ -1713,8 +1722,8 @@ rules:
   - DOMAIN-SUFFIX,mobile.events.data.microsoft.com,国外服务  # 微软遥测
   - DOMAIN-SUFFIX,connect.facebook.net,国外服务  # Facebook SDK
   # ── Anthropic CDN 被误杀 ────────────────────────────────────────
-  - DOMAIN-SUFFIX,a-cdn.anthropic.com,AI服务
-  - DOMAIN-SUFFIX,assets-proxy.anthropic.com,AI服务
+  - DOMAIN-SUFFIX,a-cdn.anthropic.com,Claude
+  - DOMAIN-SUFFIX,assets-proxy.anthropic.com,Claude
   # ── 微软 Bing 被误杀 ────────────────────────────────────────────
   - DOMAIN-SUFFIX,bing.com,国外服务                 # Bing 搜索（c.bing.com 被误杀）
   # ── 三星推送被误杀 ──────────────────────────────────────────────
@@ -1841,7 +1850,7 @@ rules:
   # 因此 AI / TikTok / Netflix / 加密货币交易所整组前置到国内子规则之前。
   # 仍在 P0–P8 安全规则（私网、STUN/QUIC 封堵、DNS 劫持）之后，安全基线不受影响。
   - RULE-SET,google-gemini,AI服务
-  - RULE-SET,anthropic,AI服务
+  - RULE-SET,anthropic,Claude
   - RULE-SET,openai,AI服务
   - DOMAIN,copilot.microsoft.com,AI服务
   - DOMAIN,sydney.bing.com,AI服务

@@ -184,6 +184,7 @@ RULESET_TARGET = {
 }
 GROUP_TARGET = {
     "AI服务": "💬 AI Services",
+    "Claude": "🤖 Claude",
     "国外服务": "默认代理",
     "流媒体": "默认代理",
     "漏网之鱼": "🐟 Final",
