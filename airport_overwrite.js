@@ -1016,7 +1016,7 @@ function main(config) {
   "DOMAIN-SUFFIX,anthropic.com,💬 AI Services",
   "DOMAIN-SUFFIX,gemini.google.com,💬 AI Services",
   "DOMAIN-SUFFIX,aistudio.google.com,💬 AI Services",
-  "AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT",
+  "AND,((IN-TYPE,TUN),(RULE-SET,private-ip,no-resolve)),DIRECT",
   "AND,((NETWORK,UDP),(DST-PORT,3478-3480)),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,5349-5355)),REJECT-DROP",
   "AND,((NETWORK,UDP),(DST-PORT,19302-19305)),REJECT-DROP",
@@ -1345,16 +1345,11 @@ function main(config) {
   "enhanced-mode": "fake-ip",
   "fake-ip-range": "198.18.0.1/16",
   "fake-ip-range6": "fc00::/18",
-  "fake-ip-cache-size": 4096,
-  "ttl": 600,
-  "min-ttl": 60,
-  "max-ttl": 3600,
-  "cache-size": 8192,
+  "cache-max-size": 8192,
   "cache-algorithm": "arc",
   "prefer-h3": false,
   "use-hosts": true,
   "use-system-hosts": false,
-  "disable-qtype-65": true,
   "fake-ip-filter-mode": "rule",
   "fake-ip-filter": [
     "DOMAIN-SUFFIX,abchina.com,real-ip",
@@ -2343,12 +2338,6 @@ function main(config) {
     "2400:3200::1",
     "2400:3200:baba::1"
   ],
-  "doh.pub": [
-    "1.12.12.12",
-    "120.53.53.53",
-    "2402:4e00::",
-    "2402:4e00:1::"
-  ],
   "dns.google": [
     "8.8.8.8",
     "8.8.4.4",
@@ -2483,7 +2472,6 @@ function main(config) {
     "IP-CIDR,140.207.0.0/16,DIRECT,no-resolve",
     "RULE-SET,cn-ip,DIRECT,no-resolve",
     "GEOIP,CN,DIRECT,no-resolve",
-    "RULE-SET,cn-ip,DIRECT,no-resolve",
     "IP-CIDR6,fe80::/10,DIRECT,no-resolve",
     "IP-CIDR6,fc00::/7,DIRECT,no-resolve"
   ]
