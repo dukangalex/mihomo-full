@@ -198,6 +198,7 @@ sniffer:
     - "+.ytimg.com"
     - "+.chatgpt.com"
     - "+.claude.ai"
+    - "+.claude.com"
   # Telegram 官方 IP 段跳过嗅探（MTProto 加密协议，TLS 嗅探会失败产生噪音日志）
   skip-dst-address:
     - "91.105.192.0/23"
@@ -1400,6 +1401,10 @@ dns:
     "+.oaiusercontent.com":  *FOREIGN_AI
     "+.anthropic.com":       *FOREIGN_AI
     "+.claude.ai":           *FOREIGN_AI
+    "+.claude.com":          *FOREIGN_AI
+    "+.clau.de":             *FOREIGN_AI
+    "+.claudeusercontent.com": *FOREIGN_AI
+    "+.claudemcpclient.com": *FOREIGN_AI
     "+.gemini.google.com":   *FOREIGN_AI
     "+.aistudio.google.com": *FOREIGN_AI
     # 兜底境外
@@ -1492,8 +1497,35 @@ sub-rules:
     - IP-CIDR6,fc00::/7,DIRECT,no-resolve       # IPv6 ULA（含 fake-ip-range6，由 fake-ip-filter 处理例外）
 
 rules:
+  # ── Claude / Anthropic 防封分流（最先匹配，保证整站所有请求同一出口）──
+  # 同一会话里页面、API、登录、风控、遥测、客服 widget 必须从同一个出口 IP
+  # 发出；任何一个子请求走了别的出口（或直连暴露国内 IP）都会被风控判定为
+  # 异常环境。机场模式下这些规则会被映射到独立的 "🤖 Claude" 策略组；
+  # 链式模式下统一进入 AI服务。
+  # 注意：原始 Surge 版本里的 DOMAIN-KEYWORD,datadog / DOMAIN-KEYWORD,sift
+  # 太宽（会误伤任何包含这两个子串的国内域名），这里收窄为 DOMAIN-SUFFIX。
   - DOMAIN-SUFFIX,claude.ai,AI服务
   - DOMAIN-SUFFIX,anthropic.com,AI服务
+  - DOMAIN-SUFFIX,claude.com,AI服务
+  - DOMAIN-SUFFIX,clau.de,AI服务
+  - DOMAIN-SUFFIX,claudemcpclient.com,AI服务
+  - DOMAIN-SUFFIX,claudeusercontent.com,AI服务
+  - DOMAIN,servd-anthropic-website.b-cdn.net,AI服务      # 官网静态资源 CDN
+  - DOMAIN,anthropic.com.cdn.cloudflare.net,AI服务       # Cloudflare CNAME
+  - DOMAIN,anthropic.auth0.com,AI服务                    # 登录认证
+  - DOMAIN,anthropic-com.ghost.io,AI服务                 # 博客内容
+  - DOMAIN-SUFFIX,sentry.io,AI服务                       # 错误上报
+  - DOMAIN-SUFFIX,statsigapi.net,AI服务                  # 功能开关/实验
+  - DOMAIN-SUFFIX,datadoghq.com,AI服务                   # 浏览器遥测（含 browser-intake-*）
+  - DOMAIN-SUFFIX,browser-intake-datadoghq.com,AI服务
+  - DOMAIN-SUFFIX,sift.com,AI服务                        # Sift 反欺诈风控
+  - DOMAIN-SUFFIX,siftscience.com,AI服务
+  - DOMAIN-SUFFIX,intercom.io,AI服务                     # 客服 widget
+  - DOMAIN-SUFFIX,intercomcdn.com,AI服务
+  - DOMAIN,cdn.usefathom.com,AI服务                      # 访问统计
+  # Anthropic 自有地址段（ARIN 登记：160.79.104.0/21、2607:6bc0::/32，AS399358）
+  - IP-CIDR,160.79.104.0/21,AI服务,no-resolve
+  - IP-CIDR6,2607:6bc0::/32,AI服务,no-resolve
   - DOMAIN-SUFFIX,gemini.google.com,AI服务
   - DOMAIN-SUFFIX,aistudio.google.com,AI服务
 
@@ -1683,7 +1715,6 @@ rules:
   - DOMAIN-SUFFIX,crashlytics.com,国外服务          # Firebase Crashlytics（firebase-settings.crashlytics.com）
   - DOMAIN-SUFFIX,firebase.io,国外服务              # Firebase 服务域
   # ── 监控/分析工具 ───────────────────────────────────────────────
-  - DOMAIN,browser-intake-us5-datadoghq.com,国外服务
 
   # P2. 广告 / 安全威胁拦截
   - RULE-SET,sukka-phishing,REJECT-DROP    # 钓鱼域名（13万条）

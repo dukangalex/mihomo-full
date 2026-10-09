@@ -23,113 +23,204 @@ function main(config) {
   var regionMatchCache = {};
 
   var REGIONS = [
-    { key: "hk", name: "🇭🇰 香港节点", flag: "🇭🇰", jsPattern: "🇭🇰|香港|\\bHKG?\\d*\\b|hong[\\s_-]*kong", filter: "(?i)(🇭🇰|香港|\\bHKG?\\d*\\b|hong[\\s_-]*kong)", icon: "" },
-    { key: "tw", name: "🇹🇼 台湾节点", flag: "🇹🇼", jsPattern: "🇹🇼|台湾|\\bTWN?\\d*\\b|taiwan", filter: "(?i)(🇹🇼|台湾|\\bTWN?\\d*\\b|taiwan)", icon: "" },
-    { key: "jp", name: "🇯🇵 日本节点", flag: "🇯🇵", jsPattern: "🇯🇵|日本|\\bJPN?\\d*\\b|japan|tokyo|osaka|东京|大阪", filter: "(?i)(🇯🇵|日本|\\bJPN?\\d*\\b|japan|tokyo|osaka|东京|大阪)", icon: "" },
-    { key: "kr", name: "🇰🇷 韩国节点", flag: "🇰🇷", jsPattern: "🇰🇷|韩国|\\bKR\\d*\\b|korea|seoul|首尔", filter: "(?i)(🇰🇷|韩国|\\bKR\\d*\\b|korea|seoul|首尔)", icon: "" },
-    { key: "sg", name: "🇸🇬 新加坡节点", flag: "🇸🇬", jsPattern: "🇸🇬|新加坡|狮城|\\bSGP?\\d*\\b|singapore", filter: "(?i)(🇸🇬|新加坡|狮城|\\bSGP?\\d*\\b|singapore)", icon: "" },
-    { key: "us", name: "🇺🇸 美国节点", flag: "🇺🇸", jsPattern: "🇺🇸|美国|\\bUSA?\\d*\\b|america|united[\\s_-]*states|los[\\s_-]*angeles|洛杉矶|san[\\s_-]*jose|圣何塞", filter: "(?i)(🇺🇸|美国|\\bUSA?\\d*\\b|america|united[\\s_-]*states|los[\\s_-]*angeles|洛杉矶|san[\\s_-]*jose|圣何塞)", icon: "" },
-    { key: "uk", name: "🇬🇧 英国节点", flag: "🇬🇧", jsPattern: "🇬🇧|英国|\\bGB\\d*\\b|united[\\s_-]*kingdom|london|伦敦", filter: "(?i)(🇬🇧|英国|\\bGB\\d*\\b|united[\\s_-]*kingdom|london|伦敦)", icon: "" },
-    { key: "de", name: "🇩🇪 德国节点", flag: "🇩🇪", jsPattern: "🇩🇪|德国|\\bDE\\d*\\b|germany|frankfurt|法兰克福", filter: "(?i)(🇩🇪|德国|\\bDE\\d*\\b|germany|frankfurt|法兰克福)", icon: "" },
-    { key: "nl", name: "🇳🇱 荷兰节点", flag: "🇳🇱", jsPattern: "🇳🇱|荷兰|\\bNL\\d*\\b|nether?lands|amsterdam|阿姆斯特丹", filter: "(?i)(🇳🇱|荷兰|\\bNL\\d*\\b|nether?lands|amsterdam|阿姆斯特丹)", icon: "" },
-    { key: "my", name: "🇲🇾 马来西亚节点", flag: "🇲🇾", jsPattern: "🇲🇾|马来西亚|\\bMY\\d*\\b|malaysia|kuala[\\s_-]*lumpur|吉隆坡", filter: "(?i)(🇲🇾|马来西亚|\\bMY\\d*\\b|malaysia|kuala[\\s_-]*lumpur|吉隆坡)", icon: "" },
-    { key: "th", name: "🇹🇭 泰国节点", flag: "🇹🇭", jsPattern: "🇹🇭|泰国|\\bTH\\d*\\b|thailand|bangkok|曼谷", filter: "(?i)(🇹🇭|泰国|\\bTH\\d*\\b|thailand|bangkok|曼谷)", icon: "" },
-    { key: "vn", name: "🇻🇳 越南节点", flag: "🇻🇳", jsPattern: "🇻🇳|越南|\\bVN\\d*\\b|vietnam|hanoi|河内|ho[\\s_-]*chi[\\s_-]*minh|胡志明", filter: "(?i)(🇻🇳|越南|\\bVN\\d*\\b|vietnam|hanoi|河内|ho[\\s_-]*chi[\\s_-]*minh|胡志明)", icon: "" },
-    { key: "ph", name: "🇵🇭 菲律宾节点", flag: "🇵🇭", jsPattern: "🇵🇭|菲律宾|\\bPH\\d*\\b|philippines|manila|马尼拉", filter: "(?i)(🇵🇭|菲律宾|\\bPH\\d*\\b|philippines|manila|马尼拉)", icon: "" },
-    { key: "id", name: "🇮🇩 印尼节点", flag: "🇮🇩", jsPattern: "🇮🇩|印尼|印度尼西亚|\\bID\\d*\\b|indonesia|jakarta|雅加达", filter: "(?i)(🇮🇩|印尼|印度尼西亚|\\bID\\d*\\b|indonesia|jakarta|雅加达)", icon: "" },
-    { key: "in", name: "🇮🇳 印度节点", flag: "🇮🇳", jsPattern: "🇮🇳|印度|\\bIN\\d*\\b|india|mumbai|孟买|delhi|德里", filter: "(?i)(🇮🇳|印度|\\bIN\\d*\\b|india|mumbai|孟买|delhi|德里)", icon: "" },
-    { key: "au", name: "🇦🇺 澳大利亚节点", flag: "🇦🇺", jsPattern: "🇦🇺|澳大利亚|澳洲|\\bAU\\d*\\b|australia|sydney|悉尼|melbourne|墨尔本", filter: "(?i)(🇦🇺|澳大利亚|澳洲|\\bAU\\d*\\b|australia|sydney|悉尼|melbourne|墨尔本)", icon: "" },
-    { key: "fr", name: "🇫🇷 法国节点", flag: "🇫🇷", jsPattern: "🇫🇷|法国|\\bFR\\d*\\b|france|paris|巴黎", filter: "(?i)(🇫🇷|法国|\\bFR\\d*\\b|france|paris|巴黎)", icon: "" },
-    { key: "ru", name: "🇷🇺 俄罗斯节点", flag: "🇷🇺", jsPattern: "🇷🇺|俄罗斯|\\bRU\\d*\\b|russia|moscow|莫斯科", filter: "(?i)(🇷🇺|俄罗斯|\\bRU\\d*\\b|russia|moscow|莫斯科)", icon: "" },
-    { key: "it", name: "🇮🇹 意大利节点", flag: "🇮🇹", jsPattern: "🇮🇹|意大利|\\bIT\\d*\\b|\\bitaly\\b|rome|罗马", filter: "(?i)(🇮🇹|意大利|\\bIT\\d*\\b|\\bitaly\\b|rome|罗马)", icon: "" },
-    { key: "ca", name: "🇨🇦 加拿大节点", flag: "🇨🇦", jsPattern: "🇨🇦|加拿大|\\bCA\\d*\\b|canada|toronto|多伦多", filter: "(?i)(🇨🇦|加拿大|\\bCA\\d*\\b|canada|toronto|多伦多)", icon: "" },
-    { key: "ar", name: "🇦🇷 阿根廷节点", flag: "🇦🇷", jsPattern: "🇦🇷|阿根廷|\\bAR\\d*\\b|argentina|buenos[\\s_-]*aires|布宜诺斯艾利斯", filter: "(?i)(🇦🇷|阿根廷|\\bAR\\d*\\b|argentina|buenos[\\s_-]*aires|布宜诺斯艾利斯)", icon: "" },
-    { key: "br", name: "🇧🇷 巴西节点", flag: "🇧🇷", jsPattern: "🇧🇷|巴西|\\bBR\\d*\\b|brazil|sao[\\s_-]*paulo|圣保罗", filter: "(?i)(🇧🇷|巴西|\\bBR\\d*\\b|brazil|sao[\\s_-]*paulo|圣保罗)", icon: "" },
-    { key: "mx", name: "🇲🇽 墨西哥节点", flag: "🇲🇽", jsPattern: "🇲🇽|墨西哥|\\bMX\\d*\\b|mexico", filter: "(?i)(🇲🇽|墨西哥|\\bMX\\d*\\b|mexico)", icon: "" },
-    { key: "sa", name: "🇸🇦 沙特阿拉伯节点", flag: "🇸🇦", jsPattern: "🇸🇦|沙特阿拉伯|沙特|\\bSA\\d*\\b|saudi[\\s_-]*arabia", filter: "(?i)(🇸🇦|沙特阿拉伯|沙特|\\bSA\\d*\\b|saudi[\\s_-]*arabia)", icon: "" },
-    { key: "za", name: "🇿🇦 南非节点", flag: "🇿🇦", jsPattern: "🇿🇦|南非|\\bZA\\d*\\b|south[\\s_-]*africa|johannesburg|约翰内斯堡", filter: "(?i)(🇿🇦|南非|\\bZA\\d*\\b|south[\\s_-]*africa|johannesburg|约翰内斯堡)", icon: "" },
-    { key: "tr", name: "🇹🇷 土耳其节点", flag: "🇹🇷", jsPattern: "🇹🇷|土耳其|\\bTR\\d*\\b|turkey|istanbul|伊斯坦布尔", filter: "(?i)(🇹🇷|土耳其|\\bTR\\d*\\b|turkey|istanbul|伊斯坦布尔)", icon: "" },
-    { key: "bn", name: "🇧🇳 文莱节点", flag: "🇧🇳", jsPattern: "🇧🇳|文莱|\\bBN\\d*\\b|brunei", filter: "(?i)(🇧🇳|文莱|\\bBN\\d*\\b|brunei)", icon: "" },
-    { key: "kh", name: "🇰🇭 柬埔寨节点", flag: "🇰🇭", jsPattern: "🇰🇭|柬埔寨|\\bKH\\d*\\b|cambodia|phnom[\\s_-]*penh|金边", filter: "(?i)(🇰🇭|柬埔寨|\\bKH\\d*\\b|cambodia|phnom[\\s_-]*penh|金边)", icon: "" },
-    { key: "la", name: "🇱🇦 老挝节点", flag: "🇱🇦", jsPattern: "🇱🇦|老挝|\\bLA\\d*\\b|\\blaos\\b|vientiane|万象", filter: "(?i)(🇱🇦|老挝|\\bLA\\d*\\b|\\blaos\\b|vientiane|万象)", icon: "" },
-    { key: "mm", name: "🇲🇲 缅甸节点", flag: "🇲🇲", jsPattern: "🇲🇲|缅甸|\\bMM\\d*\\b|myanmar|yangon|仰光", filter: "(?i)(🇲🇲|缅甸|\\bMM\\d*\\b|myanmar|yangon|仰光)", icon: "" },
-    { key: "at", name: "🇦🇹 奥地利节点", flag: "🇦🇹", jsPattern: "🇦🇹|奥地利|\\bAT\\d*\\b|austria|vienna|维也纳", filter: "(?i)(🇦🇹|奥地利|\\bAT\\d*\\b|austria|vienna|维也纳)", icon: "" },
-    { key: "be", name: "🇧🇪 比利时节点", flag: "🇧🇪", jsPattern: "🇧🇪|比利时|\\bBE\\d*\\b|belgium|brussels|布鲁塞尔", filter: "(?i)(🇧🇪|比利时|\\bBE\\d*\\b|belgium|brussels|布鲁塞尔)", icon: "" },
-    { key: "bg", name: "🇧🇬 保加利亚节点", flag: "🇧🇬", jsPattern: "🇧🇬|保加利亚|\\bBG\\d*\\b|bulgaria|sofia|索非亚", filter: "(?i)(🇧🇬|保加利亚|\\bBG\\d*\\b|bulgaria|sofia|索非亚)", icon: "" },
-    { key: "hr", name: "🇭🇷 克罗地亚节点", flag: "🇭🇷", jsPattern: "🇭🇷|克罗地亚|\\bHR\\d*\\b|croatia", filter: "(?i)(🇭🇷|克罗地亚|\\bHR\\d*\\b|croatia)", icon: "" },
-    { key: "cy", name: "🇨🇾 塞浦路斯节点", flag: "🇨🇾", jsPattern: "🇨🇾|塞浦路斯|\\bCY\\d*\\b|cyprus", filter: "(?i)(🇨🇾|塞浦路斯|\\bCY\\d*\\b|cyprus)", icon: "" },
-    { key: "cz", name: "🇨🇿 捷克节点", flag: "🇨🇿", jsPattern: "🇨🇿|捷克|捷克共和国|\\bCZ\\d*\\b|czech|prague|布拉格", filter: "(?i)(🇨🇿|捷克|捷克共和国|\\bCZ\\d*\\b|czech|prague|布拉格)", icon: "" },
-    { key: "dk", name: "🇩🇰 丹麦节点", flag: "🇩🇰", jsPattern: "🇩🇰|丹麦|\\bDK\\d*\\b|denmark|copenhagen|哥本哈根", filter: "(?i)(🇩🇰|丹麦|\\bDK\\d*\\b|denmark|copenhagen|哥本哈根)", icon: "" },
-    { key: "ee", name: "🇪🇪 爱沙尼亚节点", flag: "🇪🇪", jsPattern: "🇪🇪|爱沙尼亚|\\bEE\\d*\\b|estonia", filter: "(?i)(🇪🇪|爱沙尼亚|\\bEE\\d*\\b|estonia)", icon: "" },
-    { key: "fi", name: "🇫🇮 芬兰节点", flag: "🇫🇮", jsPattern: "🇫🇮|芬兰|\\bFI\\d*\\b|finland|helsinki|赫尔辛基", filter: "(?i)(🇫🇮|芬兰|\\bFI\\d*\\b|finland|helsinki|赫尔辛基)", icon: "" },
-    { key: "gr", name: "🇬🇷 希腊节点", flag: "🇬🇷", jsPattern: "🇬🇷|希腊|\\bGR\\d*\\b|greece|athens|雅典", filter: "(?i)(🇬🇷|希腊|\\bGR\\d*\\b|greece|athens|雅典)", icon: "" },
-    { key: "hu", name: "🇭🇺 匈牙利节点", flag: "🇭🇺", jsPattern: "🇭🇺|匈牙利|\\bHU\\d*\\b|hungary|budapest|布达佩斯", filter: "(?i)(🇭🇺|匈牙利|\\bHU\\d*\\b|hungary|budapest|布达佩斯)", icon: "" },
-    { key: "ie", name: "🇮🇪 爱尔兰节点", flag: "🇮🇪", jsPattern: "🇮🇪|爱尔兰|\\bIE\\d*\\b|ireland|dublin|都柏林", filter: "(?i)(🇮🇪|爱尔兰|\\bIE\\d*\\b|ireland|dublin|都柏林)", icon: "" },
-    { key: "lv", name: "🇱🇻 拉脱维亚节点", flag: "🇱🇻", jsPattern: "🇱🇻|拉脱维亚|\\bLV\\d*\\b|latvia", filter: "(?i)(🇱🇻|拉脱维亚|\\bLV\\d*\\b|latvia)", icon: "" },
-    { key: "lt", name: "🇱🇹 立陶宛节点", flag: "🇱🇹", jsPattern: "🇱🇹|立陶宛|\\bLT\\d*\\b|lithuania", filter: "(?i)(🇱🇹|立陶宛|\\bLT\\d*\\b|lithuania)", icon: "" },
-    { key: "lu", name: "🇱🇺 卢森堡节点", flag: "🇱🇺", jsPattern: "🇱🇺|卢森堡|\\bLU\\d*\\b|luxembourg", filter: "(?i)(🇱🇺|卢森堡|\\bLU\\d*\\b|luxembourg)", icon: "" },
-    { key: "mt", name: "🇲🇹 马耳他节点", flag: "🇲🇹", jsPattern: "🇲🇹|马耳他|\\bMT\\d*\\b|malta", filter: "(?i)(🇲🇹|马耳他|\\bMT\\d*\\b|malta)", icon: "" },
-    { key: "pl", name: "🇵🇱 波兰节点", flag: "🇵🇱", jsPattern: "🇵🇱|波兰|\\bPL\\d*\\b|poland|warsaw|华沙", filter: "(?i)(🇵🇱|波兰|\\bPL\\d*\\b|poland|warsaw|华沙)", icon: "" },
-    { key: "pt", name: "🇵🇹 葡萄牙节点", flag: "🇵🇹", jsPattern: "🇵🇹|葡萄牙|\\bPT\\d*\\b|portugal|lisbon|里斯本", filter: "(?i)(🇵🇹|葡萄牙|\\bPT\\d*\\b|portugal|lisbon|里斯本)", icon: "" },
-    { key: "ro", name: "🇷🇴 罗马尼亚节点", flag: "🇷🇴", jsPattern: "🇷🇴|罗马尼亚|\\bRO\\d*\\b|romania|bucharest|布加勒斯特", filter: "(?i)(🇷🇴|罗马尼亚|\\bRO\\d*\\b|romania|bucharest|布加勒斯特)", icon: "" },
-    { key: "sk", name: "🇸🇰 斯洛伐克节点", flag: "🇸🇰", jsPattern: "🇸🇰|斯洛伐克|\\bSK\\d*\\b|slovakia", filter: "(?i)(🇸🇰|斯洛伐克|\\bSK\\d*\\b|slovakia)", icon: "" },
-    { key: "si", name: "🇸🇮 斯洛文尼亚节点", flag: "🇸🇮", jsPattern: "🇸🇮|斯洛文尼亚|\\bSI\\d*\\b|slovenia", filter: "(?i)(🇸🇮|斯洛文尼亚|\\bSI\\d*\\b|slovenia)", icon: "" },
-    { key: "es", name: "🇪🇸 西班牙节点", flag: "🇪🇸", jsPattern: "🇪🇸|西班牙|\\bES\\d*\\b|\\bspain\\b|madrid|马德里", filter: "(?i)(🇪🇸|西班牙|\\bES\\d*\\b|\\bspain\\b|madrid|马德里)", icon: "" },
-    { key: "se", name: "🇸🇪 瑞典节点", flag: "🇸🇪", jsPattern: "🇸🇪|瑞典|\\bSE\\d*\\b|sweden|stockholm|斯德哥尔摩", filter: "(?i)(🇸🇪|瑞典|\\bSE\\d*\\b|sweden|stockholm|斯德哥尔摩)", icon: "" },
-    { key: "dz", name: "🇩🇿 阿尔及利亚节点", flag: "🇩🇿", jsPattern: "🇩🇿|阿尔及利亚|\\bDZ\\d*\\b|algeria", filter: "(?i)(🇩🇿|阿尔及利亚|\\bDZ\\d*\\b|algeria)", icon: "" },
-    { key: "ao", name: "🇦🇴 安哥拉节点", flag: "🇦🇴", jsPattern: "🇦🇴|安哥拉|\\bAO\\d*\\b|angola", filter: "(?i)(🇦🇴|安哥拉|\\bAO\\d*\\b|angola)", icon: "" },
-    { key: "bj", name: "🇧🇯 贝宁节点", flag: "🇧🇯", jsPattern: "🇧🇯|贝宁|\\bBJ\\d*\\b|benin", filter: "(?i)(🇧🇯|贝宁|\\bBJ\\d*\\b|benin)", icon: "" },
-    { key: "bw", name: "🇧🇼 博茨瓦纳节点", flag: "🇧🇼", jsPattern: "🇧🇼|博茨瓦纳|\\bBW\\d*\\b|botswana", filter: "(?i)(🇧🇼|博茨瓦纳|\\bBW\\d*\\b|botswana)", icon: "" },
-    { key: "bf", name: "🇧🇫 布基纳法索节点", flag: "🇧🇫", jsPattern: "🇧🇫|布基纳法索|\\bBF\\d*\\b|burkina[\\s_-]*faso", filter: "(?i)(🇧🇫|布基纳法索|\\bBF\\d*\\b|burkina[\\s_-]*faso)", icon: "" },
-    { key: "bi", name: "🇧🇮 布隆迪节点", flag: "🇧🇮", jsPattern: "🇧🇮|布隆迪|\\bBI\\d*\\b|burundi", filter: "(?i)(🇧🇮|布隆迪|\\bBI\\d*\\b|burundi)", icon: "" },
-    { key: "cv", name: "🇨🇻 佛得角节点", flag: "🇨🇻", jsPattern: "🇨🇻|佛得角|\\bCV\\d*\\b|cabo[\\s_-]*verde|cape[\\s_-]*verde", filter: "(?i)(🇨🇻|佛得角|\\bCV\\d*\\b|cabo[\\s_-]*verde|cape[\\s_-]*verde)", icon: "" },
-    { key: "cm", name: "🇨🇲 喀麦隆节点", flag: "🇨🇲", jsPattern: "🇨🇲|喀麦隆|\\bCM\\d*\\b|cameroon", filter: "(?i)(🇨🇲|喀麦隆|\\bCM\\d*\\b|cameroon)", icon: "" },
-    { key: "cf", name: "🇨🇫 中非共和国节点", flag: "🇨🇫", jsPattern: "🇨🇫|中非共和国|中非|\\bCF\\d*\\b|central[\\s_-]*african", filter: "(?i)(🇨🇫|中非共和国|中非|\\bCF\\d*\\b|central[\\s_-]*african)", icon: "" },
-    { key: "td", name: "🇹🇩 乍得节点", flag: "🇹🇩", jsPattern: "🇹🇩|乍得|\\bTD\\d*\\b|\\bchad\\b", filter: "(?i)(🇹🇩|乍得|\\bTD\\d*\\b|\\bchad\\b)", icon: "" },
-    { key: "km", name: "🇰🇲 科摩罗节点", flag: "🇰🇲", jsPattern: "🇰🇲|科摩罗|\\bKM\\d*\\b|comoros", filter: "(?i)(🇰🇲|科摩罗|\\bKM\\d*\\b|comoros)", icon: "" },
-    { key: "cg", name: "🇨🇬 刚果共和国节点", flag: "🇨🇬", jsPattern: "🇨🇬|刚果共和国|刚果（布）|\\bCG\\d*\\b|\\bcongo\\b", filter: "(?i)(🇨🇬|刚果共和国|刚果（布）|\\bCG\\d*\\b|\\bcongo\\b)", icon: "" },
-    { key: "cd", name: "🇨🇩 刚果民主共和国节点", flag: "🇨🇩", jsPattern: "🇨🇩|刚果民主共和国|刚果（金）|民主刚果|\\bCD\\d*\\b|dr[\\s_-]*congo|democratic[\\s_-]*republic[\\s_-]*of[\\s_-]*the[\\s_-]*congo", filter: "(?i)(🇨🇩|刚果民主共和国|刚果（金）|民主刚果|\\bCD\\d*\\b|dr[\\s_-]*congo|democratic[\\s_-]*republic[\\s_-]*of[\\s_-]*the[\\s_-]*congo)", icon: "" },
-    { key: "ci", name: "🇨🇮 科特迪瓦节点", flag: "🇨🇮", jsPattern: "🇨🇮|科特迪瓦|象牙海岸|\\bCI\\d*\\b|cote[\\s_-]*d.ivoire|ivory[\\s_-]*coast", filter: "(?i)(🇨🇮|科特迪瓦|象牙海岸|\\bCI\\d*\\b|cote[\\s_-]*d.ivoire|ivory[\\s_-]*coast)", icon: "" },
-    { key: "dj", name: "🇩🇯 吉布提节点", flag: "🇩🇯", jsPattern: "🇩🇯|吉布提|\\bDJ\\d*\\b|djibouti", filter: "(?i)(🇩🇯|吉布提|\\bDJ\\d*\\b|djibouti)", icon: "" },
-    { key: "eg", name: "🇪🇬 埃及节点", flag: "🇪🇬", jsPattern: "🇪🇬|埃及|\\bEG\\d*\\b|egypt|cairo|开罗", filter: "(?i)(🇪🇬|埃及|\\bEG\\d*\\b|egypt|cairo|开罗)", icon: "" },
-    { key: "gq", name: "🇬🇶 赤道几内亚节点", flag: "🇬🇶", jsPattern: "🇬🇶|赤道几内亚|\\bGQ\\d*\\b|equatorial[\\s_-]*guinea", filter: "(?i)(🇬🇶|赤道几内亚|\\bGQ\\d*\\b|equatorial[\\s_-]*guinea)", icon: "" },
-    { key: "er", name: "🇪🇷 厄立特里亚节点", flag: "🇪🇷", jsPattern: "🇪🇷|厄立特里亚|\\bER\\d*\\b|eritrea", filter: "(?i)(🇪🇷|厄立特里亚|\\bER\\d*\\b|eritrea)", icon: "" },
-    { key: "sz", name: "🇸🇿 斯威士兰节点", flag: "🇸🇿", jsPattern: "🇸🇿|斯威士兰|埃斯瓦蒂尼|\\bSZ\\d*\\b|eswatini|swaziland", filter: "(?i)(🇸🇿|斯威士兰|埃斯瓦蒂尼|\\bSZ\\d*\\b|eswatini|swaziland)", icon: "" },
-    { key: "et", name: "🇪🇹 埃塞俄比亚节点", flag: "🇪🇹", jsPattern: "🇪🇹|埃塞俄比亚|\\bET\\d*\\b|ethiopia", filter: "(?i)(🇪🇹|埃塞俄比亚|\\bET\\d*\\b|ethiopia)", icon: "" },
-    { key: "ga", name: "🇬🇦 加蓬节点", flag: "🇬🇦", jsPattern: "🇬🇦|加蓬|\\bGA\\d*\\b|\\bgabon\\b", filter: "(?i)(🇬🇦|加蓬|\\bGA\\d*\\b|\\bgabon\\b)", icon: "" },
-    { key: "gm", name: "🇬🇲 冈比亚节点", flag: "🇬🇲", jsPattern: "🇬🇲|冈比亚|\\bGM\\d*\\b|gambia", filter: "(?i)(🇬🇲|冈比亚|\\bGM\\d*\\b|gambia)", icon: "" },
-    { key: "gh", name: "🇬🇭 加纳节点", flag: "🇬🇭", jsPattern: "🇬🇭|加纳|\\bGH\\d*\\b|\\bghana\\b", filter: "(?i)(🇬🇭|加纳|\\bGH\\d*\\b|\\bghana\\b)", icon: "" },
-    { key: "gn", name: "🇬🇳 几内亚节点", flag: "🇬🇳", jsPattern: "🇬🇳|几内亚|\\bGN\\d*\\b|\\bguinea\\b", filter: "(?i)(🇬🇳|几内亚|\\bGN\\d*\\b|\\bguinea\\b)", icon: "" },
-    { key: "gw", name: "🇬🇼 几内亚比绍节点", flag: "🇬🇼", jsPattern: "🇬🇼|几内亚比绍|\\bGW\\d*\\b|guinea-bissau|guinea[\\s_-]*bissau", filter: "(?i)(🇬🇼|几内亚比绍|\\bGW\\d*\\b|guinea-bissau|guinea[\\s_-]*bissau)", icon: "" },
-    { key: "ke", name: "🇰🇪 肯尼亚节点", flag: "🇰🇪", jsPattern: "🇰🇪|肯尼亚|\\bKE\\d*\\b|kenya|nairobi|内罗毕", filter: "(?i)(🇰🇪|肯尼亚|\\bKE\\d*\\b|kenya|nairobi|内罗毕)", icon: "" },
-    { key: "ls", name: "🇱🇸 莱索托节点", flag: "🇱🇸", jsPattern: "🇱🇸|莱索托|\\bLS\\d*\\b|lesotho", filter: "(?i)(🇱🇸|莱索托|\\bLS\\d*\\b|lesotho)", icon: "" },
-    { key: "lr", name: "🇱🇷 利比里亚节点", flag: "🇱🇷", jsPattern: "🇱🇷|利比里亚|\\bLR\\d*\\b|liberia", filter: "(?i)(🇱🇷|利比里亚|\\bLR\\d*\\b|liberia)", icon: "" },
-    { key: "ly", name: "🇱🇾 利比亚节点", flag: "🇱🇾", jsPattern: "🇱🇾|利比亚|\\bLY\\d*\\b|\\blibya\\b", filter: "(?i)(🇱🇾|利比亚|\\bLY\\d*\\b|\\blibya\\b)", icon: "" },
-    { key: "mg", name: "🇲🇬 马达加斯加节点", flag: "🇲🇬", jsPattern: "🇲🇬|马达加斯加|\\bMG\\d*\\b|madagascar", filter: "(?i)(🇲🇬|马达加斯加|\\bMG\\d*\\b|madagascar)", icon: "" },
-    { key: "mw", name: "🇲🇼 马拉维节点", flag: "🇲🇼", jsPattern: "🇲🇼|马拉维|\\bMW\\d*\\b|malawi", filter: "(?i)(🇲🇼|马拉维|\\bMW\\d*\\b|malawi)", icon: "" },
-    { key: "ml", name: "🇲🇱 马里节点", flag: "🇲🇱", jsPattern: "🇲🇱|马里|\\bML\\d*\\b|\\bmali\\b", filter: "(?i)(🇲🇱|马里|\\bML\\d*\\b|\\bmali\\b)", icon: "" },
-    { key: "mr", name: "🇲🇷 毛里塔尼亚节点", flag: "🇲🇷", jsPattern: "🇲🇷|毛里塔尼亚|\\bMR\\d*\\b|mauritania", filter: "(?i)(🇲🇷|毛里塔尼亚|\\bMR\\d*\\b|mauritania)", icon: "" },
-    { key: "mu", name: "🇲🇺 毛里求斯节点", flag: "🇲🇺", jsPattern: "🇲🇺|毛里求斯|\\bMU\\d*\\b|mauritius", filter: "(?i)(🇲🇺|毛里求斯|\\bMU\\d*\\b|mauritius)", icon: "" },
-    { key: "ma", name: "🇲🇦 摩洛哥节点", flag: "🇲🇦", jsPattern: "🇲🇦|摩洛哥|\\bMA\\d*\\b|morocco|casablanca|卡萨布兰卡", filter: "(?i)(🇲🇦|摩洛哥|\\bMA\\d*\\b|morocco|casablanca|卡萨布兰卡)", icon: "" },
-    { key: "mz", name: "🇲🇿 莫桑比克节点", flag: "🇲🇿", jsPattern: "🇲🇿|莫桑比克|\\bMZ\\d*\\b|mozambique", filter: "(?i)(🇲🇿|莫桑比克|\\bMZ\\d*\\b|mozambique)", icon: "" },
-    { key: "na", name: "🇳🇦 纳米比亚节点", flag: "🇳🇦", jsPattern: "🇳🇦|纳米比亚|\\bNA\\d*\\b|\\bnamibia\\b", filter: "(?i)(🇳🇦|纳米比亚|\\bNA\\d*\\b|\\bnamibia\\b)", icon: "" },
-    { key: "ne", name: "🇳🇪 尼日尔节点", flag: "🇳🇪", jsPattern: "🇳🇪|尼日尔|\\bNE\\d*\\b|\\bniger\\b", filter: "(?i)(🇳🇪|尼日尔|\\bNE\\d*\\b|\\bniger\\b)", icon: "" },
-    { key: "ng", name: "🇳🇬 尼日利亚节点", flag: "🇳🇬", jsPattern: "🇳🇬|尼日利亚|\\bNG\\d*\\b|nigeria|lagos|拉各斯", filter: "(?i)(🇳🇬|尼日利亚|\\bNG\\d*\\b|nigeria|lagos|拉各斯)", icon: "" },
-    { key: "rw", name: "🇷🇼 卢旺达节点", flag: "🇷🇼", jsPattern: "🇷🇼|卢旺达|\\bRW\\d*\\b|rwanda", filter: "(?i)(🇷🇼|卢旺达|\\bRW\\d*\\b|rwanda)", icon: "" },
-    { key: "st", name: "🇸🇹 圣多美和普林西比节点", flag: "🇸🇹", jsPattern: "🇸🇹|圣多美和普林西比|\\bST\\d*\\b|sao[\\s_-]*tome", filter: "(?i)(🇸🇹|圣多美和普林西比|\\bST\\d*\\b|sao[\\s_-]*tome)", icon: "" },
-    { key: "sn", name: "🇸🇳 塞内加尔节点", flag: "🇸🇳", jsPattern: "🇸🇳|塞内加尔|\\bSN\\d*\\b|senegal", filter: "(?i)(🇸🇳|塞内加尔|\\bSN\\d*\\b|senegal)", icon: "" },
-    { key: "sc", name: "🇸🇨 塞舌尔节点", flag: "🇸🇨", jsPattern: "🇸🇨|塞舌尔|\\bSC\\d*\\b|seychelles", filter: "(?i)(🇸🇨|塞舌尔|\\bSC\\d*\\b|seychelles)", icon: "" },
-    { key: "sl", name: "🇸🇱 塞拉利昂节点", flag: "🇸🇱", jsPattern: "🇸🇱|塞拉利昂|\\bSL\\d*\\b|sierra[\\s_-]*leone", filter: "(?i)(🇸🇱|塞拉利昂|\\bSL\\d*\\b|sierra[\\s_-]*leone)", icon: "" },
-    { key: "so", name: "🇸🇴 索马里节点", flag: "🇸🇴", jsPattern: "🇸🇴|索马里|\\bSO\\d*\\b|somalia", filter: "(?i)(🇸🇴|索马里|\\bSO\\d*\\b|somalia)", icon: "" },
-    { key: "ss", name: "🇸🇸 南苏丹节点", flag: "🇸🇸", jsPattern: "🇸🇸|南苏丹|\\bSS\\d*\\b|south[\\s_-]*sudan", filter: "(?i)(🇸🇸|南苏丹|\\bSS\\d*\\b|south[\\s_-]*sudan)", icon: "" },
-    { key: "sd", name: "🇸🇩 苏丹节点", flag: "🇸🇩", jsPattern: "🇸🇩|苏丹|\\bSD\\d*\\b|\\bsudan\\b", filter: "(?i)(🇸🇩|苏丹|\\bSD\\d*\\b|\\bsudan\\b)", icon: "" },
-    { key: "tz", name: "🇹🇿 坦桑尼亚节点", flag: "🇹🇿", jsPattern: "🇹🇿|坦桑尼亚|\\bTZ\\d*\\b|tanzania", filter: "(?i)(🇹🇿|坦桑尼亚|\\bTZ\\d*\\b|tanzania)", icon: "" },
-    { key: "tg", name: "🇹🇬 多哥节点", flag: "🇹🇬", jsPattern: "🇹🇬|多哥|\\bTG\\d*\\b|\\btogo\\b", filter: "(?i)(🇹🇬|多哥|\\bTG\\d*\\b|\\btogo\\b)", icon: "" },
-    { key: "tn", name: "🇹🇳 突尼斯节点", flag: "🇹🇳", jsPattern: "🇹🇳|突尼斯|\\bTN\\d*\\b|tunisia", filter: "(?i)(🇹🇳|突尼斯|\\bTN\\d*\\b|tunisia)", icon: "" },
-    { key: "ug", name: "🇺🇬 乌干达节点", flag: "🇺🇬", jsPattern: "🇺🇬|乌干达|\\bUG\\d*\\b|uganda", filter: "(?i)(🇺🇬|乌干达|\\bUG\\d*\\b|uganda)", icon: "" },
-    { key: "zm", name: "🇿🇲 赞比亚节点", flag: "🇿🇲", jsPattern: "🇿🇲|赞比亚|\\bZM\\d*\\b|zambia", filter: "(?i)(🇿🇲|赞比亚|\\bZM\\d*\\b|zambia)", icon: "" },
-    { key: "zw", name: "🇿🇼 津巴布韦节点", flag: "🇿🇼", jsPattern: "🇿🇼|津巴布韦|\\bZW\\d*\\b|zimbabwe", filter: "(?i)(🇿🇼|津巴布韦|\\bZW\\d*\\b|zimbabwe)", icon: "" },
+    { key: "hk", name: "🇭🇰 香港节点", flag: "🇭🇰", jsPattern: "🇭🇰|香港|\\bHKG?\\d*\\b|hong[\\s_-]*kong|九龙|新界|kowloon", icon: "" },
+    { key: "tw", name: "🇹🇼 台湾节点", flag: "🇹🇼", jsPattern: "🇹🇼|台湾|\\bTWN?\\d*\\b|taiwan|台北|taipei|台中|taichung|高雄|kaohsiung|彰化|changhua|hinet", icon: "" },
+    { key: "mo", name: "🇲🇴 澳门节点", flag: "🇲🇴", jsPattern: "🇲🇴|澳门|macau|macao", cs: "MO", icon: "" },
+    { key: "jp", name: "🇯🇵 日本节点", flag: "🇯🇵", jsPattern: "🇯🇵|日本|\\bJPN?\\d*\\b|japan|tokyo|osaka|东京|大阪|埼玉|saitama|名古屋|nagoya|福冈|fukuoka|横滨|yokohama|川崎|kawasaki", icon: "" },
+    { key: "kr", name: "🇰🇷 韩国节点", flag: "🇰🇷", jsPattern: "🇰🇷|韩国|\\bKR\\d*\\b|korea|seoul|首尔|春川|chuncheon|釜山|busan|仁川|incheon", icon: "" },
+    { key: "sg", name: "🇸🇬 新加坡节点", flag: "🇸🇬", jsPattern: "🇸🇬|新加坡|狮城|\\bSGP?\\d*\\b|singapore", icon: "" },
+    { key: "us", name: "🇺🇸 美国节点", flag: "🇺🇸", jsPattern: "🇺🇸|美国|\\bUSA?\\d*\\b|america|united[\\s_-]*states|los[\\s_-]*angeles|洛杉矶|san[\\s_-]*jose|圣何塞|西雅图|seattle|硅谷|silicon[\\s_-]*valley|旧金山|san[\\s_-]*francisco|费利蒙|fremont|芝加哥|chicago|达拉斯|dallas|纽约|new[\\s_-]*york|迈阿密|miami|凤凰城|phoenix|亚特兰大|atlanta|阿什本|ashburn|弗吉尼亚|virginia|波特兰|portland|丹佛|denver|拉斯维加斯|las[\\s_-]*vegas|波士顿|boston|夏威夷|hawaii", icon: "" },
+    { key: "uk", name: "🇬🇧 英国节点", flag: "🇬🇧", jsPattern: "🇬🇧|英国|\\bGB\\d*\\b|united[\\s_-]*kingdom|london|伦敦|曼彻斯特|manchester|\\bUK\\d*\\b|britain|england", icon: "" },
+    { key: "de", name: "🇩🇪 德国节点", flag: "🇩🇪", jsPattern: "🇩🇪|德国|\\bDE\\d*\\b|germany|frankfurt|法兰克福|柏林|berlin|杜塞尔多夫|dusseldorf|慕尼黑|munich|纽伦堡|nuremberg", icon: "" },
+    { key: "nl", name: "🇳🇱 荷兰节点", flag: "🇳🇱", jsPattern: "🇳🇱|荷兰|\\bNL\\d*\\b|nether?lands|amsterdam|阿姆斯特丹", icon: "" },
+    { key: "my", name: "🇲🇾 马来西亚节点", flag: "🇲🇾", jsPattern: "🇲🇾|马来西亚|\\bMY\\d*\\b|malaysia|kuala[\\s_-]*lumpur|吉隆坡", icon: "" },
+    { key: "th", name: "🇹🇭 泰国节点", flag: "🇹🇭", jsPattern: "🇹🇭|泰国|\\bTH\\d*\\b|thailand|bangkok|曼谷", icon: "" },
+    { key: "vn", name: "🇻🇳 越南节点", flag: "🇻🇳", jsPattern: "🇻🇳|越南|\\bVN\\d*\\b|vietnam|hanoi|河内|ho[\\s_-]*chi[\\s_-]*minh|胡志明", icon: "" },
+    { key: "ph", name: "🇵🇭 菲律宾节点", flag: "🇵🇭", jsPattern: "🇵🇭|菲律宾|\\bPH\\d*\\b|philippines|manila|马尼拉", icon: "" },
+    { key: "id", name: "🇮🇩 印尼节点", flag: "🇮🇩", jsPattern: "🇮🇩|印尼|印度尼西亚|\\bID\\d*\\b|indonesia|jakarta|雅加达", icon: "" },
+    { key: "in", name: "🇮🇳 印度节点", flag: "🇮🇳", jsPattern: "🇮🇳|印度|india|mumbai|孟买|delhi|德里|班加罗尔|bangalore|海得拉巴|hyderabad|金奈|chennai", cs: "IN", icon: "" },
+    { key: "pk", name: "🇵🇰 巴基斯坦节点", flag: "🇵🇰", jsPattern: "🇵🇰|巴基斯坦|pakistan|karachi|卡拉奇|islamabad|伊斯兰堡|\\bPK\\d*\\b", icon: "" },
+    { key: "bd", name: "🇧🇩 孟加拉节点", flag: "🇧🇩", jsPattern: "🇧🇩|孟加拉|bangladesh|dhaka|达卡|\\bBD\\d*\\b", icon: "" },
+    { key: "np", name: "🇳🇵 尼泊尔节点", flag: "🇳🇵", jsPattern: "🇳🇵|尼泊尔|nepal|kathmandu|加德满都|\\bNP\\d*\\b", icon: "" },
+    { key: "lk", name: "🇱🇰 斯里兰卡节点", flag: "🇱🇰", jsPattern: "🇱🇰|斯里兰卡|sri[\\s_-]*lanka|colombo|科伦坡|\\bLK\\d*\\b", icon: "" },
+    { key: "mv", name: "🇲🇻 马尔代夫节点", flag: "🇲🇻", jsPattern: "🇲🇻|马尔代夫|maldives|\\bMV\\d*\\b", icon: "" },
+    { key: "bt", name: "🇧🇹 不丹节点", flag: "🇧🇹", jsPattern: "🇧🇹|不丹|bhutan|\\bBT\\d*\\b", icon: "" },
+    { key: "mn", name: "🇲🇳 蒙古节点", flag: "🇲🇳", jsPattern: "🇲🇳|(?:^|[^内])蒙古|mongolia|ulaanbaatar|乌兰巴托|\\bMN\\d*\\b", icon: "" },
+    { key: "kz", name: "🇰🇿 哈萨克斯坦节点", flag: "🇰🇿", jsPattern: "🇰🇿|哈萨克斯坦|kazakhstan|almaty|阿拉木图|astana|阿斯塔纳|\\bKZ\\d*\\b", icon: "" },
+    { key: "uz", name: "🇺🇿 乌兹别克斯坦节点", flag: "🇺🇿", jsPattern: "🇺🇿|乌兹别克斯坦|uzbekistan|tashkent|塔什干|\\bUZ\\d*\\b", icon: "" },
+    { key: "kg", name: "🇰🇬 吉尔吉斯斯坦节点", flag: "🇰🇬", jsPattern: "🇰🇬|吉尔吉斯斯坦|吉尔吉斯|kyrgyzstan|bishkek|比什凯克|\\bKG\\d*\\b", icon: "" },
+    { key: "tj", name: "🇹🇯 塔吉克斯坦节点", flag: "🇹🇯", jsPattern: "🇹🇯|塔吉克斯坦|tajikistan|dushanbe|\\bTJ\\d*\\b", icon: "" },
+    { key: "tm", name: "🇹🇲 土库曼斯坦节点", flag: "🇹🇲", jsPattern: "🇹🇲|土库曼斯坦|turkmenistan|\\bTM\\d*\\b", icon: "" },
+    { key: "af", name: "🇦🇫 阿富汗节点", flag: "🇦🇫", jsPattern: "🇦🇫|阿富汗|afghanistan|kabul|\\bAF\\d*\\b", icon: "" },
+    { key: "au", name: "🇦🇺 澳大利亚节点", flag: "🇦🇺", jsPattern: "🇦🇺|澳大利亚|澳洲|\\bAU\\d*\\b|australia|sydney|悉尼|melbourne|墨尔本|布里斯班|brisbane|珀斯|perth", icon: "" },
+    { key: "nz", name: "🇳🇿 新西兰节点", flag: "🇳🇿", jsPattern: "🇳🇿|新西兰|new[\\s_-]*zealand|auckland|奥克兰|wellington|惠灵顿|\\bNZ\\d*\\b", icon: "" },
+    { key: "fj", name: "🇫🇯 斐济节点", flag: "🇫🇯", jsPattern: "🇫🇯|斐济|\\bfiji\\b|\\bFJ\\d*\\b", icon: "" },
+    { key: "pg", name: "🇵🇬 巴布亚新几内亚节点", flag: "🇵🇬", jsPattern: "🇵🇬|巴布亚新几内亚|巴新|papua|\\bPG\\d*\\b", icon: "" },
+    { key: "gu", name: "🇬🇺 关岛节点", flag: "🇬🇺", jsPattern: "🇬🇺|关岛|\\bguam\\b|\\bGU\\d*\\b", icon: "" },
+    { key: "tl", name: "🇹🇱 东帝汶节点", flag: "🇹🇱", jsPattern: "🇹🇱|东帝汶|timor|\\bTL\\d*\\b", icon: "" },
+    { key: "fr", name: "🇫🇷 法国节点", flag: "🇫🇷", jsPattern: "🇫🇷|法国|\\bFR\\d*\\b|france|paris|巴黎|马赛|marseille", icon: "" },
+    { key: "ru", name: "🇷🇺 俄罗斯节点", flag: "🇷🇺", jsPattern: "🇷🇺|俄罗斯|\\bRU\\d*\\b|russia|moscow|莫斯科|圣彼得堡|petersburg|新西伯利亚|novosibirsk|伯力|哈巴罗夫斯克|khabarovsk|海参崴|vladivostok", icon: "" },
+    { key: "it", name: "🇮🇹 意大利节点", flag: "🇮🇹", jsPattern: "🇮🇹|意大利|\\bitaly\\b|rome|罗马", cs: "IT", icon: "" },
+    { key: "ca", name: "🇨🇦 加拿大节点", flag: "🇨🇦", jsPattern: "🇨🇦|加拿大|\\bCA\\d*\\b|canada|toronto|多伦多|温哥华|vancouver|蒙特利尔|montreal", icon: "" },
+    { key: "ar", name: "🇦🇷 阿根廷节点", flag: "🇦🇷", jsPattern: "🇦🇷|阿根廷|\\bAR\\d*\\b|argentina|buenos[\\s_-]*aires|布宜诺斯艾利斯", icon: "" },
+    { key: "br", name: "🇧🇷 巴西节点", flag: "🇧🇷", jsPattern: "🇧🇷|巴西|\\bBR\\d*\\b|brazil|sao[\\s_-]*paulo|圣保罗", icon: "" },
+    { key: "mx", name: "🇲🇽 墨西哥节点", flag: "🇲🇽", jsPattern: "🇲🇽|墨西哥|\\bMX\\d*\\b|mexico", icon: "" },
+    { key: "cl", name: "🇨🇱 智利节点", flag: "🇨🇱", jsPattern: "🇨🇱|智利|\\bchile\\b|santiago|圣地亚哥|\\bCL\\d*\\b", icon: "" },
+    { key: "pe", name: "🇵🇪 秘鲁节点", flag: "🇵🇪", jsPattern: "🇵🇪|秘鲁|\\bperu\\b|\\blima\\b|利马|\\bPE\\d*\\b", icon: "" },
+    { key: "co", name: "🇨🇴 哥伦比亚节点", flag: "🇨🇴", jsPattern: "🇨🇴|哥伦比亚|colombia|bogota|波哥大", cs: "CO", icon: "" },
+    { key: "ve", name: "🇻🇪 委内瑞拉节点", flag: "🇻🇪", jsPattern: "🇻🇪|委内瑞拉|venezuela|caracas|加拉加斯|\\bVE\\d*\\b", icon: "" },
+    { key: "uy", name: "🇺🇾 乌拉圭节点", flag: "🇺🇾", jsPattern: "🇺🇾|乌拉圭|uruguay|montevideo|蒙得维的亚|\\bUY\\d*\\b", icon: "" },
+    { key: "py", name: "🇵🇾 巴拉圭节点", flag: "🇵🇾", jsPattern: "🇵🇾|巴拉圭|paraguay|\\bPY\\d*\\b", icon: "" },
+    { key: "bo", name: "🇧🇴 玻利维亚节点", flag: "🇧🇴", jsPattern: "🇧🇴|玻利维亚|bolivia|\\bBO\\d*\\b", icon: "" },
+    { key: "ec", name: "🇪🇨 厄瓜多尔节点", flag: "🇪🇨", jsPattern: "🇪🇨|厄瓜多尔|ecuador|quito|基多|\\bEC\\d*\\b", icon: "" },
+    { key: "pa", name: "🇵🇦 巴拿马节点", flag: "🇵🇦", jsPattern: "🇵🇦|巴拿马|panama", cs: "PA", icon: "" },
+    { key: "cr", name: "🇨🇷 哥斯达黎加节点", flag: "🇨🇷", jsPattern: "🇨🇷|哥斯达黎加|costa[\\s_-]*rica|\\bCR\\d*\\b", icon: "" },
+    { key: "gt", name: "🇬🇹 危地马拉节点", flag: "🇬🇹", jsPattern: "🇬🇹|危地马拉|guatemala|\\bGT\\d*\\b", icon: "" },
+    { key: "hn", name: "🇭🇳 洪都拉斯节点", flag: "🇭🇳", jsPattern: "🇭🇳|洪都拉斯|honduras|\\bHN\\d*\\b", icon: "" },
+    { key: "sv", name: "🇸🇻 萨尔瓦多节点", flag: "🇸🇻", jsPattern: "🇸🇻|萨尔瓦多|el[\\s_-]*salvador|\\bSV\\d*\\b", icon: "" },
+    { key: "ni", name: "🇳🇮 尼加拉瓜节点", flag: "🇳🇮", jsPattern: "🇳🇮|尼加拉瓜|nicaragua|\\bNI\\d*\\b", icon: "" },
+    { key: "cu", name: "🇨🇺 古巴节点", flag: "🇨🇺", jsPattern: "🇨🇺|古巴|\\bcuba\\b|havana|哈瓦那|\\bCU\\d*\\b", icon: "" },
+    { key: "do", name: "🇩🇴 多米尼加节点", flag: "🇩🇴", jsPattern: "🇩🇴|多米尼加|dominican", cs: "DO", icon: "" },
+    { key: "jm", name: "🇯🇲 牙买加节点", flag: "🇯🇲", jsPattern: "🇯🇲|牙买加|jamaica|\\bJM\\d*\\b", icon: "" },
+    { key: "pr", name: "🇵🇷 波多黎各节点", flag: "🇵🇷", jsPattern: "🇵🇷|波多黎各|puerto[\\s_-]*rico|\\bPR\\d*\\b", icon: "" },
+    { key: "bs", name: "🇧🇸 巴哈马节点", flag: "🇧🇸", jsPattern: "🇧🇸|巴哈马|bahamas|\\bBS\\d*\\b", icon: "" },
+    { key: "tt", name: "🇹🇹 特立尼达和多巴哥节点", flag: "🇹🇹", jsPattern: "🇹🇹|特立尼达|trinidad|\\bTT\\d*\\b", icon: "" },
+    { key: "sa", name: "🇸🇦 沙特阿拉伯节点", flag: "🇸🇦", jsPattern: "🇸🇦|沙特阿拉伯|沙特|\\bSA\\d*\\b|saudi[\\s_-]*arabia", icon: "" },
+    { key: "za", name: "🇿🇦 南非节点", flag: "🇿🇦", jsPattern: "🇿🇦|南非|\\bZA\\d*\\b|south[\\s_-]*africa|johannesburg|约翰内斯堡", icon: "" },
+    { key: "tr", name: "🇹🇷 土耳其节点", flag: "🇹🇷", jsPattern: "🇹🇷|土耳其|\\bTR\\d*\\b|turkey|istanbul|伊斯坦布尔", icon: "" },
+    { key: "ae", name: "🇦🇪 阿联酋节点", flag: "🇦🇪", jsPattern: "🇦🇪|阿联酋|阿拉伯联合酋长国|迪拜|阿布扎比|\\buae\\b|emirates|dubai|abu[\\s_-]*dhabi|\\bAE\\d*\\b", icon: "" },
+    { key: "il", name: "🇮🇱 以色列节点", flag: "🇮🇱", jsPattern: "🇮🇱|以色列|israel|tel[\\s_-]*aviv|特拉维夫|jerusalem|耶路撒冷|\\bIL\\d*\\b", icon: "" },
+    { key: "qa", name: "🇶🇦 卡塔尔节点", flag: "🇶🇦", jsPattern: "🇶🇦|卡塔尔|qatar|doha|多哈|\\bQA\\d*\\b", icon: "" },
+    { key: "kw", name: "🇰🇼 科威特节点", flag: "🇰🇼", jsPattern: "🇰🇼|科威特|kuwait|\\bKW\\d*\\b", icon: "" },
+    { key: "bh", name: "🇧🇭 巴林节点", flag: "🇧🇭", jsPattern: "🇧🇭|巴林|bahrain|manama|麦纳麦|\\bBH\\d*\\b", icon: "" },
+    { key: "om", name: "🇴🇲 阿曼节点", flag: "🇴🇲", jsPattern: "🇴🇲|阿曼|\\boman\\b|muscat|马斯喀特", cs: "OM", icon: "" },
+    { key: "jo", name: "🇯🇴 约旦节点", flag: "🇯🇴", jsPattern: "🇯🇴|约旦|jordan|amman|安曼", cs: "JO", icon: "" },
+    { key: "lb", name: "🇱🇧 黎巴嫩节点", flag: "🇱🇧", jsPattern: "🇱🇧|黎巴嫩|lebanon|beirut|贝鲁特", cs: "LB", icon: "" },
+    { key: "iq", name: "🇮🇶 伊拉克节点", flag: "🇮🇶", jsPattern: "🇮🇶|伊拉克|\\biraq\\b|baghdad|巴格达|\\bIQ\\d*\\b", icon: "" },
+    { key: "ir", name: "🇮🇷 伊朗节点", flag: "🇮🇷", jsPattern: "🇮🇷|伊朗|\\biran\\b|tehran|德黑兰|\\bIR\\d*\\b", icon: "" },
+    { key: "sy", name: "🇸🇾 叙利亚节点", flag: "🇸🇾", jsPattern: "🇸🇾|叙利亚|syria|\\bSY\\d*\\b", icon: "" },
+    { key: "ye", name: "🇾🇪 也门节点", flag: "🇾🇪", jsPattern: "🇾🇪|也门|yemen|\\bYE\\d*\\b", icon: "" },
+    { key: "ge", name: "🇬🇪 格鲁吉亚节点", flag: "🇬🇪", jsPattern: "🇬🇪|格鲁吉亚|tbilisi|第比利斯", cs: "GE", icon: "" },
+    { key: "am", name: "🇦🇲 亚美尼亚节点", flag: "🇦🇲", jsPattern: "🇦🇲|亚美尼亚|armenia|yerevan|埃里温", cs: "AM", icon: "" },
+    { key: "az", name: "🇦🇿 阿塞拜疆节点", flag: "🇦🇿", jsPattern: "🇦🇿|阿塞拜疆|azerbaijan|\\bbaku\\b|巴库", icon: "" },
+    { key: "bn", name: "🇧🇳 文莱节点", flag: "🇧🇳", jsPattern: "🇧🇳|文莱|\\bBN\\d*\\b|brunei", icon: "" },
+    { key: "kh", name: "🇰🇭 柬埔寨节点", flag: "🇰🇭", jsPattern: "🇰🇭|柬埔寨|\\bKH\\d*\\b|cambodia|phnom[\\s_-]*penh|金边", icon: "" },
+    { key: "la", name: "🇱🇦 老挝节点", flag: "🇱🇦", jsPattern: "🇱🇦|老挝|\\bLA\\d*\\b|\\blaos\\b|vientiane|万象", icon: "" },
+    { key: "mm", name: "🇲🇲 缅甸节点", flag: "🇲🇲", jsPattern: "🇲🇲|缅甸|\\bMM\\d*\\b|myanmar|yangon|仰光", icon: "" },
+    { key: "at", name: "🇦🇹 奥地利节点", flag: "🇦🇹", jsPattern: "🇦🇹|奥地利|austria|vienna|维也纳", cs: "AT", icon: "" },
+    { key: "be", name: "🇧🇪 比利时节点", flag: "🇧🇪", jsPattern: "🇧🇪|比利时|belgium|brussels|布鲁塞尔", cs: "BE", icon: "" },
+    { key: "bg", name: "🇧🇬 保加利亚节点", flag: "🇧🇬", jsPattern: "🇧🇬|保加利亚|\\bBG\\d*\\b|bulgaria|sofia|索非亚", icon: "" },
+    { key: "hr", name: "🇭🇷 克罗地亚节点", flag: "🇭🇷", jsPattern: "🇭🇷|克罗地亚|\\bHR\\d*\\b|croatia", icon: "" },
+    { key: "cy", name: "🇨🇾 塞浦路斯节点", flag: "🇨🇾", jsPattern: "🇨🇾|塞浦路斯|\\bCY\\d*\\b|cyprus", icon: "" },
+    { key: "cz", name: "🇨🇿 捷克节点", flag: "🇨🇿", jsPattern: "🇨🇿|捷克|捷克共和国|\\bCZ\\d*\\b|czech|prague|布拉格", icon: "" },
+    { key: "dk", name: "🇩🇰 丹麦节点", flag: "🇩🇰", jsPattern: "🇩🇰|丹麦|\\bDK\\d*\\b|denmark|copenhagen|哥本哈根", icon: "" },
+    { key: "ee", name: "🇪🇪 爱沙尼亚节点", flag: "🇪🇪", jsPattern: "🇪🇪|爱沙尼亚|\\bEE\\d*\\b|estonia", icon: "" },
+    { key: "fi", name: "🇫🇮 芬兰节点", flag: "🇫🇮", jsPattern: "🇫🇮|芬兰|\\bFI\\d*\\b|finland|helsinki|赫尔辛基", icon: "" },
+    { key: "gr", name: "🇬🇷 希腊节点", flag: "🇬🇷", jsPattern: "🇬🇷|希腊|\\bGR\\d*\\b|greece|athens|雅典", icon: "" },
+    { key: "hu", name: "🇭🇺 匈牙利节点", flag: "🇭🇺", jsPattern: "🇭🇺|匈牙利|\\bHU\\d*\\b|hungary|budapest|布达佩斯", icon: "" },
+    { key: "ie", name: "🇮🇪 爱尔兰节点", flag: "🇮🇪", jsPattern: "🇮🇪|爱尔兰|\\bIE\\d*\\b|ireland|dublin|都柏林", icon: "" },
+    { key: "lv", name: "🇱🇻 拉脱维亚节点", flag: "🇱🇻", jsPattern: "🇱🇻|拉脱维亚|\\bLV\\d*\\b|latvia", icon: "" },
+    { key: "lt", name: "🇱🇹 立陶宛节点", flag: "🇱🇹", jsPattern: "🇱🇹|立陶宛|\\bLT\\d*\\b|lithuania", icon: "" },
+    { key: "lu", name: "🇱🇺 卢森堡节点", flag: "🇱🇺", jsPattern: "🇱🇺|卢森堡|\\bLU\\d*\\b|luxembourg", icon: "" },
+    { key: "mt", name: "🇲🇹 马耳他节点", flag: "🇲🇹", jsPattern: "🇲🇹|马耳他|\\bMT\\d*\\b|malta", icon: "" },
+    { key: "pl", name: "🇵🇱 波兰节点", flag: "🇵🇱", jsPattern: "🇵🇱|波兰|\\bPL\\d*\\b|poland|warsaw|华沙", icon: "" },
+    { key: "pt", name: "🇵🇹 葡萄牙节点", flag: "🇵🇹", jsPattern: "🇵🇹|葡萄牙|\\bPT\\d*\\b|portugal|lisbon|里斯本", icon: "" },
+    { key: "ro", name: "🇷🇴 罗马尼亚节点", flag: "🇷🇴", jsPattern: "🇷🇴|罗马尼亚|\\bRO\\d*\\b|romania|bucharest|布加勒斯特", icon: "" },
+    { key: "sk", name: "🇸🇰 斯洛伐克节点", flag: "🇸🇰", jsPattern: "🇸🇰|斯洛伐克|\\bSK\\d*\\b|slovakia", icon: "" },
+    { key: "si", name: "🇸🇮 斯洛文尼亚节点", flag: "🇸🇮", jsPattern: "🇸🇮|斯洛文尼亚|\\bSI\\d*\\b|slovenia", icon: "" },
+    { key: "es", name: "🇪🇸 西班牙节点", flag: "🇪🇸", jsPattern: "🇪🇸|西班牙|\\bES\\d*\\b|\\bspain\\b|madrid|马德里", icon: "" },
+    { key: "se", name: "🇸🇪 瑞典节点", flag: "🇸🇪", jsPattern: "🇸🇪|瑞典|\\bSE\\d*\\b|sweden|stockholm|斯德哥尔摩", icon: "" },
+    { key: "ch", name: "🇨🇭 瑞士节点", flag: "🇨🇭", jsPattern: "🇨🇭|瑞士|switzerland|zurich|苏黎世|geneva|日内瓦|\\bCH\\d*\\b", icon: "" },
+    { key: "no", name: "🇳🇴 挪威节点", flag: "🇳🇴", jsPattern: "🇳🇴|挪威|norway|\\boslo\\b|奥斯陆", cs: "NO", icon: "" },
+    { key: "is", name: "🇮🇸 冰岛节点", flag: "🇮🇸", jsPattern: "🇮🇸|冰岛|iceland|reykjavik|雷克雅未克", cs: "IS", icon: "" },
+    { key: "ua", name: "🇺🇦 乌克兰节点", flag: "🇺🇦", jsPattern: "🇺🇦|乌克兰|ukraine|kyiv|kiev|基辅|\\bUA\\d*\\b", icon: "" },
+    { key: "by", name: "🇧🇾 白俄罗斯节点", flag: "🇧🇾", jsPattern: "🇧🇾|白俄罗斯|belarus|minsk|明斯克", cs: "BY", icon: "" },
+    { key: "md", name: "🇲🇩 摩尔多瓦节点", flag: "🇲🇩", jsPattern: "🇲🇩|摩尔多瓦|moldova|chisinau|基希讷乌|\\bMD\\d*\\b", icon: "" },
+    { key: "rs", name: "🇷🇸 塞尔维亚节点", flag: "🇷🇸", jsPattern: "🇷🇸|塞尔维亚|serbia|belgrade|贝尔格莱德|\\bRS\\d*\\b", icon: "" },
+    { key: "ba", name: "🇧🇦 波黑节点", flag: "🇧🇦", jsPattern: "🇧🇦|波黑|波斯尼亚|bosnia|sarajevo|萨拉热窝", cs: "BA", icon: "" },
+    { key: "al", name: "🇦🇱 阿尔巴尼亚节点", flag: "🇦🇱", jsPattern: "🇦🇱|阿尔巴尼亚|albania|tirana|地拉那", cs: "AL", icon: "" },
+    { key: "mk", name: "🇲🇰 北马其顿节点", flag: "🇲🇰", jsPattern: "🇲🇰|北马其顿|马其顿|macedonia|skopje|斯科普里|\\bMK\\d*\\b", icon: "" },
+    { key: "me", name: "🇲🇪 黑山节点", flag: "🇲🇪", jsPattern: "🇲🇪|黑山|montenegro|podgorica", cs: "ME", icon: "" },
+    { key: "li", name: "🇱🇮 列支敦士登节点", flag: "🇱🇮", jsPattern: "🇱🇮|列支敦士登|liechtenstein|\\bLI\\d*\\b", icon: "" },
+    { key: "mc", name: "🇲🇨 摩纳哥节点", flag: "🇲🇨", jsPattern: "🇲🇨|摩纳哥|monaco|\\bMC\\d*\\b", icon: "" },
+    { key: "ad", name: "🇦🇩 安道尔节点", flag: "🇦🇩", jsPattern: "🇦🇩|安道尔|andorra", cs: "AD", icon: "" },
+    { key: "dz", name: "🇩🇿 阿尔及利亚节点", flag: "🇩🇿", jsPattern: "🇩🇿|阿尔及利亚|\\bDZ\\d*\\b|algeria", icon: "" },
+    { key: "ao", name: "🇦🇴 安哥拉节点", flag: "🇦🇴", jsPattern: "🇦🇴|安哥拉|\\bAO\\d*\\b|angola", icon: "" },
+    { key: "bj", name: "🇧🇯 贝宁节点", flag: "🇧🇯", jsPattern: "🇧🇯|贝宁|\\bBJ\\d*\\b|benin", icon: "" },
+    { key: "bw", name: "🇧🇼 博茨瓦纳节点", flag: "🇧🇼", jsPattern: "🇧🇼|博茨瓦纳|\\bBW\\d*\\b|botswana", icon: "" },
+    { key: "bf", name: "🇧🇫 布基纳法索节点", flag: "🇧🇫", jsPattern: "🇧🇫|布基纳法索|\\bBF\\d*\\b|burkina[\\s_-]*faso", icon: "" },
+    { key: "bi", name: "🇧🇮 布隆迪节点", flag: "🇧🇮", jsPattern: "🇧🇮|布隆迪|\\bBI\\d*\\b|burundi", icon: "" },
+    { key: "cv", name: "🇨🇻 佛得角节点", flag: "🇨🇻", jsPattern: "🇨🇻|佛得角|\\bCV\\d*\\b|cabo[\\s_-]*verde|cape[\\s_-]*verde", icon: "" },
+    { key: "cm", name: "🇨🇲 喀麦隆节点", flag: "🇨🇲", jsPattern: "🇨🇲|喀麦隆|\\bCM\\d*\\b|cameroon", icon: "" },
+    { key: "cf", name: "🇨🇫 中非共和国节点", flag: "🇨🇫", jsPattern: "🇨🇫|中非共和国|中非|\\bCF\\d*\\b|central[\\s_-]*african", icon: "" },
+    { key: "td", name: "🇹🇩 乍得节点", flag: "🇹🇩", jsPattern: "🇹🇩|乍得|\\bTD\\d*\\b|\\bchad\\b", icon: "" },
+    { key: "km", name: "🇰🇲 科摩罗节点", flag: "🇰🇲", jsPattern: "🇰🇲|科摩罗|\\bKM\\d*\\b|comoros", icon: "" },
+    { key: "cg", name: "🇨🇬 刚果共和国节点", flag: "🇨🇬", jsPattern: "🇨🇬|刚果共和国|刚果（布）|\\bCG\\d*\\b|\\bcongo\\b", icon: "" },
+    { key: "cd", name: "🇨🇩 刚果民主共和国节点", flag: "🇨🇩", jsPattern: "🇨🇩|刚果民主共和国|刚果（金）|民主刚果|\\bCD\\d*\\b|dr[\\s_-]*congo|democratic[\\s_-]*republic[\\s_-]*of[\\s_-]*the[\\s_-]*congo", icon: "" },
+    { key: "ci", name: "🇨🇮 科特迪瓦节点", flag: "🇨🇮", jsPattern: "🇨🇮|科特迪瓦|象牙海岸|\\bCI\\d*\\b|cote[\\s_-]*d.ivoire|ivory[\\s_-]*coast", icon: "" },
+    { key: "dj", name: "🇩🇯 吉布提节点", flag: "🇩🇯", jsPattern: "🇩🇯|吉布提|\\bDJ\\d*\\b|djibouti", icon: "" },
+    { key: "eg", name: "🇪🇬 埃及节点", flag: "🇪🇬", jsPattern: "🇪🇬|埃及|\\bEG\\d*\\b|egypt|cairo|开罗", icon: "" },
+    { key: "gq", name: "🇬🇶 赤道几内亚节点", flag: "🇬🇶", jsPattern: "🇬🇶|赤道几内亚|\\bGQ\\d*\\b|equatorial[\\s_-]*guinea", icon: "" },
+    { key: "er", name: "🇪🇷 厄立特里亚节点", flag: "🇪🇷", jsPattern: "🇪🇷|厄立特里亚|\\bER\\d*\\b|eritrea", icon: "" },
+    { key: "sz", name: "🇸🇿 斯威士兰节点", flag: "🇸🇿", jsPattern: "🇸🇿|斯威士兰|埃斯瓦蒂尼|\\bSZ\\d*\\b|eswatini|swaziland", icon: "" },
+    { key: "et", name: "🇪🇹 埃塞俄比亚节点", flag: "🇪🇹", jsPattern: "🇪🇹|埃塞俄比亚|\\bET\\d*\\b|ethiopia", icon: "" },
+    { key: "ga", name: "🇬🇦 加蓬节点", flag: "🇬🇦", jsPattern: "🇬🇦|加蓬|\\bGA\\d*\\b|\\bgabon\\b", icon: "" },
+    { key: "gm", name: "🇬🇲 冈比亚节点", flag: "🇬🇲", jsPattern: "🇬🇲|冈比亚|\\bGM\\d*\\b|gambia", icon: "" },
+    { key: "gh", name: "🇬🇭 加纳节点", flag: "🇬🇭", jsPattern: "🇬🇭|加纳|\\bGH\\d*\\b|\\bghana\\b", icon: "" },
+    { key: "gn", name: "🇬🇳 几内亚节点", flag: "🇬🇳", jsPattern: "🇬🇳|几内亚|\\bGN\\d*\\b|\\bguinea\\b", icon: "" },
+    { key: "gw", name: "🇬🇼 几内亚比绍节点", flag: "🇬🇼", jsPattern: "🇬🇼|几内亚比绍|\\bGW\\d*\\b|guinea-bissau|guinea[\\s_-]*bissau", icon: "" },
+    { key: "ke", name: "🇰🇪 肯尼亚节点", flag: "🇰🇪", jsPattern: "🇰🇪|肯尼亚|\\bKE\\d*\\b|kenya|nairobi|内罗毕", icon: "" },
+    { key: "ls", name: "🇱🇸 莱索托节点", flag: "🇱🇸", jsPattern: "🇱🇸|莱索托|\\bLS\\d*\\b|lesotho", icon: "" },
+    { key: "lr", name: "🇱🇷 利比里亚节点", flag: "🇱🇷", jsPattern: "🇱🇷|利比里亚|\\bLR\\d*\\b|liberia", icon: "" },
+    { key: "ly", name: "🇱🇾 利比亚节点", flag: "🇱🇾", jsPattern: "🇱🇾|利比亚|\\bLY\\d*\\b|\\blibya\\b", icon: "" },
+    { key: "mg", name: "🇲🇬 马达加斯加节点", flag: "🇲🇬", jsPattern: "🇲🇬|马达加斯加|\\bMG\\d*\\b|madagascar", icon: "" },
+    { key: "mw", name: "🇲🇼 马拉维节点", flag: "🇲🇼", jsPattern: "🇲🇼|马拉维|\\bMW\\d*\\b|malawi", icon: "" },
+    { key: "ml", name: "🇲🇱 马里节点", flag: "🇲🇱", jsPattern: "🇲🇱|马里|\\bML\\d*\\b|\\bmali\\b", icon: "" },
+    { key: "mr", name: "🇲🇷 毛里塔尼亚节点", flag: "🇲🇷", jsPattern: "🇲🇷|毛里塔尼亚|\\bMR\\d*\\b|mauritania", icon: "" },
+    { key: "mu", name: "🇲🇺 毛里求斯节点", flag: "🇲🇺", jsPattern: "🇲🇺|毛里求斯|\\bMU\\d*\\b|mauritius", icon: "" },
+    { key: "ma", name: "🇲🇦 摩洛哥节点", flag: "🇲🇦", jsPattern: "🇲🇦|摩洛哥|morocco|casablanca|卡萨布兰卡", cs: "MA", icon: "" },
+    { key: "mz", name: "🇲🇿 莫桑比克节点", flag: "🇲🇿", jsPattern: "🇲🇿|莫桑比克|\\bMZ\\d*\\b|mozambique", icon: "" },
+    { key: "na", name: "🇳🇦 纳米比亚节点", flag: "🇳🇦", jsPattern: "🇳🇦|纳米比亚|\\bnamibia\\b", cs: "NA", icon: "" },
+    { key: "ne", name: "🇳🇪 尼日尔节点", flag: "🇳🇪", jsPattern: "🇳🇪|尼日尔|\\bNE\\d*\\b|\\bniger\\b", icon: "" },
+    { key: "ng", name: "🇳🇬 尼日利亚节点", flag: "🇳🇬", jsPattern: "🇳🇬|尼日利亚|\\bNG\\d*\\b|nigeria|lagos|拉各斯", icon: "" },
+    { key: "rw", name: "🇷🇼 卢旺达节点", flag: "🇷🇼", jsPattern: "🇷🇼|卢旺达|\\bRW\\d*\\b|rwanda", icon: "" },
+    { key: "st", name: "🇸🇹 圣多美和普林西比节点", flag: "🇸🇹", jsPattern: "🇸🇹|圣多美和普林西比|\\bST\\d*\\b|sao[\\s_-]*tome", icon: "" },
+    { key: "sn", name: "🇸🇳 塞内加尔节点", flag: "🇸🇳", jsPattern: "🇸🇳|塞内加尔|\\bSN\\d*\\b|senegal", icon: "" },
+    { key: "sc", name: "🇸🇨 塞舌尔节点", flag: "🇸🇨", jsPattern: "🇸🇨|塞舌尔|\\bSC\\d*\\b|seychelles", icon: "" },
+    { key: "sl", name: "🇸🇱 塞拉利昂节点", flag: "🇸🇱", jsPattern: "🇸🇱|塞拉利昂|\\bSL\\d*\\b|sierra[\\s_-]*leone", icon: "" },
+    { key: "so", name: "🇸🇴 索马里节点", flag: "🇸🇴", jsPattern: "🇸🇴|索马里|somalia", cs: "SO", icon: "" },
+    { key: "ss", name: "🇸🇸 南苏丹节点", flag: "🇸🇸", jsPattern: "🇸🇸|南苏丹|\\bSS\\d*\\b|south[\\s_-]*sudan", icon: "" },
+    { key: "sd", name: "🇸🇩 苏丹节点", flag: "🇸🇩", jsPattern: "🇸🇩|苏丹|\\bSD\\d*\\b|\\bsudan\\b", icon: "" },
+    { key: "tz", name: "🇹🇿 坦桑尼亚节点", flag: "🇹🇿", jsPattern: "🇹🇿|坦桑尼亚|\\bTZ\\d*\\b|tanzania", icon: "" },
+    { key: "tg", name: "🇹🇬 多哥节点", flag: "🇹🇬", jsPattern: "🇹🇬|多哥|\\bTG\\d*\\b|\\btogo\\b", icon: "" },
+    { key: "tn", name: "🇹🇳 突尼斯节点", flag: "🇹🇳", jsPattern: "🇹🇳|突尼斯|\\bTN\\d*\\b|tunisia", icon: "" },
+    { key: "ug", name: "🇺🇬 乌干达节点", flag: "🇺🇬", jsPattern: "🇺🇬|乌干达|\\bUG\\d*\\b|uganda", icon: "" },
+    { key: "zm", name: "🇿🇲 赞比亚节点", flag: "🇿🇲", jsPattern: "🇿🇲|赞比亚|\\bZM\\d*\\b|zambia", icon: "" },
+    { key: "zw", name: "🇿🇼 津巴布韦节点", flag: "🇿🇼", jsPattern: "🇿🇼|津巴布韦|\\bZW\\d*\\b|zimbabwe", icon: "" },
   ];
+
+  // 地区匹配双引擎一致性：
+  //   - JS 端（本脚本）用 jsPattern + 不区分大小写；
+  //   - mihomo 端 filter 由 dlclark/regexp2（.NET 语义）执行，其 \\b 把中文也当
+  //     单词字符，"JP01专线" 在 JS 里能命中 \\bJP\\d*\\b、在内核里却不能，导致
+  //     脚本生成了地区组、内核里却筛不出节点（空组回落 COMPATIBLE=DIRECT）。
+  //   因此 filter 不再手写，统一由 jsPattern 机械转换：\\b 换成只认 ASCII 的
+  //   前后断言，与 JS 的 \\b 语义一致。
+  //   - cs：与英文常用词撞车的两字母代码（IN/IT/AT/BE/NO/IS/ME/DO...），只按
+  //     大写匹配，避免 "in"、"No.1"、"at" 之类把节点误归到这些地区。
+  var NET_WORD = "[A-Za-z0-9_]";
+  function toNetPattern(p) {
+    return String(p).replace(/\\b(?=[A-Za-z(\[])/g, "(?<!" + NET_WORD + ")").replace(/\\b/g, "(?!" + NET_WORD + ")");
+  }
+  function regionNetBody(r) {
+    var body = toNetPattern(r.jsPattern);
+    if (r.cs) body += "|(?-i:(?<!" + NET_WORD + ")(?:" + r.cs + ")\\d*(?!" + NET_WORD + "))";
+    return body;
+  }
+  for (var rgi = 0; rgi < REGIONS.length; rgi++) {
+    REGIONS[rgi].csRe = REGIONS[rgi].cs ? new RegExp("\\b(?:" + REGIONS[rgi].cs + ")\\d*\\b") : null;
+    REGIONS[rgi].filter = "(?i)(" + regionNetBody(REGIONS[rgi]) + ")";
+  }
 
   function getMatchedRegions(proxyName) {
     proxyName = String(proxyName || "");
@@ -138,7 +229,7 @@ function main(config) {
     for (var i = 0; i < REGIONS.length; i++) {
       var r = REGIONS[i];
       try {
-        if (new RegExp(r.jsPattern, "i").test(proxyName)) regions.push(r);
+        if (new RegExp(r.jsPattern, "i").test(proxyName) || (r.csRe && r.csRe.test(proxyName))) regions.push(r);
       } catch (e) {}
     }
     regionMatchCache[proxyName] = regions;
@@ -239,7 +330,7 @@ function main(config) {
 
   config.proxies = normalizedProxies.length > 0 ? normalizedProxies : originalProxies;
 
-  var allRegionKeywords = REGIONS.map(function(r) { return r.jsPattern; }).join("|");
+  var allRegionKeywords = REGIONS.map(function(r) { return regionNetBody(r); }).join("|");
   var OTHER_REGION_NAME = "🌐 其他地区";
 
   // 每个地区拆成三层：
@@ -370,6 +461,8 @@ function main(config) {
   var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Advertising.png" };
   var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Bypass.png" };
   var aiGroup = serviceGroup("💬 AI Services", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png", "🇺🇸 美国节点", false, false);
+  // Claude 独立出口：与其他 AI 分开选节点，整站（含登录/风控/遥测）固定同一出口，默认美国。
+  var claudeGroup = serviceGroup("🤖 Claude", "https://fastly.jsdelivr.net/npm/@lobehub/icons-static-png@latest/light/claude-color.png", "🇺🇸 美国节点", false, false);
   var fcmGroup = serviceGroup("🔔 FCM", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png", DIRECT_GROUP, true, true);
   var bilibiliGroup = serviceGroup("📺 Bilibili", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/bilibili.png", DIRECT_GROUP, true, true);
   var youtubeGroup = serviceGroup("📹 YouTube", "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/YouTube.png", "", false, false);
@@ -390,7 +483,7 @@ function main(config) {
   var ehentaiGroup = serviceGroup("📖 EHentai", "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Ehentai.svg", "🇺🇸 美国节点", true, false);
   var fallbackGroup = { name: "🐟 Final", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png" };
 
-  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, failoverGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
+  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, failoverGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, claudeGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
 
   var ruleProviderCommonDomain = { type: "http", format: "mrs", interval: 86400, behavior: "domain" };
   var ruleProviderCommonIpcidr = { type: "http", format: "mrs", interval: 86400, behavior: "ipcidr" };
@@ -1012,8 +1105,27 @@ function main(config) {
   }
 
   config["rules"] = [
-  "DOMAIN-SUFFIX,claude.ai,💬 AI Services",
-  "DOMAIN-SUFFIX,anthropic.com,💬 AI Services",
+  "DOMAIN-SUFFIX,claude.ai,🤖 Claude",
+  "DOMAIN-SUFFIX,anthropic.com,🤖 Claude",
+  "DOMAIN-SUFFIX,claude.com,🤖 Claude",
+  "DOMAIN-SUFFIX,clau.de,🤖 Claude",
+  "DOMAIN-SUFFIX,claudemcpclient.com,🤖 Claude",
+  "DOMAIN-SUFFIX,claudeusercontent.com,🤖 Claude",
+  "DOMAIN,servd-anthropic-website.b-cdn.net,🤖 Claude",
+  "DOMAIN,anthropic.com.cdn.cloudflare.net,🤖 Claude",
+  "DOMAIN,anthropic.auth0.com,🤖 Claude",
+  "DOMAIN,anthropic-com.ghost.io,🤖 Claude",
+  "DOMAIN-SUFFIX,sentry.io,🤖 Claude",
+  "DOMAIN-SUFFIX,statsigapi.net,🤖 Claude",
+  "DOMAIN-SUFFIX,datadoghq.com,🤖 Claude",
+  "DOMAIN-SUFFIX,browser-intake-datadoghq.com,🤖 Claude",
+  "DOMAIN-SUFFIX,sift.com,🤖 Claude",
+  "DOMAIN-SUFFIX,siftscience.com,🤖 Claude",
+  "DOMAIN-SUFFIX,intercom.io,🤖 Claude",
+  "DOMAIN-SUFFIX,intercomcdn.com,🤖 Claude",
+  "DOMAIN,cdn.usefathom.com,🤖 Claude",
+  "IP-CIDR,160.79.104.0/21,🤖 Claude,no-resolve",
+  "IP-CIDR6,2607:6bc0::/32,🤖 Claude,no-resolve",
   "DOMAIN-SUFFIX,gemini.google.com,💬 AI Services",
   "DOMAIN-SUFFIX,aistudio.google.com,💬 AI Services",
   "AND,((IN-TYPE,TUN),(RULE-SET,private-ip,no-resolve)),DIRECT",
@@ -1129,13 +1241,12 @@ function main(config) {
   "DOMAIN-SUFFIX,in.appcenter.ms,默认代理",
   "DOMAIN-SUFFIX,mobile.events.data.microsoft.com,默认代理",
   "DOMAIN-SUFFIX,connect.facebook.net,默认代理",
-  "DOMAIN-SUFFIX,a-cdn.anthropic.com,💬 AI Services",
-  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,💬 AI Services",
+  "DOMAIN-SUFFIX,a-cdn.anthropic.com,🤖 Claude",
+  "DOMAIN-SUFFIX,assets-proxy.anthropic.com,🤖 Claude",
   "DOMAIN-SUFFIX,bing.com,默认代理",
   "DOMAIN-SUFFIX,samsungosp.com,DIRECT",
   "DOMAIN-SUFFIX,crashlytics.com,默认代理",
   "DOMAIN-SUFFIX,firebase.io,默认代理",
-  "DOMAIN,browser-intake-us5-datadoghq.com,默认代理",
   "RULE-SET,sukka-phishing,REJECT-DROP",
   "RULE-SET,category-ads-all,🛑 广告拦截",
   "DOMAIN,galaxystore.ad-survey.com,REJECT",
@@ -1251,7 +1362,7 @@ function main(config) {
   "RULE-SET,apple,🍏 Apple",
   "RULE-SET,microsoft,Ⓜ️ Microsoft",
   "RULE-SET,google-gemini,💬 AI Services",
-  "RULE-SET,anthropic,💬 AI Services",
+  "RULE-SET,anthropic,🤖 Claude",
   "RULE-SET,openai,💬 AI Services",
   "RULE-SET,category-ai-!cn,💬 AI Services",
   "RULE-SET,netflix,📺 Netflix",
@@ -2159,6 +2270,22 @@ function main(config) {
       "https://8.8.8.8/dns-query#RULES",
       "https://1.1.1.1/dns-query#RULES"
     ],
+    "+.claude.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.clau.de": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.claudeusercontent.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
+    "+.claudemcpclient.com": [
+      "https://8.8.8.8/dns-query#RULES",
+      "https://1.1.1.1/dns-query#RULES"
+    ],
     "+.gemini.google.com": [
       "https://8.8.8.8/dns-query#RULES",
       "https://1.1.1.1/dns-query#RULES"
@@ -2210,7 +2337,8 @@ function main(config) {
     "+.googlevideo.com",
     "+.ytimg.com",
     "+.chatgpt.com",
-    "+.claude.ai"
+    "+.claude.ai",
+    "+.claude.com"
   ],
   "skip-dst-address": [
     "91.105.192.0/23",
@@ -2569,7 +2697,7 @@ function main(config) {
   };
   var RULESET_MAP = {
     "google-gemini": "💬 AI Services",
-    "anthropic": "💬 AI Services",
+    "anthropic": "🤖 Claude",
     "openai": "💬 AI Services",
     "category-ai-!cn": "💬 AI Services",
     "youtube": "📹 YouTube",
@@ -2618,12 +2746,33 @@ function main(config) {
     "geolocation-!cn": "默认代理"
   };
   var DOMAIN_MAP = {
-    "claude.ai": "💬 AI Services",
-    "anthropic.com": "💬 AI Services",
-    "a-cdn.anthropic.com": "💬 AI Services",
-    "assets-proxy.anthropic.com": "💬 AI Services",
+    "claude.ai": "🤖 Claude",
+    "anthropic.com": "🤖 Claude",
+    "claude.com": "🤖 Claude",
+    "clau.de": "🤖 Claude",
+    "claudemcpclient.com": "🤖 Claude",
+    "claudeusercontent.com": "🤖 Claude",
+    "a-cdn.anthropic.com": "🤖 Claude",
+    "assets-proxy.anthropic.com": "🤖 Claude",
+    "servd-anthropic-website.b-cdn.net": "🤖 Claude",
+    "anthropic.com.cdn.cloudflare.net": "🤖 Claude",
+    "anthropic.auth0.com": "🤖 Claude",
+    "anthropic-com.ghost.io": "🤖 Claude",
+    "sentry.io": "🤖 Claude",
+    "statsigapi.net": "🤖 Claude",
+    "datadoghq.com": "🤖 Claude",
+    "browser-intake-datadoghq.com": "🤖 Claude",
+    "sift.com": "🤖 Claude",
+    "siftscience.com": "🤖 Claude",
+    "intercom.io": "🤖 Claude",
+    "intercomcdn.com": "🤖 Claude",
+    "cdn.usefathom.com": "🤖 Claude",
     "gemini.google.com": "💬 AI Services",
     "aistudio.google.com": "💬 AI Services"
+  };
+  var IP_MAP = {
+    "160.79.104.0/21": "🤖 Claude",
+    "2607:6bc0::/32": "🤖 Claude"
   };
   function mapRuleTargets(list) {
     if (!list || !list.map) return list;
@@ -2635,6 +2784,10 @@ function main(config) {
       if (parts[targetIndex] === "no-resolve" && parts.length >= 3) targetIndex--;
       if (parts[0] === "RULE-SET" && RULESET_MAP[parts[1]]) {
         parts[targetIndex] = RULESET_MAP[parts[1]];
+        return parts.join(",");
+      }
+      if ((parts[0] === "IP-CIDR" || parts[0] === "IP-CIDR6") && IP_MAP[parts[1]]) {
+        parts[targetIndex] = IP_MAP[parts[1]];
         return parts.join(",");
       }
       if ((parts[0] === "DOMAIN" || parts[0] === "DOMAIN-SUFFIX" || parts[0] === "DOMAIN-KEYWORD") && DOMAIN_MAP[parts[1]]) {
