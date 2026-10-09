@@ -202,7 +202,16 @@ DOMAIN_TARGET = {d: CLAUDE_GROUP for d in CLAUDE_DOMAINS}
 DOMAIN_TARGET.update({
     "gemini.google.com": "💬 AI Services",
     "aistudio.google.com": "💬 AI Services",
+    # OpenAI tenant host under sentry.io: stays with ChatGPT, not the Claude suffix.
+    "o33249.ingest.sentry.io": "💬 AI Services",
+    # Copilot endpoints: AI exit, not the Microsoft group.
+    "copilot.microsoft.com": "💬 AI Services",
+    "sydney.bing.com": "💬 AI Services",
+    "edgeservices.bing.com": "💬 AI Services",
+    "copilot.cloud.microsoft": "💬 AI Services",
 })
+CRYPTO_EXTRA = ("binance.info", "bitget.com", "mexc.com", "kucoin.com", "gate.io", "gate.com", "htx.com", "coinbase.com", "kraken.com")
+DOMAIN_TARGET.update({d: "🪙 Crypto" for d in CRYPTO_EXTRA})
 IP_TARGET = {
     "160.79.104.0/21": CLAUDE_GROUP,
     "2607:6bc0::/32": CLAUDE_GROUP,

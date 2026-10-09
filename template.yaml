@@ -978,6 +978,9 @@ dns:
     # 广告 → fake-ip（规则层 REJECT-DROP，不实际连接）
     - RULE-SET,category-ads-all,fake-ip
     # 国内域名 → real-ip（mrs 最快）
+    # 防封闭环服务先走 fake-ip：tiktokrow-cdn.com 等被 cn 列表误收录的子域，
+    # 不再由国内 DNS 解析出真实 IP（国内解析结果会暴露查询，也可能拿到境内调度节点）
+    - RULE-SET,tiktok,fake-ip
     - RULE-SET,geolocation-cn,real-ip
     - RULE-SET,cn,real-ip
     - RULE-SET,bilibili,real-ip        # B站 CDN 需真实 IP 调度
@@ -1497,6 +1500,11 @@ sub-rules:
     - IP-CIDR6,fc00::/7,DIRECT,no-resolve       # IPv6 ULA（含 fake-ip-range6，由 fake-ip-filter 处理例外）
 
 rules:
+  # OpenAI 专属的第三方租户子域：必须排在下面 Claude 的 sentry.io 后缀之前，
+  # 否则 ChatGPT 的错误上报会被 Claude 组截走、与 ChatGPT 出口不一致。
+  # （browser-intake-datadoghq.com 是 OpenAI 与 Claude 共用的同一主机，
+  #   只能归一个组：Claude 和 AI Services 建议选同一地区。）
+  - DOMAIN,o33249.ingest.sentry.io,AI服务
   # ── Claude / Anthropic 防封分流（最先匹配，保证整站所有请求同一出口）──
   # 同一会话里页面、API、登录、风控、遥测、客服 widget 必须从同一个出口 IP
   # 发出；任何一个子请求走了别的出口（或直连暴露国内 IP）都会被风控判定为
@@ -1824,6 +1832,36 @@ rules:
   - DOMAIN-SUFFIX,recaptcha.net,国外服务
   - DOMAIN,recaptcha.google.com,国外服务
 
+  # P8.6 防封闭环：高风控服务整组前置（沿用 Claude 防封思路）
+  # 原理：同一个服务的页面、API、CDN、登录、风控、遥测必须从同一个出口发出。
+  # 之前这些规则集排在 P9 国内子规则之后，任何被 geosite:cn / geolocation-cn
+  # 误收录的子域名都会先被判直连，暴露国内 IP，或被前面更宽的组截走：
+  #   - tiktokrow-cdn.com 实测在 cn 列表内 → TikTok CDN 直连，触发地区风控
+  #   - Copilot 端点被 P13 microsoft 规则集先截走 → 与 AI 组出口不一致
+  # 因此 AI / TikTok / Netflix / 加密货币交易所整组前置到国内子规则之前。
+  # 仍在 P0–P8 安全规则（私网、STUN/QUIC 封堵、DNS 劫持）之后，安全基线不受影响。
+  - RULE-SET,google-gemini,AI服务
+  - RULE-SET,anthropic,AI服务
+  - RULE-SET,openai,AI服务
+  - DOMAIN,copilot.microsoft.com,AI服务
+  - DOMAIN,sydney.bing.com,AI服务
+  - DOMAIN,edgeservices.bing.com,AI服务
+  - DOMAIN-SUFFIX,copilot.cloud.microsoft,AI服务
+  - RULE-SET,category-ai-!cn,AI服务
+  - RULE-SET,tiktok,流媒体
+  - RULE-SET,netflix,流媒体
+  - RULE-SET,netflix-ip,流媒体,no-resolve
+  - RULE-SET,cryptocurrency,国外服务   # 交易所 KYC 风控：前端、API、静态资源同出口
+  - DOMAIN-SUFFIX,binance.info,国外服务
+  - DOMAIN-SUFFIX,bitget.com,国外服务
+  - DOMAIN-SUFFIX,mexc.com,国外服务
+  - DOMAIN-SUFFIX,kucoin.com,国外服务
+  - DOMAIN-SUFFIX,gate.io,国外服务
+  - DOMAIN-SUFFIX,gate.com,国外服务
+  - DOMAIN-SUFFIX,htx.com,国外服务
+  - DOMAIN-SUFFIX,coinbase.com,国外服务
+  - DOMAIN-SUFFIX,kraken.com,国外服务
+
   # P9. TCP → 域名子规则
   - SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN
 
@@ -1913,22 +1951,13 @@ rules:
   - RULE-SET,apple,国外服务
   - RULE-SET,microsoft,国外服务
 
-  # P14. AI 服务
-  - RULE-SET,google-gemini,AI服务
-  - RULE-SET,anthropic,AI服务
-  - RULE-SET,openai,AI服务
-  - RULE-SET,category-ai-!cn,AI服务
-
-  # P15. 流媒体
-  - RULE-SET,netflix,流媒体
-  - RULE-SET,netflix-ip,流媒体,no-resolve
+  # P15. 流媒体（Netflix / TikTok 已提前到 P8.6 防封闭环）
   - RULE-SET,hulu,流媒体
   - RULE-SET,disney,流媒体
   - RULE-SET,hbo,流媒体
   - RULE-SET,amazon,流媒体
   - RULE-SET,bahamut,流媒体
   - RULE-SET,youtube,流媒体
-  - RULE-SET,tiktok,流媒体
   - RULE-SET,biliintl,流媒体
   - RULE-SET,abema,流媒体            # 日本流媒体 Abema
   - RULE-SET,bbc,流媒体              # 欧洲流媒体 BBC
@@ -1972,7 +2001,6 @@ rules:
   - RULE-SET,dropbox,国外服务
   - RULE-SET,onedrive,国外服务
   - RULE-SET,pikpak,国外服务
-  - RULE-SET,cryptocurrency,国外服务   # 加密货币交易所(含OKX)，之前完全靠P20兜底覆盖，无专门规则
 
   # P19. 学术
   - RULE-SET,category-scholar-!cn,国外服务

@@ -59,6 +59,20 @@ if (!output.rules.some(rule => rule === "DOMAIN-SUFFIX,claude.ai,🤖 Claude")) 
 if (!output.rules.some(rule => rule === "RULE-SET,anthropic,🤖 Claude")) fail("anthropic rule-set is not routed to the dedicated Claude group");
 if (!output.rules.some(rule => rule === "IP-CIDR,160.79.104.0/21,🤖 Claude,no-resolve")) fail("Anthropic IPv4 range is not routed to the Claude group");
 if (!output.rules.some(rule => rule === "IP-CIDR6,2607:6bc0::/32,🤖 Claude,no-resolve")) fail("Anthropic IPv6 range is not routed to the Claude group");
+{
+  const r = output.rules;
+  const at = x => r.indexOf(x);
+  const sub = r.findIndex(x => x.indexOf("SUB-RULE,") === 0);
+  for (const must of ["RULE-SET,tiktok,📱 TikTok", "RULE-SET,netflix,📺 Netflix", "RULE-SET,openai,💬 AI Services",
+                      "RULE-SET,google-gemini,💬 AI Services", "RULE-SET,category-ai-!cn,💬 AI Services", "RULE-SET,cryptocurrency,🪙 Crypto"]) {
+    if (at(must) < 0 || at(must) > sub) fail(`anti-ban closed loop: ${must} must precede the domestic SUB-RULE layer`);
+  }
+  if (at("DOMAIN,copilot.microsoft.com,💬 AI Services") < 0 || at("DOMAIN,copilot.microsoft.com,💬 AI Services") > at("RULE-SET,microsoft,Ⓜ️ Microsoft")) fail("Copilot must reach the AI group before the Microsoft rule-set");
+  if (at("DOMAIN,o33249.ingest.sentry.io,💬 AI Services") < 0 || at("DOMAIN,o33249.ingest.sentry.io,💬 AI Services") > at("DOMAIN-SUFFIX,sentry.io,🤖 Claude")) fail("OpenAI Sentry tenant must not be captured by the Claude sentry.io suffix");
+  if (at("DOMAIN-SUFFIX,bitget.com,🪙 Crypto") < 0) fail("crypto exchange supplements must route to the Crypto group");
+  const ffi = (output.dns && output.dns["fake-ip-filter"]) || [];
+  if (ffi.indexOf("RULE-SET,tiktok,fake-ip") < 0 || ffi.indexOf("RULE-SET,tiktok,fake-ip") > ffi.indexOf("RULE-SET,cn,real-ip")) fail("TikTok must stay fake-ip ahead of the cn real-ip filter");
+}
 if (output.rules.some(rule => /DOMAIN-KEYWORD,(datadog|sift),/.test(rule))) fail("over-broad datadog/sift keyword rules must not exist");
 {
   const ci = output.rules.findIndex(rule => rule === "DOMAIN-SUFFIX,claude.ai,🤖 Claude");
@@ -205,4 +219,5 @@ ok("live MetaCubeX AI providers, no 404 rulesets");
 ok("rate multiplier grouping");
 ok("170+ region three-layer groups, kernel/JS regex parity, no English-word false positives");
 ok("dedicated Claude group with Anthropic domains and IP ranges");
+ok("anti-ban closed loop: AI/TikTok/Netflix/Crypto precede domestic sub-rules");
 ok("lazy health checks and Fallback group");
