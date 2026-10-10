@@ -2,6 +2,7 @@ name: Sync airport overwrite
 on:
   push:
     paths:
+      - '.github/workflows/sync-airport-overwrite.yml'
       - 'template.yaml'
       - 'airport_overwrite.js'
       - 'tools/sync-airport-overwrite.py'
