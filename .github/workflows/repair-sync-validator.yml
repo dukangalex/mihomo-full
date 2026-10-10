@@ -41,6 +41,9 @@ jobs:
           node --check airport_overwrite.js
           node tools/test-airport-overwrite.js
 
+      - name: Install YAML parser
+        run: python3 -m pip install --disable-pip-version-check --no-input pyyaml
+
       - name: Run repository static audit
         run: |
           python3 tools/run-static-audit.py
