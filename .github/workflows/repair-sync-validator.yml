@@ -1,64 +1,46 @@
-name: Repair airport sync validator
+name: Validate airport sync ordering
 
 on:
-  push:
-    paths:
-      - '.github/workflows/repair-sync-validator.yml'
+  workflow_dispatch:
 
 permissions:
-  contents: write
-  actions: write
+  contents: read
 
 jobs:
-  repair:
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Repair synchronizer ordering deterministically
+      - name: Verify synchronizer transform order
         run: |
-          python - <<'PY'
+          python3 - <<'PY'
           from pathlib import Path
 
-          p = Path('tools/sync-airport-overwrite.py')
-          s = p.read_text(encoding='utf-8')
-
-          old = '''    result=restore_airport_exceptions(result)
-              result=apply_airport_strategy_groups(result)
-              result=upsert_object(result, "rules", template["rules"])
-              result=map_airport_targets(result)
-          '''
-          new = '''    result=restore_airport_exceptions(result)
-              result=upsert_object(result, "rules", template["rules"])
-              result=apply_airport_strategy_groups(result)
-              result=map_airport_targets(result)
-              result=result.replace("DOMAIN-SUFFIX,claude.ai,💬 AI 服务", "DOMAIN-SUFFIX,claude.ai,🤖 Claude AI")
-          '''
-
-          if old not in s:
-              old = '''    result=restore_airport_exceptions(result)
-              result=apply_airport_strategy_groups(result)
-              result=upsert_object(result, "rules", template["rules"])
-              result=map_airport_targets(result)
-          '''
-          if old not in s:
-              raise SystemExit('expected synchronizer transform ordering not found')
-          s = s.replace(old, new, 1)
-          p.write_text(s, encoding='utf-8')
+          source = Path("tools/sync-airport-overwrite.py").read_text(encoding="utf-8")
+          expected = [
+              "result=restore_airport_exceptions(result)",
+              'result=upsert_object(result, "rules", remap_airport_rules(template["rules"]))',
+              "result=apply_airport_strategy_groups(result)",
+              "result=map_airport_targets(result)",
+          ]
+          positions = [source.find(item) for item in expected]
+          if any(position < 0 for position in positions):
+              raise SystemExit("Synchronizer is missing a required transformation")
+          if positions != sorted(positions):
+              raise SystemExit("Synchronizer transformation order is invalid")
+          if 'CLAUDE_GROUP = "🤖 Claude"' not in source:
+              raise SystemExit("Dedicated Claude routing target is missing")
+          if '"claude.ai", "anthropic.com"' not in source:
+              raise SystemExit("Claude/Anthropic domain mapping is missing")
+          print("Synchronizer order and dedicated Claude mapping verified")
           PY
 
-          python -m py_compile tools/sync-airport-overwrite.py
-          git diff --check
+      - name: Run JavaScript syntax and regression tests
+        run: |
+          node --check airport_overwrite.js
+          node tools/test-airport-overwrite.js
 
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add tools/sync-airport-overwrite.py
-          git diff --cached --quiet || git commit -m 'fix: repair Claude rule synchronization order'
-          git push || true
-
-      - name: Trigger real synchronization
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run sync-airport-overwrite.yml --ref main
+      - name: Run repository static audit
+        run: |
+          python3 tools/run-static-audit.py
