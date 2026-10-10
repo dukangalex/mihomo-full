@@ -1,6 +1,26 @@
 name: Validate airport sync ordering
 
 on:
+  push:
+    paths:
+      - '.github/workflows/repair-sync-validator.yml'
+      - 'template.yaml'
+      - 'airport_overwrite.js'
+      - 'tools/sync-airport-overwrite.py'
+      - 'tools/normalize-airport-strategy.py'
+      - 'tools/run-static-audit.py'
+      - 'tools/static-audit.py'
+      - 'tools/test-airport-overwrite.js'
+  pull_request:
+    paths:
+      - '.github/workflows/repair-sync-validator.yml'
+      - 'template.yaml'
+      - 'airport_overwrite.js'
+      - 'tools/sync-airport-overwrite.py'
+      - 'tools/normalize-airport-strategy.py'
+      - 'tools/run-static-audit.py'
+      - 'tools/static-audit.py'
+      - 'tools/test-airport-overwrite.js'
   workflow_dispatch:
 
 permissions:
@@ -9,8 +29,12 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
 
       - name: Verify synchronizer transform order
         run: |
@@ -45,5 +69,4 @@ jobs:
         run: python3 -m pip install --disable-pip-version-check --no-input pyyaml
 
       - name: Run repository static audit
-        run: |
-          python3 tools/run-static-audit.py
+        run: python3 tools/run-static-audit.py
