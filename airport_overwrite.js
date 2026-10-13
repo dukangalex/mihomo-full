@@ -4,7 +4,8 @@
  * 公共行为与 template.yaml 同步。
  * 框架：MyClash 全量分流组；MY 只保留 100+ 地区三层组（自动识别）和安全基线。
  * 哔哩哔哩是可选组，默认 直连，不再把 B 站钉死在底层 DIRECT。
- * 健康检查默认 lazy、间隔 300 秒、url-test 容差 50；另有 Fallback，挂了才换。
+ * 健康检查对齐 HiClash：lazy、间隔 600 秒、连续失败 3 次、空组 REJECT；url-test 容差 50。
+ * 测速仍用 generate_204 且只认 204。故障转移是 type:fallback，没有单独的 failover 类型。
  * Emby / EHentai 来自 MyClash，用域名/进程规则，不加新 MRS。
  * 禁止引用已 404 的旧 Gemini/Claude/YouTube-IP 规则集文件名
  */
@@ -250,7 +251,7 @@ function main(config) {
   function buildRegionTrio(name, matchField) {
     var autoName = "" + name + "-自动选择";
     var lbName = "" + name + "-负载均衡";
-    var common = { "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 300, timeout: 3000, "expected-status": 204, icon: "", hidden: true, lazy: true };
+    var common = { "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 600, timeout: 3000, "expected-status": 204, icon: "", hidden: true, lazy: true, "max-failed-times": 3, "empty-fallback": "REJECT" };
     var auto = { name: autoName, type: "url-test", tolerance: 50, "max-failed-times": 2 };
     var lb = { name: lbName, type: "load-balance", strategy: "sticky-sessions" };
     for (var ck in common) { if (Object.prototype.hasOwnProperty.call(common, ck)) { auto[ck] = common[ck]; lb[ck] = common[ck]; } }
@@ -301,9 +302,13 @@ function main(config) {
       type: "url-test",
       proxies: rdMatched.slice(),
       url: "https://www.gstatic.com/generate_204",
-      interval: 300,
+      interval: 600,
+      timeout: 3000,
       tolerance: 50,
+      "expected-status": 204,
       lazy: true,
+      "max-failed-times": 3,
+      "empty-fallback": "REJECT",
       hidden: true,
       icon: ""
     });
@@ -317,7 +322,7 @@ function main(config) {
 
   var AUTO_NAME = "⚡ 自动选择";
   var LB_NAME = "⚖️ 负载均衡";
-  var FAILOVER_NAME = "🔁 Fallback";
+  var FAILOVER_NAME = "🔁 故障转移";
   var SELECT_NAME = "🚀 节点选择";
   var DEFAULT_NAME = "默认代理";
   var DIRECT_GROUP = "直连";
@@ -342,9 +347,9 @@ function main(config) {
   if (typeof rateNames === "undefined" || !rateNames) rateNames = [];
   if (typeof rateGroups === "undefined" || !rateGroups) rateGroups = [];
 
-  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, tolerance: 50, timeout: 3000, "expected-status": 204, "max-failed-times": 2, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Auto.png" };
-  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, timeout: 3000, "expected-status": 204, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Round_Robin.png" };
-  var failoverGroup = { name: FAILOVER_NAME, type: "fallback", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, timeout: 5000, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png" };
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 600, tolerance: 50, timeout: 3000, "expected-status": 204, "max-failed-times": 3, "empty-fallback": "REJECT", icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Auto.png" };
+  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 600, timeout: 3000, "expected-status": 204, "max-failed-times": 3, "empty-fallback": "REJECT", icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Round_Robin.png" };
+  var failoverGroup = { name: FAILOVER_NAME, type: "fallback", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 600, timeout: 3000, "expected-status": 204, "max-failed-times": 3, "empty-fallback": "REJECT", icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png" };
   var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Static.png" };
   var defaultGroup = { name: DEFAULT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png" };
   var directGroup = { name: DIRECT_GROUP, type: "select", proxies: directNames, icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China.png" };

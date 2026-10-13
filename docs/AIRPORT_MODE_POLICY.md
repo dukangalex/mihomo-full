@@ -64,9 +64,13 @@ MyClash 独立出口一并带上 `🎬 Emby` 和 `📖 EHentai`（可选手动�
 
 ### 7. 健康检查与故障转移
 
-地区三层的 url-test / 负载均衡，以及全局自动选择、负载均衡，默认 `lazy: true`、间隔 300 秒。url-test 容差为 50。手机客户端不会在这些组未被选中时全量探测，避免一百多个地区组把电量和流量打光，也减少视频或通话中途因为延迟抖动被切走。
+Mihomo 没有 `type: failover`。故障转移的内核类型就是 `fallback`。Fallback 是类型名，Failover 是同一行为的英文叫法，不是另一种策略。
 
-另有 `🔁 Fallback`（`type: fallback`，同样 lazy，排除 DIRECT 类型节点）。需要「当前节点挂了才换、不要按延迟来回跳」时再手动选择。默认代理的第一项仍是自动选择，不改变现有默认出口。
+`url-test`（自动选择）按延迟选节点，延迟差超过容差就换，所以最快，但视频和通话容易被抖动切走。`fallback`（故障转移）按订阅里的节点顺序，用第一个还活着的；当前节点连续失败才换到下一个。更靠前的节点恢复后会自动切回去，这是 failback，不是「切走之后粘住」。它也不追最低延迟：排在前面的慢节点只要活着就会一直用。
+
+参数对齐 [HiClash](https://github.com/dukangalex/HiClash)：`lazy: true`、间隔 600 秒、超时 3000ms、连续失败 3 次、组内没有可用节点时 `empty-fallback: REJECT`。url-test 容差 50。测速 URL 不跟 HiClash 的 Apple 页面，继续用模板的 `generate_204`，并且 `expected-status: 204`，避免把返回异常页的节点当成健康。
+
+不照搬 HiClash 的部分：Bilibili 仍是可选组且默认直连；地区保持三层；远控工具保留直连例外；不新增规则集；不引入链式代理。默认代理的第一项仍是自动选择。
 
 ## 同步安全规则
 

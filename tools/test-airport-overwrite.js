@@ -38,7 +38,7 @@ if (JSON.stringify(output).includes("CI Forbidden Chain")) fail("forbidden chain
 
 const groups = Array.isArray(output["proxy-groups"]) ? output["proxy-groups"] : [];
 const requiredGroups = [
-  "默认代理", "🚀 节点选择", "⚡ 自动选择", "⚖️ 负载均衡", "🔁 Fallback", "直连",
+  "默认代理", "🚀 节点选择", "⚡ 自动选择", "⚖️ 负载均衡", "🔁 故障转移", "直连",
   "🛑 广告拦截", "🔧 远控工具", "💬 AI Services", "🔔 FCM", "📺 Bilibili",
   "📹 YouTube", "🔍 Google", "📲 Telegram", "Ⓜ️ Microsoft", "🍏 Apple",
   "📱 TikTok", "🐦 Twitter", "📘 Meta", "💬 Line", "📺 Netflix", "🎬 Emby",
@@ -108,22 +108,32 @@ if (!remote.proxies.includes("直连") && !remote.proxies.includes("DIRECT")) fa
 
 const select = byName("🚀 节点选择");
 if (select.proxies.includes("DIRECT")) fail("node selection must not be a global DIRECT switch");
-if (!select.proxies.includes("⚡ 自动选择") || !select.proxies.includes("⚖️ 负载均衡") || !select.proxies.includes("🔁 Fallback")) {
+if (!select.proxies.includes("⚡ 自动选择") || !select.proxies.includes("⚖️ 负载均衡") || !select.proxies.includes("🔁 故障转移")) {
   fail("node selection lost auto/load-balance/fallback entries");
 }
 
-const auto = byName("⚡ 自动选择");
-if (!auto.lazy || auto.interval !== 300 || auto.tolerance !== 50) {
-  fail("global url-test must be lazy, interval 300, tolerance 50");
+function assertHealth(group, label) {
+  if (!group) fail(label + " missing");
+  if (group.lazy !== true) fail(label + " must be lazy until selected");
+  if (group.interval !== 600) fail(label + " interval must be 600");
+  if (group.timeout !== 3000) fail(label + " timeout must be 3000");
+  if (group["max-failed-times"] !== 3) fail(label + " must fail over after 3 misses");
+  if (group["empty-fallback"] !== "REJECT") fail(label + " must reject when nothing is alive");
+  if (group["expected-status"] !== 204) fail(label + " must require HTTP 204");
 }
+
+const auto = byName("⚡ 自动选择");
+assertHealth(auto, "global url-test");
+if (auto.tolerance !== 50) fail("global url-test tolerance must be 50");
 const lb = byName("⚖️ 负载均衡");
-if (!lb.lazy || lb.interval !== 300) fail("global load-balance must be lazy with interval 300");
-const failover = byName("🔁 Fallback");
-if (!failover || failover.type !== "fallback") fail("Fallback group missing or not type fallback");
-if (failover.lazy !== true) fail("Fallback must be lazy until selected");
-if (failover["exclude-type"] !== "DIRECT") fail("Fallback must exclude DIRECT nodes");
+assertHealth(lb, "global load-balance");
+const failover = byName("🔁 故障转移");
+assertHealth(failover, "故障转移");
+if (!failover || failover.type !== "fallback") fail("故障转移 must use kernel type fallback, not a separate failover type");
+if (failover["exclude-type"] !== "DIRECT") fail("故障转移 must exclude DIRECT nodes");
+if (groups.some(g => g && g.name === "🔁 Fallback")) fail("English Fallback name must not remain beside Chinese core groups");
 const youtube = byName("📹 YouTube");
-if (!youtube.proxies.includes("🔁 Fallback")) fail("service groups must offer Fallback");
+if (!youtube.proxies.includes("🔁 故障转移")) fail("service groups must offer 故障转移");
 
 const direct = byName("直连");
 if (!direct.proxies.some(n => String(n).includes("双栈"))) fail("直连 group lost MyClash dual-stack node");
@@ -154,13 +164,13 @@ if (!numberedGroups.some(g => g && g.name === "📉 低倍率")) fail("0.2x node
 if (!numberedGroups.some(g => g && g.name === "🇭🇰 香港节点-自动选择")) fail("region trio lost hidden url-test layer");
 if (!numberedGroups.some(g => g && g.name === "🇭🇰 香港节点-负载均衡")) fail("region trio lost hidden load-balance layer");
 const hkAuto = numberedGroups.find(g => g && g.name === "🇭🇰 香港节点-自动选择");
-if (!hkAuto.lazy || hkAuto.tolerance !== 50 || hkAuto.interval !== 300) {
-  fail("region url-test must be lazy with tolerance 50 and interval 300");
+if (!hkAuto.lazy || hkAuto.tolerance !== 50 || hkAuto.interval !== 600 || hkAuto["max-failed-times"] !== 3) {
+  fail("region url-test must be lazy with tolerance 50, interval 600, and 3 misses");
 }
 const hkLb = numberedGroups.find(g => g && g.name === "🇭🇰 香港节点-负载均衡");
-if (!hkLb.lazy || hkLb.interval !== 300) fail("region load-balance must be lazy");
+if (!hkLb.lazy || hkLb.interval !== 600 || hkLb["empty-fallback"] !== "REJECT") fail("region load-balance must be lazy and reject when empty");
 const lowRate = numberedGroups.find(g => g && g.name === "📉 低倍率-自动选择");
-if (!lowRate || !lowRate.lazy || lowRate.interval !== 300) fail("rate url-test must be lazy");
+if (!lowRate || !lowRate.lazy || lowRate.interval !== 600 || lowRate["empty-fallback"] !== "REJECT") fail("rate url-test must be lazy");
 const numberedEhentai = numberedGroups.find(g => g && g.name === "📖 EHentai");
 if (!numberedEhentai || numberedEhentai["default-selected"] !== "🇺🇸 美国节点") fail("EHentai should prefer US when US nodes exist");
 
@@ -177,4 +187,4 @@ ok("numbered region node tags");
 ok("live MetaCubeX AI providers, no 404 rulesets");
 ok("rate multiplier grouping");
 ok("100+ region three-layer groups");
-ok("lazy health checks and Fallback group");
+ok("lazy health checks aligned with HiClash fallback");

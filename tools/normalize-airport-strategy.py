@@ -24,7 +24,7 @@ MYCLASH_ICON = "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg"
 
 BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
   var LB_NAME = "⚖️ 负载均衡";
-  var FAILOVER_NAME = "🔁 Fallback";
+  var FAILOVER_NAME = "🔁 故障转移";
   var SELECT_NAME = "🚀 节点选择";
   var DEFAULT_NAME = "默认代理";
   var DIRECT_GROUP = "直连";
@@ -49,9 +49,9 @@ BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
   if (typeof rateNames === "undefined" || !rateNames) rateNames = [];
   if (typeof rateGroups === "undefined" || !rateGroups) rateGroups = [];
 
-  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, tolerance: 50, timeout: 3000, "expected-status": 204, "max-failed-times": 2, icon: "''' + ICON + r'''/Auto.png" };
-  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, timeout: 3000, "expected-status": 204, icon: "''' + ICON + r'''/Round_Robin.png" };
-  var failoverGroup = { name: FAILOVER_NAME, type: "fallback", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 300, timeout: 5000, icon: "''' + ICON + r'''/Available.png" };
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 600, tolerance: 50, timeout: 3000, "expected-status": 204, "max-failed-times": 3, "empty-fallback": "REJECT", icon: "''' + ICON + r'''/Auto.png" };
+  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 600, timeout: 3000, "expected-status": 204, "max-failed-times": 3, "empty-fallback": "REJECT", icon: "''' + ICON + r'''/Round_Robin.png" };
+  var failoverGroup = { name: FAILOVER_NAME, type: "fallback", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 600, timeout: 3000, "expected-status": 204, "max-failed-times": 3, "empty-fallback": "REJECT", icon: "''' + ICON + r'''/Available.png" };
   var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames), icon: "''' + ICON + r'''/Static.png" };
   var defaultGroup = { name: DEFAULT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "''' + ICON + r'''/Proxy.png" };
   var directGroup = { name: DIRECT_GROUP, type: "select", proxies: directNames, icon: "''' + ICON + r'''/China.png" };
