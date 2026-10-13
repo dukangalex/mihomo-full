@@ -2,6 +2,7 @@ name: Sync airport overwrite
 on:
   push:
     paths:
+      - '.github/workflows/sync-airport-overwrite.yml'
       - 'template.yaml'
       - 'airport_overwrite.js'
       - 'tools/sync-airport-overwrite.py'
@@ -13,14 +14,21 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+
+# Serialize generated commits; each run starts from the current main branch.
+concurrency:
+  group: airport-sync-main
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          fetch-depth: 1
-      - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: '3.12'
       - name: Install YAML parser

@@ -1,4 +1,4 @@
-# Clash Meta (Mihomo) 配置 · FINAL v7 (Mihomo v1.19.31 · IPv6 Dual-Stack)
+# Clash Meta (Mihomo) 配置 · FINAL v7.1 (Mihomo v1.19.32 · IPv6 Dual-Stack)
 # 目标：中国大陆用户 · 境内全直连 · 境外链式代理（机场入口 + 自建VPS落地）
 # 零泄露（宁可断网也不泄露） · 零误判 · 零风控隐患 · 高隐匿 · 国内流量无感
 # IPv6 全面双栈支持（v6 变更：ipv6=true, dns.ipv6=true,
@@ -153,7 +153,7 @@ tun:
   # reallocates"问题——该问题会导致过期/损坏的 DNS 应答被用于路由分类
   # 判断，后果不是断网而是可能把本该走代理的境外域名误判直连，属于真实
   # 泄露风险而非单纯故障，因此当时关闭 GSO 换正确性优先于吞吐量。
-  # 现状：该问题已在 mihomo v1.19.31 的官方修复列表中确认修复
+  # 现状：该问题已在 mihomo v1.19.30 的官方修复列表中确认修复（v1.19.31/32 均包含）
   # （fix: tun dns hijack sending zero-filled or stale packets when
   # PackBuffer reallocates, PR #3037）。三端（Android/Apple 系/Windows）
   # 核心均已确认升级到 v1.19.31，前提已满足，重新开启 GSO 拿回吞吐量。
@@ -198,6 +198,7 @@ sniffer:
     - "+.ytimg.com"
     - "+.chatgpt.com"
     - "+.claude.ai"
+    - "+.claude.com"
   # Telegram 官方 IP 段跳过嗅探（MTProto 加密协议，TLS 嗅探会失败产生噪音日志）
   skip-dst-address:
     - "91.105.192.0/23"
@@ -809,6 +810,15 @@ proxy-groups:
       - 落地负载均衡
       - 落地手动选择
 
+  - name: "Claude"
+    type: select
+    # Claude / Anthropic 独立出口（防封）：可与「AI服务」选不同落地，
+    # 但建议两者保持同一地区（Datadog 遥测主机两家共用，归 Claude 组）。
+    proxies:
+      - 落地优选出口
+      - 落地负载均衡
+      - 落地手动选择
+
   - name: "国外服务"
     type: select
     proxies:
@@ -868,11 +878,6 @@ hosts:
     - "223.6.6.6"
     - "2400:3200::1"
     - "2400:3200:baba::1"
-  "doh.pub":
-    - "1.12.12.12"
-    - "120.53.53.53"
-    - "2402:4e00::"
-    - "2402:4e00:1::"
   "dns.google":
     - "8.8.8.8"
     - "8.8.4.4"
@@ -897,23 +902,22 @@ dns:
   fake-ip-range: 198.18.0.1/16
   # fake-ip-range6：IPv6 fake-ip 地址池，与 fake-ip-range 配合实现 IPv6 双栈 fake-ip
   fake-ip-range6: fc00::/18
-  fake-ip-cache-size: 4096
+  # [2026-10 内核对齐 v1.19.32] 以下字段已按 mihomo 源码 config.RawDNS 核对：
+  # 原来的 fake-ip-cache-size / ttl / min-ttl / max-ttl / cache-size /
+  # disable-qtype-65 在 mihomo 中都不存在（来自其他内核/客户端的写法），
+  # 一直被内核静默忽略、从未生效，注释里描述的"min-ttl 60s 跟随 CDN 调度"
+  # 等效果实际并不存在。已删除这些死字段，只保留 mihomo 真正支持的：
+  #   cache-max-size（原 cache-size 的正确字段名）、cache-algorithm、prefer-h3。
+  # mihomo 的 DNS 缓存 TTL 直接遵循上游应答，没有 min/max TTL 钳制选项；
+  # 也没有屏蔽 HTTPS(type 65) 记录的开关，不要再把这些字段加回来。
   # fake-ip 持久化只由 profile.store-fake-ip 一个开关控制（见文件头部 profile 段），
   # 原来这里的 dns.fake-ip-persist 字段实测不生效、且与 profile.store-fake-ip:false
   # 相矛盾，已删除避免误导——不要在这里重新加回来。
-  ttl: 600
-  # "国内流量无感"优化：300s→60s
-  # 国内CDN（短视频/直播/下载）常用30-60s短TTL做节点负载均衡和故障切换
-  # min-ttl过高会让 mihomo 缓存旧节点IP超过CDN调度周期，
-  # 60s 在"减少DNS查询频率"与"及时跟随CDN调度"间取得平衡
-  min-ttl: 60
-  max-ttl: 3600
-  cache-size: 8192
+  cache-max-size: 8192
   cache-algorithm: arc
   prefer-h3: false
   use-hosts: true              # 开启后 hosts 预解析生效（消除冷启动循环依赖）
   use-system-hosts: false
-  disable-qtype-65: true
 
   # fake-ip-filter rule 模式
   # 顺序：mrs 规则集（最快）→ geosite → 手工精细条目 → MATCH 兜底
@@ -983,6 +987,9 @@ dns:
     # 广告 → fake-ip（规则层 REJECT-DROP，不实际连接）
     - RULE-SET,category-ads-all,fake-ip
     # 国内域名 → real-ip（mrs 最快）
+    # 防封闭环服务先走 fake-ip：tiktokrow-cdn.com 等被 cn 列表误收录的子域，
+    # 不再由国内 DNS 解析出真实 IP（国内解析结果会暴露查询，也可能拿到境内调度节点）
+    - RULE-SET,tiktok,fake-ip
     - RULE-SET,geolocation-cn,real-ip
     - RULE-SET,cn,real-ip
     - RULE-SET,bilibili,real-ip        # B站 CDN 需真实 IP 调度
@@ -1406,6 +1413,10 @@ dns:
     "+.oaiusercontent.com":  *FOREIGN_AI
     "+.anthropic.com":       *FOREIGN_AI
     "+.claude.ai":           *FOREIGN_AI
+    "+.claude.com":          *FOREIGN_AI
+    "+.clau.de":             *FOREIGN_AI
+    "+.claudeusercontent.com": *FOREIGN_AI
+    "+.claudemcpclient.com": *FOREIGN_AI
     "+.gemini.google.com":   *FOREIGN_AI
     "+.aistudio.google.com": *FOREIGN_AI
     # 兜底境外
@@ -1492,19 +1503,56 @@ sub-rules:
     - IP-CIDR,140.207.0.0/16,DIRECT,no-resolve
     - RULE-SET,cn-ip,DIRECT,no-resolve
     - GEOIP,CN,DIRECT,no-resolve
-    # IPv6 中国大陆 IP 直连
-    - RULE-SET,cn-ip,DIRECT,no-resolve
+    # cn-ip 规则集本身同时包含 IPv4/IPv6 段，上面一条已覆盖 IPv6 中国大陆 IP，
+    # 原来这里重复的第二条 RULE-SET,cn-ip 已删除。
     - IP-CIDR6,fe80::/10,DIRECT,no-resolve     # IPv6 链路本地
     - IP-CIDR6,fc00::/7,DIRECT,no-resolve       # IPv6 ULA（含 fake-ip-range6，由 fake-ip-filter 处理例外）
 
 rules:
-  - DOMAIN-SUFFIX,claude.ai,AI服务
-  - DOMAIN-SUFFIX,anthropic.com,AI服务
+  # OpenAI 专属的第三方租户子域：必须排在下面 Claude 的 sentry.io 后缀之前，
+  # 否则 ChatGPT 的错误上报会被 Claude 组截走、与 ChatGPT 出口不一致。
+  # （browser-intake-datadoghq.com 是 OpenAI 与 Claude 共用的同一主机，
+  #   只能归一个组：Claude 和 AI Services 建议选同一地区。）
+  - DOMAIN,o33249.ingest.sentry.io,AI服务
+  # ── Claude / Anthropic 防封分流（最先匹配，保证整站所有请求同一出口）──
+  # 同一会话里页面、API、登录、风控、遥测、客服 widget 必须从同一个出口 IP
+  # 发出；任何一个子请求走了别的出口（或直连暴露国内 IP）都会被风控判定为
+  # 异常环境。机场模式下这些规则会被映射到独立的 "🤖 Claude" 策略组；
+  # 链式模式下统一进入 AI服务。
+  # 注意：原始 Surge 版本里的 DOMAIN-KEYWORD,datadog / DOMAIN-KEYWORD,sift
+  # 太宽（会误伤任何包含这两个子串的国内域名），这里收窄为 DOMAIN-SUFFIX。
+  - DOMAIN-SUFFIX,claude.ai,Claude
+  - DOMAIN-SUFFIX,anthropic.com,Claude
+  - DOMAIN-SUFFIX,claude.com,Claude
+  - DOMAIN-SUFFIX,clau.de,Claude
+  - DOMAIN-SUFFIX,claudemcpclient.com,Claude
+  - DOMAIN-SUFFIX,claudeusercontent.com,Claude
+  - DOMAIN,servd-anthropic-website.b-cdn.net,Claude      # 官网静态资源 CDN
+  - DOMAIN,anthropic.com.cdn.cloudflare.net,Claude       # Cloudflare CNAME
+  - DOMAIN,anthropic.auth0.com,Claude                    # 登录认证
+  - DOMAIN,anthropic-com.ghost.io,Claude                 # 博客内容
+  - DOMAIN-SUFFIX,sentry.io,Claude                       # 错误上报
+  - DOMAIN-SUFFIX,statsigapi.net,Claude                  # 功能开关/实验
+  - DOMAIN-SUFFIX,datadoghq.com,Claude                   # 浏览器遥测（含 browser-intake-*）
+  - DOMAIN-SUFFIX,browser-intake-datadoghq.com,Claude
+  - DOMAIN-SUFFIX,sift.com,Claude                        # Sift 反欺诈风控
+  - DOMAIN-SUFFIX,siftscience.com,Claude
+  - DOMAIN-SUFFIX,intercom.io,Claude                     # 客服 widget
+  - DOMAIN-SUFFIX,intercomcdn.com,Claude
+  - DOMAIN,cdn.usefathom.com,Claude                      # 访问统计
+  # Anthropic 自有地址段（ARIN 登记：160.79.104.0/21、2607:6bc0::/32，AS399358）
+  - IP-CIDR,160.79.104.0/21,Claude,no-resolve
+  - IP-CIDR6,2607:6bc0::/32,Claude,no-resolve
   - DOMAIN-SUFFIX,gemini.google.com,AI服务
   - DOMAIN-SUFFIX,aistudio.google.com,AI服务
 
   # P0. TUN 私有 IP 快速通道
-  - AND,((IN-TYPE,TUN),(RULE-SET,private-ip)),DIRECT
+  # [2026-10] 必须带 no-resolve：AND 内的 ipcidr 规则集没有 no-resolve 时，
+  # 每一条 TUN 域名连接都会在规则匹配的第一步被强制做一次本地 DNS 解析，
+  # 抵消 fake-ip 的意义、给所有新连接增加一次 DoH 往返，并让后续所有
+  # no-resolve 的 IP 规则提前拿到解析结果。私有地址域名由后面的
+  # DOMAIN-SUFFIX,lan/local 等规则和 RULE-SET,private-ip 覆盖。
+  - AND,((IN-TYPE,TUN),(RULE-SET,private-ip,no-resolve)),DIRECT
 
   # P0.5. STUN/TURN 端口无条件封堵（必须在任何 IP-CIDR/cn-ip 强制直连之前）
   # 起因：2026-09 用户用 IPPure WebRTC 泄露测试实测发现，B站/芒果TV/小米WiFi
@@ -1674,8 +1722,8 @@ rules:
   - DOMAIN-SUFFIX,mobile.events.data.microsoft.com,国外服务  # 微软遥测
   - DOMAIN-SUFFIX,connect.facebook.net,国外服务  # Facebook SDK
   # ── Anthropic CDN 被误杀 ────────────────────────────────────────
-  - DOMAIN-SUFFIX,a-cdn.anthropic.com,AI服务
-  - DOMAIN-SUFFIX,assets-proxy.anthropic.com,AI服务
+  - DOMAIN-SUFFIX,a-cdn.anthropic.com,Claude
+  - DOMAIN-SUFFIX,assets-proxy.anthropic.com,Claude
   # ── 微软 Bing 被误杀 ────────────────────────────────────────────
   - DOMAIN-SUFFIX,bing.com,国外服务                 # Bing 搜索（c.bing.com 被误杀）
   # ── 三星推送被误杀 ──────────────────────────────────────────────
@@ -1684,7 +1732,6 @@ rules:
   - DOMAIN-SUFFIX,crashlytics.com,国外服务          # Firebase Crashlytics（firebase-settings.crashlytics.com）
   - DOMAIN-SUFFIX,firebase.io,国外服务              # Firebase 服务域
   # ── 监控/分析工具 ───────────────────────────────────────────────
-  - DOMAIN,browser-intake-us5-datadoghq.com,国外服务
 
   # P2. 广告 / 安全威胁拦截
   - RULE-SET,sukka-phishing,REJECT-DROP    # 钓鱼域名（13万条）
@@ -1794,6 +1841,36 @@ rules:
   - DOMAIN-SUFFIX,recaptcha.net,国外服务
   - DOMAIN,recaptcha.google.com,国外服务
 
+  # P8.6 防封闭环：高风控服务整组前置（沿用 Claude 防封思路）
+  # 原理：同一个服务的页面、API、CDN、登录、风控、遥测必须从同一个出口发出。
+  # 之前这些规则集排在 P9 国内子规则之后，任何被 geosite:cn / geolocation-cn
+  # 误收录的子域名都会先被判直连，暴露国内 IP，或被前面更宽的组截走：
+  #   - tiktokrow-cdn.com 实测在 cn 列表内 → TikTok CDN 直连，触发地区风控
+  #   - Copilot 端点被 P13 microsoft 规则集先截走 → 与 AI 组出口不一致
+  # 因此 AI / TikTok / Netflix / 加密货币交易所整组前置到国内子规则之前。
+  # 仍在 P0–P8 安全规则（私网、STUN/QUIC 封堵、DNS 劫持）之后，安全基线不受影响。
+  - RULE-SET,google-gemini,AI服务
+  - RULE-SET,anthropic,Claude
+  - RULE-SET,openai,AI服务
+  - DOMAIN,copilot.microsoft.com,AI服务
+  - DOMAIN,sydney.bing.com,AI服务
+  - DOMAIN,edgeservices.bing.com,AI服务
+  - DOMAIN-SUFFIX,copilot.cloud.microsoft,AI服务
+  - RULE-SET,category-ai-!cn,AI服务
+  - RULE-SET,tiktok,流媒体
+  - RULE-SET,netflix,流媒体
+  - RULE-SET,netflix-ip,流媒体,no-resolve
+  - RULE-SET,cryptocurrency,国外服务   # 交易所 KYC 风控：前端、API、静态资源同出口
+  - DOMAIN-SUFFIX,binance.info,国外服务
+  - DOMAIN-SUFFIX,bitget.com,国外服务
+  - DOMAIN-SUFFIX,mexc.com,国外服务
+  - DOMAIN-SUFFIX,kucoin.com,国外服务
+  - DOMAIN-SUFFIX,gate.io,国外服务
+  - DOMAIN-SUFFIX,gate.com,国外服务
+  - DOMAIN-SUFFIX,htx.com,国外服务
+  - DOMAIN-SUFFIX,coinbase.com,国外服务
+  - DOMAIN-SUFFIX,kraken.com,国外服务
+
   # P9. TCP → 域名子规则
   - SUB-RULE,(NETWORK,tcp),DOMESTIC_DOMAIN
 
@@ -1883,22 +1960,13 @@ rules:
   - RULE-SET,apple,国外服务
   - RULE-SET,microsoft,国外服务
 
-  # P14. AI 服务
-  - RULE-SET,google-gemini,AI服务
-  - RULE-SET,anthropic,AI服务
-  - RULE-SET,openai,AI服务
-  - RULE-SET,category-ai-!cn,AI服务
-
-  # P15. 流媒体
-  - RULE-SET,netflix,流媒体
-  - RULE-SET,netflix-ip,流媒体,no-resolve
+  # P15. 流媒体（Netflix / TikTok 已提前到 P8.6 防封闭环）
   - RULE-SET,hulu,流媒体
   - RULE-SET,disney,流媒体
   - RULE-SET,hbo,流媒体
   - RULE-SET,amazon,流媒体
   - RULE-SET,bahamut,流媒体
   - RULE-SET,youtube,流媒体
-  - RULE-SET,tiktok,流媒体
   - RULE-SET,biliintl,流媒体
   - RULE-SET,abema,流媒体            # 日本流媒体 Abema
   - RULE-SET,bbc,流媒体              # 欧洲流媒体 BBC
@@ -1942,7 +2010,6 @@ rules:
   - RULE-SET,dropbox,国外服务
   - RULE-SET,onedrive,国外服务
   - RULE-SET,pikpak,国外服务
-  - RULE-SET,cryptocurrency,国外服务   # 加密货币交易所(含OKX)，之前完全靠P20兜底覆盖，无专门规则
 
   # P19. 学术
   - RULE-SET,category-scholar-!cn,国外服务

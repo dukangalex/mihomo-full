@@ -75,12 +75,21 @@ grep -qE '^  auto-detect-interface:[[:space:]]*true' "$CONFIG" || fail "TUN auto
 grep -qE '^  gso:[[:space:]]*true' "$CONFIG" || fail "TUN gso 必须为 true"
 # Mihomo v1.19.31 已不再接受早期 PATCH 版中使用的 route-only 字段；
 # 这里必须检查“旧字段不存在”，而不是继续要求它存在。
-for stale in 'inet4-route-only' 'inet6-route' 'query-v6' 'fast-queries'; do
+for stale in 'inet4-route-only' 'inet6-route' 'query-v6' 'fast-queries' 'global-client-fingerprint'; do
   if grep -qE "(^|[[:space:]])${stale}:" "$CONFIG"; then
-    fail "最终配置仍包含 Mihomo v1.19.31 已移除/不应使用的字段：${stale}"
+    fail "最终配置仍包含 Mihomo 已移除/不应使用的字段：${stale}"
   fi
 done
-ok "TUN 字段与 Mihomo v1.19.31 对齐，无历史废弃字段"
+ok "TUN 字段与 Mihomo v1.19.32 对齐，无历史废弃字段"
+# mihomo 会静默忽略未知字段，下列 DNS 字段在 config.RawDNS 中不存在，
+# 写了也从不生效，只会让人误以为 TTL/缓存/HTTPS 记录被调整过。
+for dead in 'fake-ip-cache-size' 'min-ttl' 'max-ttl' 'disable-qtype-65' 'cache-size' 'ttl'; do
+  if grep -qE "^  ${dead}:" "$CONFIG"; then
+    fail "dns 段包含 mihomo 不支持、会被静默忽略的字段：${dead}"
+  fi
+done
+grep -qE '^  cache-max-size:[[:space:]]*[0-9]+' "$CONFIG" || fail "dns 缺少 cache-max-size"
+ok "DNS 字段均为 mihomo 实际支持的字段"
 grep -qF 'IP-CIDR6,ff00::/8,REJECT-DROP,no-resolve' "$CONFIG" || fail "IPv6 组播封堵规则缺失"
 grep -qF 'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外 QUIC(UDP/443) 封堵缺失"
 grep -qF 'AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外明文 TCP/53 封堵缺失"

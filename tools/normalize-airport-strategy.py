@@ -77,6 +77,8 @@ BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
   var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "''' + ICON + r'''/Advertising.png" };
   var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "''' + ICON + r'''/Bypass.png" };
   var aiGroup = serviceGroup("💬 AI Services", "''' + ICON + r'''/ChatGPT.png", "🇺🇸 美国节点", false, false);
+  // Claude 独立出口：与其他 AI 分开选节点，整站（含登录/风控/遥测）固定同一出口，默认美国。
+  var claudeGroup = serviceGroup("🤖 Claude", "https://fastly.jsdelivr.net/npm/@lobehub/icons-static-png@latest/light/claude-color.png", "🇺🇸 美国节点", false, false);
   var fcmGroup = serviceGroup("🔔 FCM", "''' + ICON + r'''/Google_Search.png", DIRECT_GROUP, true, true);
   var bilibiliGroup = serviceGroup("📺 Bilibili", "''' + ICON + r'''/bilibili.png", DIRECT_GROUP, true, true);
   var youtubeGroup = serviceGroup("📹 YouTube", "''' + ICON + r'''/YouTube.png", "", false, false);
@@ -97,7 +99,7 @@ BLOCK = r'''  var AUTO_NAME = "⚡ 自动选择";
   var ehentaiGroup = serviceGroup("📖 EHentai", "''' + MYCLASH_ICON + r'''/Ehentai.svg", "🇺🇸 美国节点", true, false);
   var fallbackGroup = { name: "🐟 Final", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "''' + ICON + r'''/Stack.png" };
 
-  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, failoverGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
+  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, failoverGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, claudeGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
 
 '''
 
