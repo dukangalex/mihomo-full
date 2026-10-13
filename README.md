@@ -215,8 +215,11 @@ mff
 ### 2.1 效果
 
 - 不需要 VPS，不需要 v2ray-agent，不需要域名和证书。
-- 机场原有的节点、地区分组、自动测速、负载均衡等全部保留。
-- 额外获得：完整的规则集（含本次新增的微信规则集）、DNS 防泄漏、Sniffer、银行/微信直连保护、STUN/远控默认拦截等本项目的安全加固能力。
+- 机场节点保留。地区按节点名自动识别，有节点才建组，每组三层：隐藏自动选择、隐藏负载均衡、对外手动选择。
+- 核心出口：默认代理、节点选择、自动选择、负载均衡、故障转移。故障转移就是内核的 `fallback`，没有另一种叫 Failover 的策略。它按订阅顺序用第一个还活着的节点，连续失败 3 次才换；更靠前的节点恢复后会切回去。默认出口仍是自动选择。
+- 服务组使用英文名，和 FCM、TikTok 一致：Bilibili、YouTube、Google、Telegram、Microsoft、Apple、Claude 等。Bilibili 和 FCM 默认直连，需要代理时再手动切。链式模板仍把 B 站钉在底层直连，国内视频不绕落地。
+- 健康检查没选中不测，间隔 600 秒，只认 `generate_204` 的 204。一个可用节点都没有时拒绝，而不是漏成直连。
+- 额外获得：完整的规则集（含微信规则集）、DNS 防泄漏、Sniffer、银行/微信直连保护、STUN/远控例外等安全加固。行为细节见 [`docs/AIRPORT_MODE_POLICY.md`](./docs/AIRPORT_MODE_POLICY.md)。
 
 ### 2.2 使用方法
 
@@ -242,7 +245,7 @@ https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.
 ### 2.4 日常维护
 
 - 更换机场：直接在客户端里改订阅链接即可，不涉及本项目。
-- 更新覆写脚本：多数客户端会按你设置的间隔自动重新拉取 `airport_overwrite.js`；也可以在客户端里手动"刷新订阅"。
+- 更新覆写脚本：多数客户端会按你设置的间隔自动重新拉取 `airport_overwrite.js`；也可以在客户端里手动「刷新订阅」或「更新覆写」。策略组有变更时，请手动刷新一次，否则界面还是旧缓存。
 - 规则集、DNS 等安全加固内容随本仓库更新；仓库有更新时，客户端下次拉取覆写脚本会自动生效，不需要手动改动。
 
 ---
@@ -770,6 +773,7 @@ mff
 - [Cloudflare EdgeTunnel (cmliu/edgetunnel)](https://github.com/cmliu/edgetunnel) — 文档中引用的 Cloudflare 免费机场进阶玩法
 - [Cloudflare Country-Specific IP Filter](https://github.com/alienwaregf/Cloudflare-Country-Specific-IP-Filter) — 文档中引用的 Cloudflare 优选 IP 进阶玩法
 - 本项目部分策略组设计、规则组织方式以及机场覆写思路参考并借鉴了 [MyClash](https://github.com/AIsouler/MyClash)。感谢 [AIsouler/MyClash](https://github.com/AIsouler/MyClash) 项目的开源实践与思路贡献。本项目在此基础上根据自身的链式代理、机场覆写和安全策略需求进行调整与维护。
+- 机场模式的故障转移健康检查（lazy、600 秒、连续失败 3 次、空组拒绝）对齐 [HiClash](https://github.com/dukangalex/HiClash)。测速地址仍用本仓库模板的 `generate_204`，只认 204。
 - 规则集与社区贡献者（广告/地理/防钓鱼等公开规则源）
 - 所有提交 Issue、建议与测试反馈的用户
 
