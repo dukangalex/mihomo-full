@@ -439,6 +439,25 @@ def sync_runtime_maps(text):
         text = text[:i] + head + body + text[j:]
     return text
 
+def remap_dns_proxy(value):
+    """Point chain DNS exits at airport groups.
+
+    The chain template binds foreign DoH to #国外服务. Airport mode has no
+    such group; 默认代理 is the same exit. respect-rules stays false so the
+    lookup does not re-enter the rule tree. #RULES is a kernel keyword.
+    """
+    if isinstance(value, str):
+        for src, dst in GROUP_TARGET.items():
+            suffix = "#" + src
+            if value.endswith(suffix):
+                return value[: -len(suffix)] + "#" + dst
+        return value
+    if isinstance(value, list):
+        return [remap_dns_proxy(item) for item in value]
+    if isinstance(value, dict):
+        return {key: remap_dns_proxy(item) for key, item in value.items()}
+    return value
+
 def transform(template,airport):
     result=enforce_full_overwrite_contract(airport)
     for key in COMMON_OBJECTS:
@@ -447,6 +466,8 @@ def transform(template,airport):
             result=upsert_object(result, key, remap_airport_rules(template[key]))
         elif key == "sub-rules":
             result=upsert_object(result, key, tune_sub_rules(template[key]))
+        elif key == "dns":
+            result=upsert_object(result, key, remap_dns_proxy(template[key]))
         else:
             result=upsert_object(result,key,template[key])
     for key in COMMON_SCALARS:

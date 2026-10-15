@@ -240,7 +240,7 @@ https://raw.githubusercontent.com/dukangalex/mihomo-full/main/airport_overwrite.
 | A. 链式 | 需要 | 自建 VPS 落地 | 想要固定且可控的落地出口 IP，或对机场落地质量不放心 |
 | B. 仅机场 | 不需要 | 机场自身节点 | 不想折腾 VPS，直接信任机场的落地质量 |
 
-两种方案的安全规则、DNS、Sniffer 等公共行为保持一致（详见 [`docs/BEHAVIOR_POLICY.md`](./docs/BEHAVIOR_POLICY.md)），只有节点来源和策略组 UI 不同。
+两种方案的安全规则和 Sniffer 保持一致。DNS 解析器也相同，但链式模式的境外 DoH 走「国外服务」，机场模式没有这个组，同步时改写成「默认代理」。详见 [`docs/BEHAVIOR_POLICY.md`](./docs/BEHAVIOR_POLICY.md) 和 [`docs/AIRPORT_MODE_POLICY.md`](./docs/AIRPORT_MODE_POLICY.md)。
 
 ### 2.4 日常维护
 

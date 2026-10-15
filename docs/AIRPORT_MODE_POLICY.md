@@ -72,6 +72,8 @@ Mihomo 没有 `type: failover`。故障转移的内核类型就是 `fallback`。
 
 不照搬 HiClash 的部分：Bilibili 仍是可选组且默认直连；地区保持三层；远控工具保留直连例外；不新增规则集；不引入链式代理。默认代理的第一项仍是自动选择。
 
+链式主配置的境外 DoH 绑定 `国外服务`，并且 `respect-rules: false`，避免 DNS 查询钻回规则树。机场同步把这个出口改写成 `默认代理`，因为机场模式没有 `国外服务` 组。PCDN 的 `mcdn.bilivideo.com` / `mcdn.bilivideo.cn` 继续强制 real-ip，否则 hosts 黑洞会被 fake-ip 吃掉。
+
 ## 同步安全规则
 
 `tools/sync-airport-overwrite.py` 只同步公共行为，禁止：
