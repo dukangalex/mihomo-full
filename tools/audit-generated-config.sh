@@ -39,7 +39,7 @@ ok "链式：机场入口 → 前置优选入口 → 落地 VPS"
 
 # DIRECT 只能存在于批准的局部例外，不得成为通用出口。
 grep -q '^  - name: "🛑 广告拦截"$' "$CONFIG" || fail "缺少广告拦截策略组"
-grep -qF 'proxies: ["REJECT-DROP","REJECT", "DIRECT"]' "$CONFIG" || fail "广告拦截缺少 DIRECT 例外"
+grep -qE 'proxies:[[:space:]]*\[[[:space:]]*"REJECT-DROP"[[:space:]]*,[[:space:]]*"REJECT"[[:space:]]*,[[:space:]]*"DIRECT"[[:space:]]*\]' "$CONFIG" || fail "广告拦截缺少 DIRECT 例外"
 grep -qF 'RULE-SET,category-ads-all,🛑 广告拦截' "$CONFIG" || fail "广告规则未进入广告策略组"
 grep -q '^  - name: "远控工具"$' "$CONFIG" || fail "缺少远控工具策略组"
 if grep -q 'geosite:category-ads-all.*rcode://name_error' "$CONFIG"; then fail "广告规则仍在 DNS 层强制 NXDOMAIN，DIRECT 例外无法生效"; fi
@@ -56,11 +56,23 @@ ok "国内服务：规则集/IP 层 DIRECT"
 grep -qF 'proxy-server-nameserver:' "$CONFIG" || fail "缺少 proxy-server-nameserver"
 grep -qF 'direct-nameserver:' "$CONFIG" || fail "缺少 direct-nameserver"
 grep -qF 'direct-nameserver-follow-policy: true' "$CONFIG" || fail "缺少 direct-nameserver-follow-policy: true"
-grep -qF 'respect-rules: true' "$CONFIG" || fail "DNS respect-rules 未开启"
+grep -qF 'respect-rules: false' "$CONFIG" || fail "DNS respect-rules 必须关闭，避免查询钻回规则树"
 grep -qF 'https://doh.pub/dns-query' "$CONFIG" || fail "缺少腾讯 DNSPod DoH"
 grep -qF 'https://223.5.5.5/dns-query' "$CONFIG" || fail "缺少阿里公共 DNS IP DoH"
-grep -qF 'https://dns.google/dns-query#RULES' "$CONFIG" || fail "缺少境外 DNS Google DoH#RULES"
-grep -qF 'https://1.1.1.1/dns-query#RULES' "$CONFIG" || fail "缺少境外 DNS Cloudflare DoH#RULES"
+grep -qF 'https://dns.google/dns-query#国外服务' "$CONFIG" || fail "缺少境外 DNS Google DoH#国外服务"
+grep -qF 'https://1.1.1.1/dns-query#国外服务' "$CONFIG" || fail "缺少境外 DNS Cloudflare DoH#国外服务"
+# 只禁止把它当作引导/直连解析器。hosts 里给 cloudflare-dns.com 钉 anycast 地址仍然允许。
+if awk '
+  /^  [A-Za-z0-9_-]+:/ {
+    key=$1
+    gsub(/:/, "", key)
+    active = (key=="default-nameserver" || key=="direct-nameserver" || key=="nameserver" || key=="proxy-server-nameserver")
+  }
+  active && /2606:4700:4700::1111/ { found=1 }
+  END { exit !found }
+' "$CONFIG"; then fail "引导 DNS 不得使用 Cloudflare IPv6，避免国内解析被抢答"; fi
+if grep -qF 'IP-CIDR6,fc00::/7,DIRECT' "$CONFIG"; then fail "fc00::/7 会吞掉 IPv6 fake-ip 地址池"; fi
+grep -qF 'IP-CIDR6,fd00::/8,DIRECT,no-resolve' "$CONFIG" || fail "缺少收窄后的 IPv6 ULA 直连"
 grep -qF 'tls://223.5.5.5' "$CONFIG" || fail "缺少加密 DNS bootstrap 223.5.5.5"
 grep -qF 'tls://223.6.6.6' "$CONFIG" || fail "缺少加密 DNS bootstrap 223.6.6.6"
 grep -qF 'nameserver-policy:' "$CONFIG" || fail "缺少 nameserver-policy"
@@ -91,11 +103,11 @@ done
 grep -qE '^  cache-max-size:[[:space:]]*[0-9]+' "$CONFIG" || fail "dns 缺少 cache-max-size"
 ok "DNS 字段均为 mihomo 实际支持的字段"
 grep -qF 'IP-CIDR6,ff00::/8,REJECT-DROP,no-resolve' "$CONFIG" || fail "IPv6 组播封堵规则缺失"
-grep -qF 'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外 QUIC(UDP/443) 封堵缺失"
-grep -qF 'AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外明文 TCP/53 封堵缺失"
-grep -qF 'AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外明文 UDP/53 封堵缺失"
-grep -qF 'AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外明文 TCP/853 封堵缺失"
-grep -qF 'AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip)))),REJECT-DROP' "$CONFIG" || fail "境外明文 UDP/853 封堵缺失"
+grep -qF 'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((RULE-SET,cn-ip,no-resolve)))),REJECT-DROP' "$CONFIG" || fail "境外 QUIC(UDP/443) 封堵缺失"
+grep -qF 'AND,((NETWORK,TCP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip,no-resolve)))),REJECT-DROP' "$CONFIG" || fail "境外明文 TCP/53 封堵缺失"
+grep -qF 'AND,((NETWORK,UDP),(DST-PORT,53),(NOT,((RULE-SET,cn-ip,no-resolve)))),REJECT-DROP' "$CONFIG" || fail "境外明文 UDP/53 封堵缺失"
+grep -qF 'AND,((NETWORK,TCP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip,no-resolve)))),REJECT-DROP' "$CONFIG" || fail "境外明文 TCP/853 封堵缺失"
+grep -qF 'AND,((NETWORK,UDP),(DST-PORT,853),(NOT,((RULE-SET,cn-ip,no-resolve)))),REJECT-DROP' "$CONFIG" || fail "境外明文 UDP/853 封堵缺失"
 ok "TUN / IPv6 / QUIC / 明文 DNS 封堵基线通过"
 
 # 最终 MATCH 必须唯一存在并指向链式出口。

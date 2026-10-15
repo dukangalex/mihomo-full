@@ -5,6 +5,7 @@ The public template is the single source of truth for common behavior.
 Only chain-specific provider/dialer/landing behavior may intentionally differ.
 """
 from __future__ import annotations
+import importlib.util
 import json
 import re
 import shutil
@@ -130,16 +131,27 @@ if dns.get("direct-nameserver-follow-policy") is not True:
 if "nameserver-policy" not in dns:
     errors.append("DNS missing nameserver-policy")
 hosts = template.get("hosts") or {}
-if "https://dns.google/dns-query#RULES" in (dns.get("nameserver") or []):
+nameserver_text = " ".join(str(x) for x in (dns.get("nameserver") or []))
+if "dns.google" in nameserver_text:
     # The IPv4 pins are the required minimum; an IPv6-era config may additionally
     # pin the AAAA addresses, which is a valid strengthening, not incorrect pinning.
     pinned = hosts.get("dns.google")
     if not isinstance(pinned, list) or not all(ip in pinned for ip in ("8.8.8.8", "8.8.4.4")):
         errors.append("dns.google DoH is configured but hosts pinning is missing or incorrect")
 for key, value in policy.items():
+    # Domestic policies use doh.pub. They may be a subset of direct-nameserver:
+    # v7.2's CN_DNS intentionally omits the extra Aliyun IPv6 resolver that
+    # proxy-server-nameserver carries. They must not introduce a foreign DoH
+    # or a proxy-group fragment (#国外服务 / #RULES / #默认代理).
     if isinstance(value, list) and any(isinstance(x, str) and "doh.pub/dns-query" in x for x in value):
-        if value != proxy_dns and "#RULES" not in " ".join(map(str, value)):
-            errors.append(f"nameserver-policy {key!r} drifts from template proxy-server-nameserver")
+        direct_set = set(direct_dns) if isinstance(direct_dns, list) else set()
+        bad = [x for x in value if not isinstance(x, str) or x not in direct_set or "#" in x]
+        if bad or not value:
+            errors.append(f"nameserver-policy {key!r} must stay a domestic subset of direct-nameserver")
+    elif isinstance(value, list) and any(isinstance(x, str) and "#" in x for x in value):
+        joined = " ".join(str(x) for x in value)
+        if "#RULES" in joined or "#国外服务" not in joined:
+            errors.append(f"nameserver-policy {key!r} foreign DoH must bind #国外服务, not #RULES")
 
 def extract_json_assignment(text: str, marker: str):
     m = re.search(r'config\["' + re.escape(marker) + r'"\]\s*=\s*', text)
@@ -181,7 +193,13 @@ def canonicalize_airport_rules(rules):
 
 for key in ("tun", "dns", "sniffer", "hosts", "rule-providers"):
     try:
-        if extract_json_assignment(airport, key) != template.get(key): errors.append(f"airport common object drift: {key}")
+        expected = template.get(key)
+        if key == "dns":
+            spec = importlib.util.spec_from_file_location("airport_sync", ROOT / "tools/sync-airport-overwrite.py")
+            sync_mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(sync_mod)
+            expected = sync_mod.remap_dns_proxy(expected)
+        if extract_json_assignment(airport, key) != expected: errors.append(f"airport common object drift: {key}")
     except ValueError as exc: errors.append(str(exc))
 try:
     airport_sub = extract_json_assignment(airport, "sub-rules")

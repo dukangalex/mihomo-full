@@ -89,6 +89,16 @@ if ((output["sub-rules"] || {}).DOMESTIC_DOMAIN && output["sub-rules"].DOMESTIC_
   fail("Bilibili still sits in DOMESTIC_DOMAIN bottom-layer DIRECT");
 }
 if (!output.rules.some(rule => rule === "PROCESS-NAME-WILDCARD,*AnyDesk*,🔧 远控工具")) fail("AnyDesk is not routed to the remote-control group");
+if (output.rules.some(rule => rule.indexOf("IP-CIDR6,fc00::/7,DIRECT") === 0)) fail("fc00::/7 must not capture the IPv6 fake-ip pool");
+if (!output.rules.some(rule => rule === "IP-CIDR6,fd00::/8,DIRECT,no-resolve")) fail("ULA direct must be narrowed to fd00::/8");
+if (output.rules.some(rule => rule === "RULE-SET,cn-ip,DIRECT,no-resolve")) fail("top-level cn-ip DIRECT would steal the AWS push ranges");
+const dns = output.dns || {};
+if (dns["respect-rules"] !== false) fail("DNS respect-rules must stay false");
+const dnsDump = JSON.stringify(dns);
+if (dnsDump.indexOf("#国外服务") >= 0 || dnsDump.indexOf("#RULES") >= 0) fail("airport DNS must not reference a chain-only group or re-enter rules");
+if (dnsDump.indexOf("https://dns.google/dns-query#默认代理") < 0) fail("foreign DoH must leave through 默认代理");
+const ffi = dns["fake-ip-filter"] || [];
+if (ffi.indexOf("DOMAIN-SUFFIX,mcdn.bilivideo.cn,real-ip") < 0) fail("Bilibili PCDN must stay real-ip so the hosts blackhole works");
 if (groups.some(g => g && ["🔰 节点选择", "🤖 AI服务", "🌍 国外服务"].includes(g.name))) fail("legacy strategy group remains");
 
 const byName = name => groups.find(g => g && g.name === name);
