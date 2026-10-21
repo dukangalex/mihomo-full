@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /* Regression test for airport_overwrite.js strategy and overwrite isolation. */
-const fs = require("fs");
-const vm = require("vm");
+(async () => {
+const fs = await import("node:fs");
+const vm = await import("node:vm");
 
 const source = fs.readFileSync("airport_overwrite.js", "utf8");
 const sandbox = {};
@@ -241,3 +242,4 @@ ok("170+ region three-layer groups, kernel/JS regex parity, no English-word fals
 ok("dedicated Claude group with Anthropic domains and IP ranges");
 ok("anti-ban closed loop: AI/TikTok/Netflix/Crypto precede domestic sub-rules");
 ok("lazy health checks aligned with HiClash fallback");
+})().catch(err => { console.error(err); process.exit(1); });

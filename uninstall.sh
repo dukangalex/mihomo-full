@@ -85,6 +85,12 @@ echo "  - $BIN_LINK（仅因已验证指向 Mihomo Full）"
 (( MF_OWNED )) && echo "  - $MF_LINK（仅因已验证指向 Mihomo Full）"
 (( GO_OWNED )) && echo "  - $GO_LINK（仅因已验证指向 Mihomo Full，历史遗留快捷入口）"
 if [[ -e "$SERVICE_FILE" ]]; then echo "  - $BOT_SERVICE（仅因已验证属于本项目）"; fi
+SNIPPET_FILE="/etc/nginx/snippets/mihomo-full-assets.conf"
+SNIPPET_OWNED=0
+if [[ -f "$SNIPPET_FILE" && ! -L "$SNIPPET_FILE" ]] && grep -Fq "# BEGIN mihomo-full managed assets" "$SNIPPET_FILE" 2>/dev/null; then
+  SNIPPET_OWNED=1
+  echo "  - $SNIPPET_FILE（仅因已验证包含 Mihomo Full 托管标记）"
+fi
 echo ""
 echo "明确不会操作："
 echo "  - /etc/v2ray-agent"
@@ -101,6 +107,29 @@ if [[ -e "$SERVICE_FILE" ]]; then
   systemctl daemon-reload || true
 fi
 
+if (( SNIPPET_OWNED )); then
+  mapfile -t NGX_CONFS < <(find /etc/nginx -type f \( -name '*.conf' -o -name '*enabled*' \) 2>/dev/null | sort -u)
+  for nf in "${NGX_CONFS[@]:-}"; do
+    [[ -f "$nf" && ! -L "$nf" ]] || continue
+    if grep -Fq "$SNIPPET_FILE" "$nf" 2>/dev/null; then
+      bak="${nf}.mihomo-full-uninstall.bak.$(date +%Y%m%d%H%M%S)"
+      cp -a -- "$nf" "$bak"
+      grep -Fv "$SNIPPET_FILE" "$bak" > "${nf}.tmp" && mv -- "${nf}.tmp" "$nf"
+      if command -v nginx >/dev/null 2>&1 && ! nginx -t >/dev/null 2>&1; then
+        mv -- "$bak" "$nf"
+        warn "移除 $nf 中的 Nginx include 后测试未通过，已恢复原文件：$nf"
+      else
+        rm -f -- "$bak"
+        info "已从 Nginx 站点配置移除托管引用：$nf"
+      fi
+    fi
+  done
+  rm -f -- "$SNIPPET_FILE"
+  if command -v nginx >/dev/null 2>&1 && nginx -t >/dev/null 2>&1; then
+    systemctl reload nginx 2>/dev/null || nginx -s reload 2>/dev/null || true
+  fi
+fi
+
 if [[ -L "$BIN_LINK" ]]; then rm -f -- "$BIN_LINK"; fi
 if (( MF_OWNED )); then rm -f -- "$MF_LINK"; fi
 if (( GO_OWNED )); then rm -f -- "$GO_LINK"; fi
@@ -111,4 +140,4 @@ if [[ -d /etc/v2ray-agent ]]; then
 fi
 
 info "Mihomo Full 已卸载。"
-warn "如果你曾手工把订阅 location 加入 Nginx，请按原配置手工移除；本卸载器不会扫描并修改未知的 Nginx 配置。"
+warn "如果你曾手工把自定义订阅 location 加入 Nginx，请按原配置手工检查；本卸载器仅清理带托管标记的片段。"

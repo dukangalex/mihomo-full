@@ -12,7 +12,11 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-import yaml
+try:
+    import yaml
+    HAS_PYYAML = True
+except ModuleNotFoundError:
+    HAS_PYYAML = False
 
 ROOT = Path(__file__).resolve().parents[1]
 template_path = ROOT / "template.yaml"
@@ -32,32 +36,55 @@ endpoint = endpoint_path.read_text(encoding="utf-8")
 uninstall = uninstall_path.read_text(encoding="utf-8")
 manage = manage_path.read_text(encoding="utf-8")
 
-class UniqueKeyLoader(yaml.SafeLoader):
-    pass
+if HAS_PYYAML:
+    class UniqueKeyLoader(yaml.SafeLoader):
+        pass
 
-def _construct_unique_mapping(loader, node, deep=False):
-    explicit_keys = {}
-    for key_node, _value_node in node.value:
-        if key_node.tag == "tag:yaml.org,2002:merge":
-            continue
-        key = loader.construct_object(key_node, deep=deep)
-        if key in explicit_keys:
-            mark = getattr(key_node, "start_mark", None)
-            line = (mark.line + 1) if mark else "?"
-            raise ValueError(f"duplicate YAML mapping key {key!r} at line {line}")
-        explicit_keys[key] = True
-    loader.flatten_mapping(node)
-    mapping = {}
-    for key_node, value_node in node.value:
-        key = loader.construct_object(key_node, deep=deep)
-        mapping[key] = loader.construct_object(value_node, deep=deep)
-    return mapping
+    def _construct_unique_mapping(loader, node, deep=False):
+        explicit_keys = {}
+        for key_node, _value_node in node.value:
+            if key_node.tag == "tag:yaml.org,2002:merge":
+                continue
+            key = loader.construct_object(key_node, deep=deep)
+            if key in explicit_keys:
+                mark = getattr(key_node, "start_mark", None)
+                line = (mark.line + 1) if mark else "?"
+                raise ValueError(f"duplicate YAML mapping key {key!r} at line {line}")
+            explicit_keys[key] = True
+        loader.flatten_mapping(node)
+        mapping = {}
+        for key_node, value_node in node.value:
+            key = loader.construct_object(key_node, deep=deep)
+            mapping[key] = loader.construct_object(value_node, deep=deep)
+        return mapping
 
-UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_unique_mapping)
-try:
-    template = yaml.load(template_text, Loader=UniqueKeyLoader)
-except (yaml.YAMLError, ValueError) as exc:
-    raise SystemExit(f"[FAIL] template.yaml YAML integrity error: {exc}")
+    UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_unique_mapping)
+    try:
+        template = yaml.load(template_text, Loader=UniqueKeyLoader)
+    except (yaml.YAMLError, ValueError) as exc:
+        raise SystemExit(f"[FAIL] template.yaml YAML integrity error: {exc}")
+else:
+    node_script = """
+const fs = require('fs');
+const path = require('path');
+const yamlPath = [
+  path.resolve(process.cwd(), 'node_modules/yaml'),
+  path.resolve(process.cwd(), '../node_modules/yaml'),
+  '/app/applet/node_modules/yaml'
+].find(p => fs.existsSync(p));
+const YAML = require(yamlPath || 'yaml');
+const src = fs.readFileSync(0, 'utf8');
+const doc = YAML.parseDocument(src, { merge: true, uniqueKeys: true, maxAliasCount: 1000 });
+if (doc.errors && doc.errors.length > 0) {
+  console.error(doc.errors.map(e => e.message).join('; '));
+  process.exit(1);
+}
+process.stdout.write(JSON.stringify(doc.toJS({ maxAliasCount: 1000 })));
+"""
+    proc = subprocess.run(["node", "-e", node_script], input=template_text, text=True, capture_output=True)
+    if proc.returncode != 0:
+        raise SystemExit(f"[FAIL] template.yaml YAML integrity error: {proc.stderr.strip()}")
+    template = json.loads(proc.stdout)
 
 errors: list[str] = []
 if not isinstance(template, dict):
@@ -211,7 +238,12 @@ try:
         errors.append("airport common object drift: sub-rules (Bilibili must leave DOMESTIC_DOMAIN DIRECT)")
 except ValueError as exc: errors.append(str(exc))
 try:
-    if False:
+    airport_rules = extract_json_assignment(airport, "rules")
+    spec = importlib.util.spec_from_file_location("airport_sync_rules", ROOT / "tools/sync-airport-overwrite.py")
+    sync_mod_rules = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sync_mod_rules)
+    expected_rules = sync_mod_rules.remap_airport_rules(template.get("rules") or [])
+    if airport_rules != expected_rules:
         errors.append("airport common object drift: rules (outside approved target mappings)")
 except ValueError as exc: errors.append(str(exc))
 

@@ -51,16 +51,14 @@ IPv6 在本项目里其实涉及两件不同的事，容易被混为一谈：
 
 任意一个能正常打开且显示到了 IPv6 地址，说明客户端网络有 IPv6，按第 3 节建议保持开启。都打不开或提示不支持，说明客户端没有 IPv6，可以按第 6 节关闭。
 
-## 6. 关闭 IPv6 支持的操作步骤（`template.yaml`）
+## 6. 关闭 IPv6 支持的操作步骤（`template.yaml` · Mihomo v1.19.32 基线）
 
-只需要改 **4 个开关**，IPv6 使用与 IPv4 相同的官方 `cn-ip` / `private-ip` MRS 规则集，不再维护不存在的 `geoip6/` 规则集——客户端没有 IPv6 流量时这些规则不会被匹配到，留着不会造成任何副作用，也符合"只增强、不削减既有功能"的原则，以后要重新开启时更省事。
+只需要改 **2 个核心开关**（注：Mihomo v1.19.31+ 已移除早期 PATCH 版的 `tun.inet4-route-only` 与 `dns.query-v6` 字段，`tools/audit-generated-config.sh` 会拦截这些废弃字段，请勿手动添加）。IPv6 使用与 IPv4 相同的官方 `cn-ip` / `private-ip` MRS 规则集——客户端没有 IPv6 流量时这些规则不会被匹配到，留着不会造成任何副作用，也符合"只增强、不削减既有功能"的原则，以后要重新开启时更省事。
 
 | 位置 | 当前值（开启） | 改为（关闭） |
 | --- | --- | --- |
 | 顶层 `ipv6:` | `true` | `false` |
-| `tun.inet4-route-only:` | `false` | `true` |
 | `dns.ipv6:` | `true` | `false` |
-| `dns.query-v6:` | `true` | `false` |
 
 改完后重新生成配置：
 
@@ -68,11 +66,11 @@ IPv6 在本项目里其实涉及两件不同的事，容易被混为一谈：
 mihomo-full --generate
 ```
 
-（机场模式使用 `tools/sync-airport-overwrite.py` 会自动把这四项同步进 `airport_overwrite.js`，同步前后都建议跑一次 `--check` 确认无误。）
+（机场模式使用 `tools/sync-airport-overwrite.py` 会自动把顶层 `ipv6` 与 `dns.ipv6` 同步进 `airport_overwrite.js`，同步前后都建议跑一次 `--check` 确认无误。）
 
 ## 7. 重新开启 IPv6 支持
 
-把上表 4 项改回开启值即可，无需其他改动。
+把上表 2 项改回 `true` 即可，无需其他改动。
 
 ## 8. 机场模式（方案 B）不受本节影响
 

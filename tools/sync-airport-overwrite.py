@@ -1,9 +1,29 @@
 #!/usr/bin/env python3
 """Synchronize template public behavior into the non-chain Airport overwrite."""
 from __future__ import annotations
-import argparse, json, re
+import argparse, json, os, re, subprocess
 from pathlib import Path
-import yaml
+try:
+    import yaml
+    def load_yaml_text(text: str):
+        return yaml.safe_load(text)
+except ModuleNotFoundError:
+    def load_yaml_text(text: str):
+        node_script = """
+const fs = require('fs');
+const path = require('path');
+const yamlPath = [
+  path.resolve(process.cwd(), 'node_modules/yaml'),
+  path.resolve(process.cwd(), '../node_modules/yaml'),
+  '/app/applet/node_modules/yaml'
+].find(p => fs.existsSync(p));
+const YAML = require(yamlPath || 'yaml');
+const src = fs.readFileSync(0, 'utf8');
+const doc = YAML.parse(src, { merge: true, uniqueKeys: true, maxAliasCount: 1000 });
+process.stdout.write(JSON.stringify(doc));
+"""
+        proc = subprocess.run(["node", "-e", node_script], input=text, text=True, capture_output=True, check=True)
+        return json.loads(proc.stdout)
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "template.yaml"
 AIRPORT = ROOT / "airport_overwrite.js"
@@ -222,7 +242,7 @@ PROCESS_TARGET = {
     "*youtube*": "📹 YouTube",
 }
 REQUIRED_AIRPORT_GROUPS = (
-    "默认代理", "🚀 节点选择", "⚡ 自动选择", "⚖️ 负载均衡", "直连",
+    "默认代理", "🚀 节点选择", "⚡ 自动选择", "⚖️ 负载均衡", "🔁 故障转移", "直连",
     "🛑 广告拦截", "🔧 远控工具", "💬 AI Services", "🤖 Claude", "🔔 FCM", "📺 Bilibili",
     "📹 YouTube", "🔍 Google", "📲 Telegram", "Ⓜ️ Microsoft", "🍏 Apple",
     "📱 TikTok", "🐦 Twitter", "📘 Meta", "💬 Line", "📺 Netflix", "🎬 Emby",
@@ -339,46 +359,94 @@ def tune_sub_rules(sub):
     return out
 
 
+ICON = "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color"
+MYCLASH_ICON = "https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg"
+
+
 def apply_airport_strategy_groups(text):
     start=text.find('  var AUTO_NAME = "♻️ 自动选择";')
     if start < 0:
         start=text.find('  var AUTO_NAME = "⚡ 自动选择";')
     end=text.find('  var ruleProviderCommonDomain =',start)
     if start<0 or end<0: raise RuntimeError("airport strategy-group block not found")
-    block='''  var AUTO_NAME = "⚡ 自动选择";
+    block=r'''  var AUTO_NAME = "⚡ 自动选择";
   var LB_NAME = "⚖️ 负载均衡";
+  var FAILOVER_NAME = "🔁 故障转移";
   var SELECT_NAME = "🚀 节点选择";
   var DEFAULT_NAME = "默认代理";
   var DIRECT_GROUP = "直连";
-  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, tolerance: 35, icon: "" };
-  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", url: "https://www.gstatic.com/generate_204", interval: 180, icon: "" };
-  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames), icon: "" };
-  var defaultGroup = { name: DEFAULT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME].concat(regionNames).concat([SELECT_NAME]), icon: "" };
-  var directGroup = { name: DIRECT_GROUP, type: "select", proxies: ["DIRECT"], icon: "" };
-  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "" };
-  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "" };
-  var aiGroup = { name: "💬 AI Services", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var claudeGroup = { name: "🤖 Claude", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var fcmGroup = { name: "🔔 FCM", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var bilibiliGroup = { name: "📺 Bilibili", type: "select", proxies: [DIRECT_GROUP, DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var youtubeGroup = { name: "📹 YouTube", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var googleGroup = { name: "🔍 Google", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var telegramGroup = { name: "📲 Telegram", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var microsoftGroup = { name: "Ⓜ️ Microsoft", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var appleGroup = { name: "🍏 Apple", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var tiktokGroup = { name: "📱 TikTok", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var twitterGroup = { name: "🐦 Twitter", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var metaGroup = { name: "📘 Meta", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var lineGroup = { name: "💬 Line", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var netflixGroup = { name: "📺 Netflix", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var embyGroup = { name: "🎬 Emby", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var spotifyGroup = { name: "🎵 Spotify", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var steamGroup = { name: "🎮 Steam", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var pikpakGroup = { name: "📦 PikPak", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var cryptoGroup = { name: "🪙 Crypto", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME], icon: "" };
-  var ehentaiGroup = { name: "📖 EHentai", type: "select", proxies: [DEFAULT_NAME, AUTO_NAME, SELECT_NAME, DIRECT_GROUP], icon: "" };
-  var fallbackGroup = { name: "🐟 Final", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, SELECT_NAME], icon: "" };
-  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, claudeGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup];
+
+  var DIRECT_NODES = [
+    { name: "🇨🇳 直连 | 双栈", type: "direct" },
+    { name: "🇨🇳 直连 | IPv4优先", type: "direct", "ip-version": "ipv4-prefer" },
+    { name: "🇨🇳 直连 | IPv6优先", type: "direct", "ip-version": "ipv6-prefer" },
+    { name: "🇨🇳 直连 | 仅IPv4", type: "direct", "ip-version": "ipv4" },
+    { name: "🇨🇳 直连 | 仅IPv6", type: "direct", "ip-version": "ipv6" }
+  ];
+  var seenProxyNames = {};
+  for (var spi = 0; spi < config.proxies.length; spi++) {
+    seenProxyNames[String(config.proxies[spi].name || "")] = true;
+  }
+  for (var dni = 0; dni < DIRECT_NODES.length; dni++) {
+    if (!seenProxyNames[DIRECT_NODES[dni].name]) config.proxies.push(DIRECT_NODES[dni]);
+  }
+  var directNames = [];
+  for (var dnj = 0; dnj < DIRECT_NODES.length; dnj++) directNames.push(DIRECT_NODES[dnj].name);
+
+  if (typeof rateNames === "undefined" || !rateNames) rateNames = [];
+  if (typeof rateGroups === "undefined" || !rateGroups) rateGroups = [];
+
+  var autoGroup = { name: AUTO_NAME, type: "url-test", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 600, tolerance: 50, timeout: 3000, "expected-status": 204, "max-failed-times": 3, "empty-fallback": "REJECT", icon: "''' + ICON + r'''/Auto.png" };
+  var lbGroup = { name: LB_NAME, type: "load-balance", strategy: "sticky-sessions", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 600, timeout: 3000, "expected-status": 204, "max-failed-times": 3, "empty-fallback": "REJECT", icon: "''' + ICON + r'''/Round_Robin.png" };
+  var failoverGroup = { name: FAILOVER_NAME, type: "fallback", "include-all": true, "exclude-type": "DIRECT", lazy: true, url: "https://www.gstatic.com/generate_204", interval: 600, timeout: 3000, "expected-status": 204, "max-failed-times": 3, "empty-fallback": "REJECT", icon: "''' + ICON + r'''/Available.png" };
+  var selectGroup = { name: SELECT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames), icon: "''' + ICON + r'''/Static.png" };
+  var defaultGroup = { name: DEFAULT_NAME, type: "select", proxies: [AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "''' + ICON + r'''/Proxy.png" };
+  var directGroup = { name: DIRECT_GROUP, type: "select", proxies: directNames, icon: "''' + ICON + r'''/China.png" };
+
+  var serviceProxies = [DEFAULT_NAME, AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]);
+  function pickDefault(preferred) {
+    if (preferred === DIRECT_GROUP) return DIRECT_GROUP;
+    for (var i = 0; i < regionNames.length; i++) {
+      if (regionNames[i] === preferred) return preferred;
+    }
+    return DEFAULT_NAME;
+  }
+  function serviceGroup(name, icon, preferred, withDirect, directFirst) {
+    var proxies;
+    if (withDirect && directFirst) proxies = [DIRECT_GROUP].concat(serviceProxies);
+    else if (withDirect) proxies = serviceProxies.concat([DIRECT_GROUP]);
+    else proxies = serviceProxies.slice();
+    var g = { name: name, type: "select", proxies: proxies, icon: icon || "" };
+    if (preferred) g["default-selected"] = pickDefault(preferred);
+    return g;
+  }
+
+  var adBlockGroup = { name: "🛑 广告拦截", type: "select", proxies: ["REJECT-DROP", "REJECT", DIRECT_GROUP], icon: "''' + ICON + r'''/Advertising.png" };
+  var remoteToolGroup = { name: "🔧 远控工具", type: "select", proxies: ["REJECT-DROP", DEFAULT_NAME, DIRECT_GROUP], icon: "''' + ICON + r'''/Bypass.png" };
+  var aiGroup = serviceGroup("💬 AI Services", "''' + ICON + r'''/ChatGPT.png", "🇺🇸 美国节点", false, false);
+  // Claude 独立出口：与其他 AI 分开选节点，整站（含登录/风控/遥测）固定同一出口，默认美国。
+  var claudeGroup = serviceGroup("🤖 Claude", "https://fastly.jsdelivr.net/npm/@lobehub/icons-static-png@latest/light/claude-color.png", "🇺🇸 美国节点", false, false);
+  var fcmGroup = serviceGroup("🔔 FCM", "''' + ICON + r'''/Google_Search.png", DIRECT_GROUP, true, true);
+  var bilibiliGroup = serviceGroup("📺 Bilibili", "''' + ICON + r'''/bilibili.png", DIRECT_GROUP, true, true);
+  var youtubeGroup = serviceGroup("📹 YouTube", "''' + ICON + r'''/YouTube.png", "", false, false);
+  var googleGroup = serviceGroup("🔍 Google", "''' + ICON + r'''/Google_Search.png", "", false, false);
+  var telegramGroup = serviceGroup("📲 Telegram", "''' + ICON + r'''/Telegram.png", "", false, false);
+  var microsoftGroup = serviceGroup("Ⓜ️ Microsoft", "''' + ICON + r'''/Microsoft.png", "", true, false);
+  var appleGroup = serviceGroup("🍏 Apple", "''' + ICON + r'''/Apple.png", "", true, false);
+  var tiktokGroup = serviceGroup("📱 TikTok", "''' + ICON + r'''/TikTok.png", "🇯🇵 日本节点", false, false);
+  var twitterGroup = serviceGroup("🐦 Twitter", "''' + ICON + r'''/Twitter.png", "", false, false);
+  var metaGroup = serviceGroup("📘 Meta", "''' + ICON + r'''/Facebook.png", "", false, false);
+  var lineGroup = serviceGroup("💬 Line", "''' + ICON + r'''/Line.png", "🇯🇵 日本节点", false, false);
+  var netflixGroup = serviceGroup("📺 Netflix", "''' + ICON + r'''/Netflix.png", "", false, false);
+  var embyGroup = serviceGroup("🎬 Emby", "''' + MYCLASH_ICON + r'''/Emby.svg", "", true, false);
+  var spotifyGroup = serviceGroup("🎵 Spotify", "''' + ICON + r'''/Spotify.png", "", true, false);
+  var steamGroup = serviceGroup("🎮 Steam", "''' + ICON + r'''/Steam.png", "", true, false);
+  var pikpakGroup = serviceGroup("📦 PikPak", "''' + ICON + r'''/Cloud.png", "", true, false);
+  var cryptoGroup = serviceGroup("🪙 Crypto", "''' + ICON + r'''/Bitcoin.png", "🇯🇵 日本节点", false, false);
+  var ehentaiGroup = serviceGroup("📖 EHentai", "''' + MYCLASH_ICON + r'''/Ehentai.svg", "🇺🇸 美国节点", true, false);
+  var fallbackGroup = { name: "🐟 Final", type: "select", proxies: [DEFAULT_NAME, DIRECT_GROUP, AUTO_NAME, LB_NAME, FAILOVER_NAME].concat(rateNames).concat(regionNames).concat([SELECT_NAME]), icon: "''' + ICON + r'''/Stack.png" };
+
+  config["proxy-groups"] = [defaultGroup, selectGroup, autoGroup, lbGroup, failoverGroup, directGroup, adBlockGroup, remoteToolGroup, aiGroup, claudeGroup, fcmGroup, bilibiliGroup, youtubeGroup, googleGroup, telegramGroup, microsoftGroup, appleGroup, tiktokGroup, twitterGroup, metaGroup, lineGroup, netflixGroup, embyGroup, spotifyGroup, steamGroup, pikpakGroup, cryptoGroup, ehentaiGroup, fallbackGroup].concat(rateGroups).concat(regionGroups);
 
 '''
     return text[:start]+block+text[end:]
@@ -487,7 +555,7 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    args=parse_args(); template=yaml.safe_load(TEMPLATE.read_text(encoding="utf-8")); original=AIRPORT.read_text(encoding="utf-8")
+    args=parse_args(); template=load_yaml_text(TEMPLATE.read_text(encoding="utf-8")); original=AIRPORT.read_text(encoding="utf-8")
     first=transform(template,original); second=transform(template,first)
     if first!=second: raise RuntimeError("Airport synchronization is not idempotent: second pass changes the output")
     if args.check:

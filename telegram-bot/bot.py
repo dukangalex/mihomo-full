@@ -32,7 +32,7 @@ def menu():
         [InlineKeyboardButton("🚀 更新落地节点", callback_data="generate"), InlineKeyboardButton("📊 当前状态", callback_data="status")],
         [InlineKeyboardButton("📈 VPS流量/到期", callback_data="vps")],
         [InlineKeyboardButton("📦 规则集管理", callback_data="rules")],
-        [InlineKeyboardButton("🧪 配置完整性检查", callback_data="check")],
+        [InlineKeyboardButton("🧪 语法与完整性检查", callback_data="check"), InlineKeyboardButton("🔍 最终配置审计", callback_data="audit")],
         [InlineKeyboardButton("🤖 卸载 Telegram Bot", callback_data="bot_uninstall")],
         [InlineKeyboardButton("🗑 卸载 Mihomo Full", callback_data="uninstall")],
     ])
@@ -187,6 +187,9 @@ async def button(update, context):
         await q.edit_message_text(("📦 当前本地规则覆盖：\n" + (out or "（无本地覆盖）"))[:4000], reply_markup=rules_menu())
     elif action == "check":
         code, out = run_manage(["--check"])
+        await q.edit_message_text(("✅ " if code == 0 else "❌ ") + out, reply_markup=menu())
+    elif action == "audit":
+        code, out = run_manage(["--audit"])
         await q.edit_message_text(("✅ " if code == 0 else "❌ ") + out, reply_markup=menu())
     elif action == "status":
         code, out = run_manage(["status"])

@@ -23,7 +23,7 @@
 - `profile.store-fake-ip: false`
 - geodata / geox-url
 - NTP 禁用
-- TUN：mixed / auto-route / strict-route / auto-detect-interface / dns-hijack / inet4-route-only / gso
+- TUN：mixed / auto-route / strict-route / auto-detect-interface / dns-hijack / mtu 1500 / gso（对齐 v1.19.32，不含已废弃的 `inet4-route-only`）
 - sniffer：HTTP/TLS、force-domain、skip-dst-address、skip-domain
 - DNS：fake-ip、安全过滤、国内/境外解析策略、`respect-rules`
 - 公共规则集、规则优先级和安全封堵
