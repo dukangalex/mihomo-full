@@ -23,7 +23,7 @@
 - `profile.store-fake-ip: false`
 - geodata / geox-url
 - NTP 禁用
-- TUN：mixed / auto-route / strict-route / auto-detect-interface / dns-hijack / mtu 1500 / gso（对齐 v1.19.32，不含已废弃的 `inet4-route-only`）
+- TUN：mixed / auto-route / strict-route / auto-detect-interface / dns-hijack / mtu 1500 / gso（对齐 v1.19.33，不含已废弃的 `inet4-route-only`）。`auto-redirect` 保持 false，`dns-mode` 留空，避免把 Linux 专用劫持写进跨平台配置。
 - sniffer：HTTP/TLS、force-domain、skip-dst-address、skip-domain
 - DNS：fake-ip、安全过滤、国内/境外解析策略、`respect-rules`
 - 公共规则集、规则优先级和安全封堵
@@ -105,9 +105,9 @@
 
 ## Mihomo 内核基线
 
-- 正式基线：**Mihomo v1.19.32**。
+- 正式基线：**Mihomo v1.19.33**。这是当前稳定版，不是每天变动的 Alpha。v1.19.33 修复 CVE-2026-97031（畸形 TLS ECH 可耗尽进程内存），并修正 DoH 放弃后连接堆积、重载时 fake-ip 分配丢失、亚毫秒测速被记成失败、dialer-proxy 环检测过重。
 - `template.yaml` 是公共行为唯一权威源；`airport_overwrite.js` 只继承公共行为并保留机场模式专属 UX。
-- v1.19.32 相关的 TUN、IPv6、UDP、VLESS、Hysteria/Hysteria2 行为以该版本实际内核为准，不再以旧版本注释作为兼容基线。
+- v1.19.33 相关的 TUN、IPv6、UDP、VLESS、Hysteria/Hysteria2 行为以该版本实际内核为准，不再以旧版本注释作为兼容基线。
 
 ## 链式健康检查原则
 
@@ -116,4 +116,4 @@
 - 前置入口使用更大的切换 tolerance，避免入口轻微延迟波动导致整条机场→VPS 链路级联切换。
 - 落地出口使用当前前置入口下的完整链路健康结果。
 - 链式空策略组统一 `empty-fallback: REJECT`，禁止空池回落到兼容性默认行为。
-- 不按协议名称预先排除 VMess、VLESS、SS、Trojan、Hysteria/Hysteria2、TUIC、WireGuard；具体协议稳定性通过 v1.19.32 的实际运行测试判断。
+- 不按协议名称预先排除 VMess、VLESS、SS、Trojan、Hysteria/Hysteria2、TUIC、WireGuard；具体协议稳定性通过 v1.19.33 的实际运行测试判断。

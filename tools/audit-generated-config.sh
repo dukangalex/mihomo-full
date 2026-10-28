@@ -85,6 +85,11 @@ grep -qE '^  strict-route:[[:space:]]*true' "$CONFIG" || fail "TUN strict-route 
 grep -qE '^  auto-route:[[:space:]]*true' "$CONFIG" || fail "TUN auto-route 未开启"
 grep -qE '^  auto-detect-interface:[[:space:]]*true' "$CONFIG" || fail "TUN auto-detect-interface 未开启"
 grep -qE '^  gso:[[:space:]]*true' "$CONFIG" || fail "TUN gso 必须为 true"
+grep -qE '^  auto-redirect:[[:space:]]*false' "$CONFIG" || fail "auto-redirect 必须保持 false，这是跨平台配置"
+# v1.19.33 新增 tun.dns-mode。留空等于旧行为。写成 hijack 时 Linux 还要 auto-redirect。
+if grep -qE '^[[:space:]]*dns-mode:' "$CONFIG"; then
+  fail "tun.dns-mode 必须留空，避免在关掉 auto-redirect 的跨平台配置里启用 Linux 专用劫持"
+fi
 # Mihomo v1.19.31 已不再接受早期 PATCH 版中使用的 route-only 字段；
 # 这里必须检查“旧字段不存在”，而不是继续要求它存在。
 for stale in 'inet4-route-only' 'inet6-route' 'query-v6' 'fast-queries' 'global-client-fingerprint'; do
@@ -92,7 +97,7 @@ for stale in 'inet4-route-only' 'inet6-route' 'query-v6' 'fast-queries' 'global-
     fail "最终配置仍包含 Mihomo 已移除/不应使用的字段：${stale}"
   fi
 done
-ok "TUN 字段与 Mihomo v1.19.32 对齐，无历史废弃字段"
+ok "TUN 字段与 Mihomo v1.19.33 对齐，无历史废弃字段"
 # mihomo 会静默忽略未知字段，下列 DNS 字段在 config.RawDNS 中不存在，
 # 写了也从不生效，只会让人误以为 TTL/缓存/HTTPS 记录被调整过。
 for dead in 'fake-ip-cache-size' 'min-ttl' 'max-ttl' 'disable-qtype-65' 'cache-size' 'ttl'; do
