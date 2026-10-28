@@ -1,4 +1,4 @@
-# Clash Meta (Mihomo) 配置 · FINAL v7.2 (Mihomo v1.19.32 · IPv6 Dual-Stack)
+# Clash Meta (Mihomo) 配置 · FINAL v7.2 (Mihomo v1.19.33 · IPv6 Dual-Stack)
 # 目标：中国大陆用户 · 境内全直连 · 境外链式代理（机场入口 + 自建VPS落地）
 # 零泄露（宁可断网也不泄露） · 零误判 · 零风控隐患 · 高隐匿 · 国内流量无感
 # IPv6 全面双栈支持（v6 变更：ipv6=true, dns.ipv6=true,
@@ -18,6 +18,10 @@
 #     仅保留国内阿里 IPv6 DoT/DoH，防止国内解析并发抢答导致 CDN 调度至境外或直连超时。
 # 15. [优化] 关闭 respect-rules: false，境外 DoH 统一通过 #国外服务 显式绑定出站策略组，
 #     彻底消除 DNS 查詢重入规则树引发的循环依赖；合并 nameserver-policy 同构锚点，清理冗余规则。
+# 16. [对齐] 内核基线升到稳定版 v1.19.33（含 CVE-2026-97031：畸形 ECH 可耗尽进程内存）。
+#     不跟 Alpha。tun.dns-mode 故意留空：写 hijack 时 Linux 还要 auto-redirect，
+#     而本配置要在 Windows / macOS / Android 共用，auto-redirect 保持 false。
+#     留空等于旧行为（Windows/Linux 且 auto-route 时为 hijack，macOS 为 disabled）。
 #
 # ── 历史版本关键变更（供以后核对）──
 # 1. tun.exclude-package 已移除，银行 App 的直连保障靠 rules 里的 PROCESS-NAME-WILDCARD 兜底。
@@ -92,13 +96,15 @@ tun:
   enable: true
   stack: mixed
   auto-route: true
-  auto-redirect: false         # Linux 专属特性，跨平台跑 Windows/macOS/Android 直接关闭
+  auto-redirect: false         # Linux 专属。跨平台（Windows/macOS/Android）必须关闭。因此 dns-mode 也不写 hijack。
   strict-route: true           # 严格路由：防止流量绕过 TUN
   auto-detect-interface: true
   mtu: 1500                    # 标准以太网 MTU，消除 TUN 网卡指纹特征
   gso: true                    # v1.19.30+ 已修复 PackBuffer 重分配问题；若解析异常改回 false
   gso-max-size: 65536
   udp-timeout: 300
+  # dns-mode 留空（v1.19.33 可写 disabled/native/hijack）。不要改成 hijack：
+  # Linux 上 hijack 依赖上面关掉的 auto-redirect。留空与 v1.19.32 行为一致。
   dns-hijack:
     - any:53
     - tcp://any:53

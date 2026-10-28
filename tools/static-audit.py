@@ -90,6 +90,22 @@ errors: list[str] = []
 if not isinstance(template, dict):
     raise SystemExit("[FAIL] template.yaml did not parse as a mapping")
 
+KERNEL = "v1.19.33"
+workflow = (ROOT / ".github/workflows/static-audit.yml").read_text(encoding="utf-8")
+behavior = (ROOT / "COMMON_BEHAVIOR.md").read_text(encoding="utf-8")
+pins = re.findall(r'MIHOMO_VERSION="(v\d+\.\d+\.\d+)"', workflow)
+if pins != [KERNEL]:
+    errors.append(f"CI mihomo pin must be exactly {KERNEL}, got {pins}")
+if KERNEL not in template_text.splitlines()[0]:
+    errors.append("template.yaml header is not pinned to the CI mihomo version")
+if f"正式基线：**Mihomo {KERNEL}**" not in behavior:
+    errors.append("COMMON_BEHAVIOR.md kernel baseline drifted from CI")
+tun = template.get("tun") or {}
+if tun.get("auto-redirect") is not False:
+    errors.append("tun.auto-redirect must stay false; Linux hijack is not portable")
+if "dns-mode" in tun:
+    errors.append("tun.dns-mode must stay unset so v1.19.33 keeps the v1.19.32 DNS hijack behavior")
+
 groups = {g.get("name") for g in template.get("proxy-groups", []) if isinstance(g, dict) and g.get("name")}
 builtins = {"DIRECT", "REJECT", "REJECT-DROP", "PASS", "fake-ip", "real-ip"}
 
