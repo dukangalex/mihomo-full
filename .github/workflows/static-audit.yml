@@ -93,4 +93,8 @@ jobs:
           chmod +x "$RUNNER_TEMP/mihomo"
           mkdir -p "$RUNNER_TEMP/mihomo-test-dir"
           cp "$RUNNER_TEMP/mf-output/full-config.yaml" "$RUNNER_TEMP/mihomo-test-dir/config.yaml"
+          # Pre-seed geodata so -t does not depend on the kernel's runtime download
+          # (which has been observed to fetch invalid GeoSite.dat under CI network conditions).
+          curl -fsSL -o "$RUNNER_TEMP/mihomo-test-dir/GeoSite.dat" \
+            "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat"
           "$RUNNER_TEMP/mihomo" -d "$RUNNER_TEMP/mihomo-test-dir" -t
